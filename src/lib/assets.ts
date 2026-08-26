@@ -32,7 +32,12 @@ const SP = {
 } as const;
 
 /** 種類名 → 画像。絵のない種は見た目の近い種を流用する */
+/**
+ * 種類 → イラスト。専用の絵がない種類は、シルエットが最も近い種類の絵を借りる。
+ * 借り物であることを忘れないよう、専用絵を持つ8種を上に、代用を下にまとめてある。
+ */
 const SPECIES_IMAGE: Record<string, string> = {
+  // 専用のイラストがある種類
   "オオクワガタ": SP.ookuwa,
   "ヒラタクワガタ": SP.hirata,
   "コクワガタ": SP.kokuwa,
@@ -41,10 +46,27 @@ const SPECIES_IMAGE: Record<string, string> = {
   "ニジイロクワガタ": SP.nijiiro,
   "タランドゥスオオツヤクワガタ": SP.tarandus,
   "オウゴンオニクワガタ": SP.ougononi,
+
+  // 近縁種の絵を借りているもの (専用イラストができ次第ここから外す)
+  "ヒメオオクワガタ": SP.ookuwa,
+  "ホペイオオクワガタ": SP.ookuwa,
+  "タイワンオオクワガタ": SP.ookuwa,
+  "アンタエウスオオクワガタ": SP.ookuwa,
+  "アカアシクワガタ": SP.kokuwa,
+  "ネブトクワガタ": SP.kokuwa,
   "パラワンオオヒラタ": SP.hirata,
   "スマトラオオヒラタ": SP.hirata,
-  "アンタエウスオオクワガタ": SP.ookuwa,
+  "アルキデスヒラタクワガタ": SP.hirata,
+  "ダイオウヒラタクワガタ": SP.hirata,
   "ギラファノコギリクワガタ": SP.nokogiri,
+  // フタマタとホソアカは大顎の形が独特で、近い絵がない。
+  // 大顎が長い点だけでも近いノコギリを当てている
+  "セアカフタマタクワガタ": SP.nokogiri,
+  "マンディブラリスフタマタクワガタ": SP.nokogiri,
+  "メタリフェルホソアカクワガタ": SP.nokogiri,
+  "パプアキンイロクワガタ": SP.nijiiro,
+  "レギウスオオツヤクワガタ": SP.tarandus,
+  "インターメディアツヤクワガタ": SP.tarandus,
 };
 
 export function speciesImage(species: string): string {

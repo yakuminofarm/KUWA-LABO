@@ -22,19 +22,52 @@ export function feedingSummary(beetles: Beetle[], today = todayStr()) {
   return { targets, pending, done: targets.length - pending.length };
 }
 
+/**
+ * 種類の選択肢。国産・外国産で分け、外国産は属ごとにまとめている
+ * (オオクワ系 → ヒラタ系 → ノコギリ系 → フタマタ系 → ホソアカ系 →
+ *  キンイロ系 → ツヤ系 → オウゴンオニ)。
+ * 飼育者は近縁種をまとめて見るので、五十音順よりこの並びのほうが探しやすい。
+ */
+export const SPECIES_GROUPS: { label: string; species: string[] }[] = [
+  {
+    label: "国産",
+    species: [
+      "オオクワガタ",
+      "ヒラタクワガタ",
+      "コクワガタ",
+      "ノコギリクワガタ",
+      "ミヤマクワガタ",
+      "アカアシクワガタ",
+      "ネブトクワガタ",
+      "ヒメオオクワガタ",
+    ],
+  },
+  {
+    label: "外国産",
+    species: [
+      "ホペイオオクワガタ",
+      "タイワンオオクワガタ",
+      "アンタエウスオオクワガタ",
+      "パラワンオオヒラタ",
+      "スマトラオオヒラタ",
+      "アルキデスヒラタクワガタ",
+      "ダイオウヒラタクワガタ",
+      "ギラファノコギリクワガタ",
+      "セアカフタマタクワガタ",
+      "マンディブラリスフタマタクワガタ",
+      "メタリフェルホソアカクワガタ",
+      "ニジイロクワガタ",
+      "パプアキンイロクワガタ",
+      "タランドゥスオオツヤクワガタ",
+      "レギウスオオツヤクワガタ",
+      "インターメディアツヤクワガタ",
+      "オウゴンオニクワガタ",
+    ],
+  },
+];
+
 export const SPECIES_OPTIONS = [
-  "オオクワガタ",
-  "ヒラタクワガタ",
-  "コクワガタ",
-  "ノコギリクワガタ",
-  "ミヤマクワガタ",
-  "パラワンオオヒラタ",
-  "スマトラオオヒラタ",
-  "アンタエウスオオクワガタ",
-  "ギラファノコギリクワガタ",
-  "ニジイロクワガタ",
-  "タランドゥスオオツヤクワガタ",
-  "オウゴンオニクワガタ",
+  ...SPECIES_GROUPS.flatMap((g) => g.species),
   "その他",
 ];
 
@@ -154,17 +187,36 @@ export function daysSinceLastChange(larva: Larva): number | undefined {
 
 // ── 種類別のビジュアルカラー (アバターのグラデーション) ──────
 export const SPECIES_GRADIENTS: Record<string, string> = {
+  // 国産
   "オオクワガタ": "from-slate-700 to-indigo-950",
   "ヒラタクワガタ": "from-zinc-600 to-zinc-900",
   "コクワガタ": "from-stone-500 to-stone-800",
   "ノコギリクワガタ": "from-orange-700 to-red-950",
   "ミヤマクワガタ": "from-yellow-700 to-amber-950",
+  "アカアシクワガタ": "from-red-800 to-stone-950",
+  "ネブトクワガタ": "from-stone-600 to-stone-900",
+  "ヒメオオクワガタ": "from-slate-600 to-slate-900",
+  // オオクワ系
+  "ホペイオオクワガタ": "from-slate-800 to-zinc-950",
+  "タイワンオオクワガタ": "from-slate-700 to-neutral-950",
+  "アンタエウスオオクワガタ": "from-indigo-700 to-indigo-950",
+  // ヒラタ系
   "パラワンオオヒラタ": "from-slate-600 to-slate-950",
   "スマトラオオヒラタ": "from-gray-600 to-gray-950",
-  "アンタエウスオオクワガタ": "from-indigo-700 to-indigo-950",
+  "アルキデスヒラタクワガタ": "from-zinc-700 to-black",
+  "ダイオウヒラタクワガタ": "from-neutral-700 to-neutral-950",
+  // ノコギリ・フタマタ
   "ギラファノコギリクワガタ": "from-amber-700 to-yellow-950",
+  "セアカフタマタクワガタ": "from-red-700 to-neutral-900",
+  "マンディブラリスフタマタクワガタ": "from-zinc-800 to-black",
+  // ホソアカ・キンイロ
+  "メタリフェルホソアカクワガタ": "from-teal-600 to-amber-800",
   "ニジイロクワガタ": "from-emerald-500 via-teal-600 to-fuchsia-700",
+  "パプアキンイロクワガタ": "from-lime-500 via-emerald-500 to-amber-600",
+  // ツヤ・オウゴンオニ
   "タランドゥスオオツヤクワガタ": "from-neutral-600 to-black",
+  "レギウスオオツヤクワガタ": "from-neutral-700 to-black",
+  "インターメディアツヤクワガタ": "from-amber-900 to-neutral-950",
   "オウゴンオニクワガタ": "from-yellow-400 to-amber-700",
 };
 

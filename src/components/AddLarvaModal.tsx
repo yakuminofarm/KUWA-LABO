@@ -4,9 +4,10 @@ import { useState } from "react";
 import { CheckCircle2, X } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Gender, Larva, LarvaStage } from "@/types";
-import { SPECIES_OPTIONS, STAGE_LABELS } from "@/lib/breeding";
+import { STAGE_LABELS } from "@/lib/breeding";
 import { generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
+import { SpeciesSelect } from "@/components/SpeciesSelect";
 import { PhotoPicker } from "@/components/KuwaUI";
 
 interface AddLarvaModalProps {
@@ -110,26 +111,13 @@ export function AddLarvaModal({ onClose }: AddLarvaModalProps) {
           </div>
 
           {!form.lineId && (
-            <div>
-              <label className="block text-sm font-medium text-[#40352a] mb-1">種類</label>
-              <select
-                value={form.species}
-                onChange={(e) => setForm({ ...form, species: e.target.value })}
-                className={inputCls}
-              >
-                {SPECIES_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-              {form.species === "その他" && (
-                <input
-                  value={form.customSpecies}
-                  onChange={(e) => setForm({ ...form, customSpecies: e.target.value })}
-                  placeholder="種類名を入力"
-                  className={`mt-2 ${inputCls}`}
-                />
-              )}
-            </div>
+            <SpeciesSelect
+              value={form.species}
+              custom={form.customSpecies}
+              onChange={(species) => setForm({ ...form, species })}
+              onCustomChange={(customSpecies) => setForm({ ...form, customSpecies })}
+              className={inputCls}
+            />
           )}
 
           <div>
