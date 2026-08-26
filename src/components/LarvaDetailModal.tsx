@@ -26,6 +26,7 @@ import {
 } from "@/lib/breeding";
 import { formatDate, formatDateShort, generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
+import { PromoteLarvaForm } from "@/components/PromoteLarvaForm";
 import { PhotoPicker } from "@/components/KuwaUI";
 import { STAGE_IMAGE, TOOL_IMAGE } from "@/lib/assets";
 
@@ -383,7 +384,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
               </p>
               <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
                 {larva.dugOutDate
-                  ? `${formatDate(larva.dugOutDate)} に掘り出しました。成虫として登録すると管理を続けられます。`
+                  ? `${formatDate(larva.dugOutDate)} に掘り出しました。`
                   : `体が固まるまで待ちます。目安は ${formatDate(expectedDigOutDate(larva.emergedDate))} 頃 (羽化から${daysBetween(larva.emergedDate)}日経過)。`}
               </p>
               {!larva.dugOutDate && (
@@ -396,6 +397,11 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
                 </button>
               )}
             </div>
+          )}
+
+          {/* 羽化後: 成虫台帳へ引き上げる */}
+          {larva.stage === "adult" && larva.emergedDate && (
+            <PromoteLarvaForm larva={larva} />
           )}
 
           {/* 雌雄判別 */}

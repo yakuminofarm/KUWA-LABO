@@ -326,3 +326,39 @@ export function deriveUpcomingTasks(lines: BreedingLine[], larvae: Larva[]): Upc
 
   return tasks.sort((a, b) => Number(b.overdue) - Number(a.overdue));
 }
+
+/* ───────────── 羽化した幼虫を成虫台帳へ引き上げる ───────────── */
+
+/**
+ * 累代表記を1つ進める。
+ *   WD (野外採集) → WF1     野外個体の子は WF1
+ *   WF1 → WF2 / CBF2 → CBF3 / F5 → F6
+ * 表記の揺れは飼育者ごとに幅があるので、読めない形は空で返して手入力にゆだねる。
+ */
+export function nextGeneration(parent?: string): string {
+  const g = parent?.trim().toUpperCase();
+  if (!g) return "";
+  if (g === "WD" || g === "WILD") return "WF1";
+  const m = /^(WF|CBF|CB|F)(\d+)$/.exec(g);
+  if (!m) return "";
+  const prefix = m[1] === "CB" ? "CBF" : m[1];
+  return `${prefix}${parseInt(m[2], 10) + 1}`;
+}
+
+/**
+ * ラインの親から、子に引き継ぐ産地と累代を割り出す。
+ * 産地は母親を優先する (同じ産地同士で組むのが普通だが、
+ * 揃っていない場合の慣習として母系をとる)。
+ */
+export function deriveOffspringInfo(
+  line: BreedingLine | undefined,
+  beetles: Beetle[]
+): { locality: string; generation: string } {
+  if (!line) return { locality: "", generation: "" };
+  const mother = beetles.find((b) => b.id === line.femaleId);
+  const father = beetles.find((b) => b.id === line.maleId);
+  return {
+    locality: (mother?.locality ?? father?.locality ?? "").trim(),
+    generation: nextGeneration(mother?.generation ?? father?.generation),
+  };
+}

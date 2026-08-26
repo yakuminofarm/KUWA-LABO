@@ -5,7 +5,7 @@ import { Check, CheckCircle2, HandCoins, Heart, Skull, Trash2, UtensilsCrossed, 
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Beetle } from "@/types";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
-import { formatYen, genderColor, todayStr } from "@/lib/breeding";
+import { formatYen, genderColor, larvaCost, todayStr } from "@/lib/breeding";
 import { formatDate, getGenderLabel } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { PhotoPicker, PhotoThumb } from "@/components/KuwaUI";
@@ -29,7 +29,7 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
 }
 
 export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModalProps) {
-  const { beetles, lines, updateBeetle, deleteBeetle, toggleFavorite, toggleFedToday } =
+  const { beetles, lines, larvae, updateBeetle, deleteBeetle, toggleFavorite, toggleFedToday } =
     useKuwagataStore();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -42,6 +42,11 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
 
   // ストアの最新状態を参照 (お気に入り等の即時反映のため)
   const beetle = beetles.find((b) => b.id === initial.id) ?? initial;
+  // 自家産の個体は入手金額を持たない。代わりに育成にかかった額を元の記録から出す
+  const sourceLarva = beetle.sourceLarvaId
+    ? larvae.find((l) => l.id === beetle.sourceLarvaId)
+    : undefined;
+  const rearingCost = sourceLarva ? larvaCost(sourceLarva) : 0;
 
   const relatedLines = lines.filter(
     (l) => l.maleId === beetle.id || l.femaleId === beetle.id
@@ -95,6 +100,35 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
             onChange={(url) => updateBeetle(beetle.id, { photoUrl: url })}
             label="この子の写真"
           />
+
+          {/* 後食前: エサやりの輪に入れるための切りかえ。
+              羽化したての個体は後食を始めるまで食べないので、
+              始まったと分かった時点でここから記録する */}
+          {!beetle.matured && beetle.isAlive && beetle.soldPriceYen == null && (
+            <button
+              onClick={() => {
+                updateBeetle(beetle.id, { matured: true });
+                showToast("後食を記録しました。今日からエサやりの対象になります");
+              }}
+              className="w-full rounded-2xl px-4 py-4 flex items-center gap-3.5 active:scale-[0.98] transition-all"
+              style={{ background: "var(--kuwa-card)", border: "1px dashed rgba(163,102,15,0.5)" }}
+            >
+              <span
+                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "var(--kuwa-bark-bg)", color: "var(--kuwa-bark)" }}
+              >
+                <UtensilsCrossed className="w-5 h-5" strokeWidth={2.2} />
+              </span>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="font-maru text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+                  後食を始めた
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--kuwa-ink-soft)" }}>
+                  記録するとエサやりの対象になります
+                </p>
+              </div>
+            </button>
+          )}
 
           {/* 今日のエサやり */}
           {beetle.matured && beetle.isAlive && beetle.soldPriceYen == null && (
@@ -160,6 +194,12 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
             <InfoRow label="羽化日" value={beetle.emergedDate ? formatDate(beetle.emergedDate) : undefined} />
             <InfoRow label="入手日" value={formatDate(beetle.acquiredDate)} />
             <InfoRow label="入手金額" value={beetle.priceYen != null ? formatYen(beetle.priceYen) : undefined} />
+            {sourceLarva && (
+              <InfoRow
+                label="育成費用"
+                value={rearingCost > 0 ? formatYen(rearingCost) : "記録なし"}
+              />
+            )}
             <InfoRow
               label="状態"
               value={

@@ -37,7 +37,12 @@ function LarvaThumb({ larva }: { larva: Larva }) {
 
 function LarvaCard({ larva, onClick }: { larva: Larva; onClick: () => void }) {
   const lines = useKuwagataStore((s) => s.lines);
+  const beetles = useKuwagataStore((s) => s.beetles);
   const line = larva.lineId ? lines.find((l) => l.id === larva.lineId) : undefined;
+  // 成虫の実在で判断する。成虫を消したらバッジも消え、登録し直せる
+  const promoted =
+    larva.promotedBeetleId != null &&
+    beetles.some((b) => b.id === larva.promotedBeetleId);
   const weight = latestWeight(larva);
   const lastChange = latestBottleChange(larva);
   const days = daysSinceLastChange(larva);
@@ -81,6 +86,11 @@ function LarvaCard({ larva, onClick }: { larva: Larva; onClick: () => void }) {
               </span>
               {!larva.isAlive && (
                 <span className="kuwa-badge font-maru bg-[#ded5c6] text-[#7a7062]">飼育終了</span>
+              )}
+              {promoted && (
+                <span className="kuwa-badge font-maru flex-shrink-0 bg-[#d7e0b8] text-[#55682f]">
+                  成虫ずみ
+                </span>
               )}
             </div>
             {weight != null && larva.stage !== "adult" && (

@@ -31,6 +31,7 @@ export interface Beetle {
   matured?: boolean;       // 後食済み (ブリード可能な成熟状態)
   lastFedDate?: string;    // 最終給餌日 (YYYY-MM-DD)。日付が変わると未給餌に戻る
   sourceLineId?: string;   // 出身ブリードライン
+  sourceLarvaId?: string;  // 幼虫台帳から引き上げた場合の元レコード
   photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
   isAlive: boolean;
   isFavorite?: boolean;
@@ -94,6 +95,12 @@ export interface Larva {
   emergedDate?: string;    // 羽化日
   emergedSizeMm?: number;  // 羽化サイズ (mm)
   dugOutDate?: string;     // 掘り出し日 (羽化後に取り出した日)
+  /**
+   * 成虫台帳へ引き上げたときの成虫ID。
+   * 引き上げても幼虫レコードは消さない — ビン交換や体重の履歴が育成の記録そのもので、
+   * 掛かった費用もここから集計しているため。成虫側に費用を写すと二重計上になる。
+   */
+  promotedBeetleId?: string;
   photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
   isAlive: boolean;
   notes: string;

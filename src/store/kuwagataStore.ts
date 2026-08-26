@@ -2,8 +2,21 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Beetle, BottleChange, BreedingLine, Expense, Larva, ReminderSettings } from "@/types";
 import { todayStr } from "@/lib/breeding";
+import { generateId } from "@/lib/utils";
 import { mockBeetles, mockExpenses, mockLarvae, mockLines } from "@/lib/mockData";
 import type { BackupData, ImportResult } from "@/lib/backup";
+
+/** 引き上げ時に人が確かめて決める項目 (幼虫の記録からは埋まらないもの) */
+export interface PromoteDetails {
+  code: string;
+  name?: string;
+  gender: Beetle["gender"];
+  sizeMm?: number;
+  locality?: string;
+  generation?: string;
+  matured?: boolean;
+  notes?: string;
+}
 
 interface KuwagataStore {
   beetles: Beetle[];
@@ -30,6 +43,13 @@ interface KuwagataStore {
   getLine: (id: string) => BreedingLine | undefined;
 
   addLarva: (larva: Larva) => void;
+  /**
+   * 羽化した幼虫を成虫台帳へ引き上げる。
+   * 幼虫レコードは残したまま相互にリンクする — 育成の履歴を失わないため、
+   * また費用は幼虫側で集計しているので、成虫に写すと二重計上になるため。
+   * すでに引き上げずみなら何もせず undefined を返す。
+   */
+  promoteLarva: (larvaId: string, details: PromoteDetails) => Beetle | undefined;
   updateLarva: (id: string, updates: Partial<Larva>) => void;
   deleteLarva: (id: string) => void;
   getLarva: (id: string) => Larva | undefined;
@@ -135,6 +155,46 @@ export const useKuwagataStore = create<KuwagataStore>()(
       getLine: (id) => get().lines.find((l) => l.id === id),
 
       addLarva: (larva) => set((s) => ({ larvae: [...s.larvae, larva] })),
+
+      promoteLarva: (larvaId, details) => {
+        const s = get();
+        const larva = s.larvae.find((l) => l.id === larvaId);
+        if (!larva) return undefined;
+        // 二重登録を防ぐ。ただし成虫側が消されている場合は登録し直せるようにする
+        if (larva.promotedBeetleId && s.beetles.some((b) => b.id === larva.promotedBeetleId)) {
+          return undefined;
+        }
+
+        const beetle: Beetle = {
+          id: generateId(),
+          code: details.code.trim(),
+          name: details.name?.trim() || undefined,
+          species: larva.species,
+          locality: details.locality?.trim() || undefined,
+          generation: details.generation?.trim() || undefined,
+          gender: details.gender,
+          sizeMm: details.sizeMm,
+          emergedDate: larva.emergedDate,
+          // 掘り出した日をもって手元の成虫として数える (未掘り出しなら羽化日)
+          acquiredDate: larva.dugOutDate ?? larva.emergedDate ?? todayStr(),
+          // priceYen は入れない。育成費用は幼虫レコードから集計しており、
+          // ここに写すと総支出が二重に膨らむ
+          matured: details.matured ?? false,
+          sourceLineId: larva.lineId,
+          sourceLarvaId: larva.id,
+          photoUrl: larva.photoUrl,
+          isAlive: true,
+          notes: details.notes?.trim() ?? "",
+        };
+
+        set((st) => ({
+          beetles: [...st.beetles, beetle],
+          larvae: st.larvae.map((l) =>
+            l.id === larvaId ? { ...l, promotedBeetleId: beetle.id } : l
+          ),
+        }));
+        return beetle;
+      },
 
       updateLarva: (id, updates) =>
         set((s) => ({
