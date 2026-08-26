@@ -39,6 +39,14 @@ function TabIcon({ mask, color }: { mask: string; color: string }) {
 export function KuwagataBottomNav({ activeTab, onChange }: KuwagataBottomNavProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 max-w-md mx-auto">
+      {/* バウンドを抑えきれない端末向けの保険。ナビの下に地色を敷いておき、
+          ページが持ち上がっても地の色が続いて見えるようにする。
+          ナビ本体の背面ではないので、上のぼかしには影響しない。 */}
+      <span
+        aria-hidden
+        className="absolute top-full left-0 right-0 h-24"
+        style={{ background: "var(--kuwa-bg)" }}
+      />
       <div
         className="px-2 pb-safe"
         style={{

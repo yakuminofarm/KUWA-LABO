@@ -5,6 +5,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* 端まで来てからさらにスワイプしたときの、iOSのバウンドを止める。
+   バウンド中はページ全体が持ち上がり、固定しているボトムナビや
+   sticky のヘッダーまで一緒に動いて、ナビの下に地色の帯が見えてしまう。 */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 body {
   background: var(--kuwa-bg);
   color: var(--kuwa-ink);
