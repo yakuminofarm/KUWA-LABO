@@ -1,0 +1,143 @@
+"use client";
+
+import { Check, Heart, Ruler } from "lucide-react";
+import { Beetle } from "@/types";
+import { useKuwagataStore } from "@/store/kuwagataStore";
+import { SpeciesAvatar } from "@/components/KuwagataSVG";
+import { PhotoThumb } from "@/components/KuwaUI";
+import { genderColor, needsFeedingToday, todayStr } from "@/lib/breeding";
+import { getGenderLabel } from "@/lib/utils";
+import { TOOL_IMAGE } from "@/lib/assets";
+
+interface BeetleCardProps {
+  beetle: Beetle;
+  onClick: () => void;
+}
+
+export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
+  const toggleFavorite = useKuwagataStore((s) => s.toggleFavorite);
+  const toggleFedToday = useKuwagataStore((s) => s.toggleFedToday);
+  const isSold = beetle.soldPriceYen != null;
+  const inactive = isSold || !beetle.isAlive;
+  const fedToday = beetle.lastFedDate === todayStr();
+  const showFeed = beetle.matured && !inactive;
+  const pendingFeed = needsFeedingToday(beetle);
+
+  return (
+    <button
+      onClick={onClick}
+      className="kuwa-card w-full text-left p-4 transition-all active:scale-[0.98]"
+      style={inactive ? { opacity: 0.66 } : undefined}
+    >
+      <div className="flex items-start gap-3.5">
+        <PhotoThumb src={beetle.photoUrl} fallback={<SpeciesAvatar species={beetle.species} />} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+              {beetle.code}
+            </p>
+            {beetle.name && (
+              <p className="text-xs truncate" style={{ color: "var(--kuwa-ink-soft)" }}>
+                「{beetle.name}」
+              </p>
+            )}
+            {isSold ? (
+              <span className="kuwa-badge font-maru bg-[#d7e0b8] text-[#55682f]">お迎えされました</span>
+            ) : (
+              !beetle.isAlive && (
+                <span className="kuwa-badge font-maru bg-[#ded5c6] text-[#7a7062]">飼育終了</span>
+              )
+            )}
+          </div>
+          <p className="text-xs truncate mt-1" style={{ color: "var(--kuwa-ink-soft)" }}>
+            {beetle.species}
+            {beetle.locality && ` / ${beetle.locality}`}
+          </p>
+          <div className="flex items-center gap-2.5 mt-2 flex-wrap">
+            <span className={`text-xs font-bold ${genderColor(beetle.gender)}`}>
+              {getGenderLabel(beetle.gender)}
+            </span>
+            {beetle.generation && (
+              <span className="kuwa-badge bg-[#e3ceaa] text-[#6b4423]">{beetle.generation}</span>
+            )}
+            {beetle.sizeMm != null && (
+              <span
+                className="text-xs font-semibold flex items-center gap-1"
+                style={{ color: "var(--kuwa-ink-soft)", fontVariantNumeric: "tabular-nums" }}
+              >
+                <Ruler className="w-3.5 h-3.5" strokeWidth={2.2} />
+                {beetle.sizeMm}mm
+              </span>
+            )}
+            {beetle.matured && !inactive && (
+              <span className="kuwa-badge bg-[#d7e0b8] text-[#55682f]">後食済み</span>
+            )}
+            {pendingFeed && (
+              <span className="kuwa-badge font-maru bg-[#f0d49b] text-[#a3660f]">エサまだ</span>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-2 flex-shrink-0">
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label="お気に入り"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(beetle.id);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.stopPropagation();
+                toggleFavorite(beetle.id);
+              }
+            }}
+            className="p-1.5"
+          >
+            <Heart
+              className="w-[18px] h-[18px] transition-colors"
+              strokeWidth={2.2}
+              style={{
+                color: beetle.isFavorite ? "#b0492f" : "#c0ac8f",
+                fill: beetle.isFavorite ? "#b0492f" : "none",
+              }}
+            />
+          </span>
+
+          {showFeed && (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label={fedToday ? "エサやり済み" : "エサをあげた"}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFedToday(beetle.id);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  toggleFedToday(beetle.id);
+                }
+              }}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
+                fedToday ? "" : "animate-kuwa-pop"
+              }`}
+              style={
+                fedToday
+                  ? { background: "var(--kuwa-moss)", color: "#fdf6e7" }
+                  : { background: "var(--kuwa-amber-soft)", color: "var(--kuwa-amber)" }
+              }
+            >
+              {fedToday ? (
+                <Check className="w-[18px] h-[18px]" strokeWidth={3} />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={TOOL_IMAGE.jelly} alt="" width={20} height={20} />
+              )}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}

@@ -1,0 +1,124 @@
+export type Gender = "male" | "female" | "unknown";
+
+export type KuwagataSpecies =
+  | "オオクワガタ"
+  | "ヒラタクワガタ"
+  | "コクワガタ"
+  | "ノコギリクワガタ"
+  | "ミヤマクワガタ"
+  | "パラワンオオヒラタ"
+  | "スマトラオオヒラタ"
+  | "アンタエウスオオクワガタ"
+  | "ギラファノコギリクワガタ"
+  | "ニジイロクワガタ"
+  | "タランドゥスオオツヤクワガタ"
+  | "オウゴンオニクワガタ"
+  | "その他";
+
+/** 成虫個体 */
+export interface Beetle {
+  id: string;
+  code: string;            // 管理番号 (例: 26OK-A1)
+  name?: string;           // 愛称
+  species: KuwagataSpecies | string;
+  locality?: string;       // 産地 (例: 山梨県韮崎、スマトラ アチェ)
+  generation?: string;     // 累代 (例: WD, WF1, CBF2, F5)
+  gender: Gender;
+  sizeMm?: number;         // 体長 (mm)
+  emergedDate?: string;    // 羽化日
+  acquiredDate: string;    // 入手日
+  priceYen?: number;       // 入手金額 (円)
+  matured?: boolean;       // 後食済み (ブリード可能な成熟状態)
+  lastFedDate?: string;    // 最終給餌日 (YYYY-MM-DD)。日付が変わると未給餌に戻る
+  sourceLineId?: string;   // 出身ブリードライン
+  photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
+  isAlive: boolean;
+  isFavorite?: boolean;
+  soldDate?: string;       // 販売日
+  soldPriceYen?: number;   // 販売金額 (円)
+  soldTo?: string;         // 販売先 (店舗・知人など)
+  notes: string;
+}
+
+/** ブリードラインの進行状況 */
+export type LineStatus =
+  | "pairing"        // ペアリング中
+  | "laying"         // 産卵セット中
+  | "waiting_split"  // 割り出し待ち
+  | "split_done"     // 割り出し済み
+  | "finished";      // 終了
+
+/** ブリードライン (ペアリング〜産卵セット〜割り出しの1サイクル) */
+export interface BreedingLine {
+  id: string;
+  name: string;            // ライン名 (例: 2026-A)
+  species: KuwagataSpecies | string;
+  maleId?: string;
+  femaleId?: string;
+  pairingDate?: string;    // ペアリング開始日
+  setDate?: string;        // 産卵セット投入日
+  setType?: string;        // セット内容 (産卵材/発酵マット/カワラ材/菌床)
+  splitDate?: string;      // 割り出し日
+  eggCount?: number;       // 採卵数
+  larvaCount?: number;     // 割り出し幼虫数
+  status: LineStatus;
+  notes: string;
+}
+
+/** 成長ステージ (卵→初齢→2齢→3齢→前蛹→蛹→羽化) */
+export type LarvaStage = "egg" | "L1" | "L2" | "L3" | "prepupa" | "pupa" | "adult";
+
+/** ビン交換 (菌糸ビン・マット交換) の記録 */
+export interface BottleChange {
+  id: string;
+  date: string;
+  bottleType: string;      // 菌糸ビン / 発酵マット / カワラ菌糸 など
+  bottleSize?: string;     // 800cc, 1400cc など
+  weightG?: number;        // 交換時体重 (g)
+  costYen?: number;        // ビン・マット代 (円)
+  memo?: string;
+}
+
+/** 幼虫個体 */
+export interface Larva {
+  id: string;
+  code: string;            // 管理番号 (例: 2026-A-01)
+  lineId?: string;         // 出身ライン
+  species: KuwagataSpecies | string;
+  stage: LarvaStage;
+  gender: Gender;          // 雌雄判別結果
+  hatchDate?: string;      // 孵化日 (または割り出し日)
+  priceYen?: number;       // 入手金額 (購入幼虫の場合、円)
+  bottleChanges: BottleChange[];
+  pupaDate?: string;       // 蛹化日
+  emergedDate?: string;    // 羽化日
+  emergedSizeMm?: number;  // 羽化サイズ (mm)
+  dugOutDate?: string;     // 掘り出し日 (羽化後に取り出した日)
+  photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
+  isAlive: boolean;
+  notes: string;
+}
+
+/** 消耗品・経費のカテゴリ */
+export type ExpenseCategory =
+  | "ゼリー"
+  | "菌糸ビン"
+  | "マット"
+  | "産卵材"
+  | "器具・用品"
+  | "その他";
+
+/** 消耗品・経費の記録 (個体に紐付かない共通コスト) */
+export interface Expense {
+  id: string;
+  date: string;
+  category: ExpenseCategory;
+  amountYen: number;
+  memo?: string;
+}
+
+/** 給餌リマインダーの設定 */
+export interface ReminderSettings {
+  enabled: boolean;
+  time: string;            // "HH:MM" (24時間表記)
+}

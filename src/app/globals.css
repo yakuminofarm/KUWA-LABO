@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--kuwa-bg);
+  color: var(--kuwa-ink);
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* iOSでテキスト選択ハイライトを抑制 */
+  -webkit-tap-highlight-color: transparent;
+  /* フォントスケール無効化（Safari） */
+  -webkit-text-size-adjust: 100%;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.animate-slide-up { animation: slideUp 0.35s ease-out both; }
+
+/* ── スクロールバー非表示（モバイル横スクロール） ── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── ホームバー・ノッチを避ける ── */
+.pb-safe    { padding-bottom: max(8px,  env(safe-area-inset-bottom)); }
+.pb-safe-lg { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+
+/* ── フォーム入力 最小タップ高さ保証 ── */
+input, select, textarea, button {
+  touch-action: manipulation; /* ダブルタップズーム無効 */
+}
+input, select {
+  min-height: 44px;
+  font-size: 16px; /* iOS で自動ズームしない最低サイズ */
+}
+textarea { font-size: 16px; }
+
+/* ════════════════════════════════════════════
+   くわらぼ デザイントークン (クワガタ手帳)
+   朽木・樹液・黒土・苔 — 飼育現場の自然色
+   ════════════════════════════════════════════ */
+:root {
+  --kuwa-bg:        #ead9bd;  /* 地色: 茶みのある生成り */
+  --kuwa-card:      #fffdf6;  /* カード面 (地色から浮かせる) */
+  --kuwa-ink:       #31241a;  /* 本文 (黒土) */
+  --kuwa-ink-soft:  #77644b;  /* 補足テキスト */
+  --kuwa-bark:      #6b4423;  /* 朽木茶 */
+  --kuwa-bark-bg:   #e3ceaa;  /* 朽木茶の面 */
+  --kuwa-amber:     #a3660f;  /* 樹液・ゼリーの琥珀 */
+  --kuwa-amber-soft:#f0d49b;
+  --kuwa-gold:      #e0a63f;  /* 暗色面に載せる金 */
+  --kuwa-soil:      #241a11;  /* 黒土 */
+  --kuwa-moss:      #55682f;  /* 苔・葉の緑 */
+  --kuwa-moss-bg:   #d7e0b8;
+  --kuwa-clay:      #a3502f;  /* 期限超過などの警告 (テラコッタ) */
+  --kuwa-clay-bg:   #f0d3c2;
+  --kuwa-line:      rgba(107, 68, 35, 0.16); /* 罫線・カード縁 */
+}
+
+/* 丸ゴシック見出し (Zen Maru Gothic → iOSはヒラギノ丸ゴ) */
+.font-maru {
+  font-family: var(--font-zen-maru), "Hiragino Maru Gothic ProN",
+    "M PLUS Rounded 1c", "BIZ UDGothic", sans-serif;
+}
+
+/* ぼかしの入った薄いソフトシャドウ */
+.kuwa-shadow    { box-shadow: 0 6px 20px rgba(84, 58, 30, 0.10); }
+.kuwa-shadow-lg { box-shadow: 0 14px 38px rgba(36, 26, 17, 0.26); }
+
+/* ここぞの1箇所用: 優しく弾むポップ */
+@keyframes kuwaPop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.12); }
+  65%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.animate-kuwa-pop { animation: kuwaPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* ── くわらぼ 共通コンポーネント ───────────────── */
+.kuwa-card {
+  background: var(--kuwa-card);
+  border: 1px solid var(--kuwa-line);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(84, 58, 30, 0.10);
+}
+
+/* 絞り込み・並び替えチップ */
+.kuwa-chip {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--kuwa-card);
+  color: var(--kuwa-ink-soft);
+  border: 1px solid var(--kuwa-line);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.kuwa-chip[data-on="true"] {
+  background: var(--kuwa-bark);
+  border-color: var(--kuwa-bark);
+  color: #fdf6e7;
+}
+.kuwa-chip-moss[data-on="true"] {
+  background: var(--kuwa-moss);
+  border-color: var(--kuwa-moss);
+}
+.kuwa-chip-amber[data-on="true"] {
+  background: var(--kuwa-amber);
+  border-color: var(--kuwa-amber);
+}
+
+/* 入力欄 */
+.kuwa-input {
+  width: 100%;
+  background: #fffdf6;
+  border: 1px solid var(--kuwa-line);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 16px;
+  color: var(--kuwa-ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.kuwa-input::placeholder { color: #b3a189; }
+/* 検索欄: 左にアイコン分の余白 (.kuwa-input の padding を上書きするため後に定義) */
+.kuwa-input-search { padding-left: 44px; }
+.kuwa-input:focus {
+  outline: none;
+  border-color: var(--kuwa-amber);
+  box-shadow: 0 0 0 3px rgba(163, 102, 15, 0.15);
+}
+
+/* ボトムシート */
+.kuwa-sheet { background: var(--kuwa-bg); border-radius: 24px 24px 0 0; }
+.kuwa-sheet-bar {
+  background: rgba(234, 217, 189, 0.96);
+  border-bottom: 1px solid var(--kuwa-line);
+}
+.kuwa-sheet-foot {
+  background: rgba(234, 217, 189, 0.96);
+  border-top: 1px solid var(--kuwa-line);
+}
+
+/* ボタン */
+.kuwa-btn-primary {
+  background: linear-gradient(140deg, #8a5a2b, var(--kuwa-bark));
+  color: #fdf6e7;
+  border-radius: 12px;
+  font-weight: 700;
+}
+.kuwa-btn-primary:disabled {
+  background: #d8c9ae;
+  color: #a1927c;
+}
+.kuwa-btn-ghost {
+  background: var(--kuwa-card);
+  border: 1px solid var(--kuwa-line);
+  color: var(--kuwa-ink-soft);
+  border-radius: 12px;
+  font-weight: 600;
+}
+.kuwa-btn-danger {
+  background: var(--kuwa-card);
+  border: 1px solid rgba(163, 80, 47, 0.4);
+  color: var(--kuwa-clay);
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* FAB */
+.kuwa-fab {
+  background: linear-gradient(140deg, #8a5a2b, var(--kuwa-bark));
+  color: #fdf6e7;
+  box-shadow: 0 8px 26px rgba(58, 35, 15, 0.4);
+}
+
+/* バッジ */
+/* 日本語見出しを文節で折り返す (未対応ブラウザは従来動作) */
+.jp-wrap { word-break: auto-phrase; }
+
+.kuwa-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
