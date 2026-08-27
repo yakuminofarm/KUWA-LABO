@@ -2,7 +2,9 @@
  * 電波がなくても開けるようにする。
  * データは localStorage にあるので、画面さえ出れば記録・閲覧はそのまま使える。
  */
-const CACHE = "kuwarabo-v1";
+// 名前を変えると activate で古いほうが消える。
+// 端末に残った古い画面を確実に捨てたいときに上げる。
+const CACHE = "kuwarabo-v2";
 const PAGE = "/";
 
 self.addEventListener("install", (e) => {
