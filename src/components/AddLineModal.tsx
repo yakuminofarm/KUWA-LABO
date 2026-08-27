@@ -6,59 +6,40 @@ import { useKuwagataStore } from "@/store/kuwagataStore";
 import { BreedingLine } from "@/types";
 import { generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
-import { SpeciesSelect } from "@/components/SpeciesSelect";
+import {
+  LineFields,
+  LineFormState,
+  emptyLineForm,
+  formToLine,
+  isLineFormValid,
+} from "@/components/LineFields";
 
 interface AddLineModalProps {
   onClose: () => void;
 }
 
-const inputCls =
-  "kuwa-input";
-
 export function AddLineModal({ onClose }: AddLineModalProps) {
-  const { beetles, addLine } = useKuwagataStore();
+  const addLine = useKuwagataStore((s) => s.addLine);
   const { showToast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    species: "オオクワガタ",
-    customSpecies: "",
-    maleId: "",
-    femaleId: "",
-    pairingDate: new Date().toISOString().split("T")[0],
-    notes: "",
-  });
+  const [form, setForm] = useState<LineFormState>(emptyLineForm);
 
-  const males = beetles.filter((b) => b.gender === "male" && b.isAlive);
-  const females = beetles.filter((b) => b.gender === "female" && b.isAlive);
 
-  const canSubmit = form.name.trim() !== "";
+  const canSubmit = isLineFormValid(form);
 
   const handleSubmit = () => {
     if (!canSubmit || submitting || done) return;
     setSubmitting(true);
-    const species =
-      form.species === "その他" ? form.customSpecies || "その他" : form.species;
     const line: BreedingLine = {
       id: generateId(),
-      name: form.name.trim(),
-      species,
-      maleId: form.maleId || undefined,
-      femaleId: form.femaleId || undefined,
-      pairingDate: form.pairingDate || undefined,
+      ...formToLine(form),
       status: "pairing",
-      notes: form.notes,
     };
     addLine(line);
     setDone(true);
     showToast(`ライン ${line.name} ができました！`);
     setTimeout(() => onClose(), 800);
-  };
-
-  const beetleLabel = (id: string) => {
-    const b = beetles.find((x) => x.id === id);
-    return b ? `${b.code}${b.sizeMm ? ` (${b.sizeMm}mm)` : ""}` : "";
   };
 
   return (
@@ -72,73 +53,7 @@ export function AddLineModal({ onClose }: AddLineModalProps) {
         </div>
 
         <div className="overflow-y-auto flex-1 px-5 pt-5 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[#40352a] mb-1">ライン名 *</label>
-            <input
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="例: 2026-A"
-              className={inputCls}
-            />
-          </div>
-
-          <SpeciesSelect
-            value={form.species}
-            custom={form.customSpecies}
-            onChange={(species) => setForm({ ...form, species })}
-            onCustomChange={(customSpecies) => setForm({ ...form, customSpecies })}
-            className={inputCls}
-          />
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-[#40352a] mb-1">♂ 種親オス</label>
-              <select
-                value={form.maleId}
-                onChange={(e) => setForm({ ...form, maleId: e.target.value })}
-                className={inputCls}
-              >
-                <option value="">未選択</option>
-                {males.map((b) => (
-                  <option key={b.id} value={b.id}>{beetleLabel(b.id)}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#40352a] mb-1">♀ 種親メス</label>
-              <select
-                value={form.femaleId}
-                onChange={(e) => setForm({ ...form, femaleId: e.target.value })}
-                className={inputCls}
-              >
-                <option value="">未選択</option>
-                {females.map((b) => (
-                  <option key={b.id} value={b.id}>{beetleLabel(b.id)}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#40352a] mb-1">ペアリング開始日</label>
-            <input
-              type="date"
-              value={form.pairingDate}
-              onChange={(e) => setForm({ ...form, pairingDate: e.target.value })}
-              className={inputCls}
-            />
-          </div>
-
-          <div className="pb-4">
-            <label className="block text-sm font-medium text-[#40352a] mb-1">メモ</label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              placeholder="狙い・組み合わせの意図など"
-              rows={3}
-              className={`${inputCls} resize-none`}
-            />
-          </div>
+          <LineFields form={form} onChange={setForm} />
         </div>
 
         <div className="kuwa-sheet-foot flex-shrink-0 px-5 pt-4 pb-safe-lg">

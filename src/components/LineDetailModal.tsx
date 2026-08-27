@@ -1,15 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Shovel, Trash2, Worm, X } from "lucide-react";
+import { CheckCircle2, Pencil, Shovel, Trash2, Worm, X } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { BreedingLine, Larva } from "@/types";
 import {
   LINE_STATUS_COLORS,
   LINE_STATUS_LABELS,
+  SPECIES_OPTIONS,
 } from "@/lib/breeding";
 import { formatDate, generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
+import {
+  LineFields,
+  LineFormState,
+  formToLine,
+  isLineFormValid,
+  lineToForm,
+} from "@/components/LineFields";
 import { TOOL_IMAGE } from "@/lib/assets";
 
 interface LineDetailModalProps {
@@ -25,6 +33,15 @@ export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps
     useKuwagataStore();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState<LineFormState | null>(null);
+
+  const saveEdit = () => {
+    if (!editForm || !isLineFormValid(editForm)) return;
+    updateLine(line.id, formToLine(editForm));
+    setEditing(false);
+    showToast("書きかえました");
+  };
 
   const line = lines.find((l) => l.id === initial.id) ?? initial;
   const male = line.maleId ? beetles.find((b) => b.id === line.maleId) : undefined;
@@ -121,6 +138,27 @@ export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps
         </div>
 
         <div className="overflow-y-auto flex-1 px-5 py-5 space-y-5">
+          {editing ? (
+            <div className="space-y-3.5">
+              <LineFields form={editForm!} onChange={setEditForm} showProgress />
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={saveEdit}
+                  disabled={!editForm || !isLineFormValid(editForm)}
+                  className="kuwa-btn-primary flex-1 py-3 text-sm active:scale-[0.98] transition-all disabled:opacity-40"
+                >
+                  保存する
+                </button>
+                <button
+                  onClick={() => setEditing(false)}
+                  className="kuwa-btn-ghost px-5 py-3 text-sm active:scale-[0.98] transition-all"
+                >
+                  やめる
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* ペア情報 */}
           <div className="grid grid-cols-2 gap-2.5">
             <div className="bg-[#cfdbdd]/60 rounded-2xl px-4 py-3.5">
@@ -327,6 +365,19 @@ export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps
             <Trash2 className="w-4 h-4" />
             {confirmDelete ? "ほんとうに消す (幼虫の記録は残ります)" : "ラインを削除"}
           </button>
+
+              <button
+                onClick={() => {
+                  setEditForm(lineToForm(line, SPECIES_OPTIONS));
+                  setEditing(true);
+                }}
+                className="kuwa-btn-ghost w-full py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+              >
+                <Pencil className="w-4 h-4" strokeWidth={2.2} />
+                このラインの情報を直す
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

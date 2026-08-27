@@ -14,6 +14,7 @@ import {
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { BottleChange, Gender, Larva } from "@/types";
 import {
+  SPECIES_OPTIONS,
   STAGE_COLORS,
   STAGE_LABELS,
   daysBetween,
@@ -26,6 +27,13 @@ import {
 } from "@/lib/breeding";
 import { formatDate, formatDateShort, generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
+import {
+  LarvaFields,
+  LarvaFormState,
+  formToLarva,
+  isLarvaFormValid,
+  larvaToForm,
+} from "@/components/LarvaFields";
 import { PromoteLarvaForm } from "@/components/PromoteLarvaForm";
 import { PhotoPicker } from "@/components/KuwaUI";
 import { STAGE_IMAGE, TOOL_IMAGE } from "@/lib/assets";
@@ -158,6 +166,15 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
   } = useKuwagataStore();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<LarvaFormState | null>(null);
+
+  const saveEdit = () => {
+    if (!form || !isLarvaFormValid(form)) return;
+    updateLarva(larva.id, formToLarva(form));
+    setEditing(false);
+    showToast("書きかえました");
+  };
   const [showChangeForm, setShowChangeForm] = useState(false);
   const [editingChangeId, setEditingChangeId] = useState<string | null>(null);
   const [confirmDeleteChangeId, setConfirmDeleteChangeId] = useState<string | null>(null);
@@ -302,6 +319,27 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
           </div>
 
           {/* 基本情報 */}
+          {editing ? (
+            <div className="space-y-3.5">
+              <LarvaFields form={form!} onChange={setForm} showGrowth />
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={saveEdit}
+                  disabled={!form || !isLarvaFormValid(form)}
+                  className="kuwa-btn-primary flex-1 py-3 text-sm active:scale-[0.98] transition-all disabled:opacity-40"
+                >
+                  保存する
+                </button>
+                <button
+                  onClick={() => setEditing(false)}
+                  className="kuwa-btn-ghost px-5 py-3 text-sm active:scale-[0.98] transition-all"
+                >
+                  やめる
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
           <div className="bg-[#d7e0b8]/50 rounded-2xl px-4 py-3 space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-[#8b7a64]">種類</span>
@@ -677,6 +715,19 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
               {confirmDelete ? "ほんとうに消す" : "削除"}
             </button>
           </div>
+
+              <button
+                onClick={() => {
+                  setForm(larvaToForm(larva, SPECIES_OPTIONS));
+                  setEditing(true);
+                }}
+                className="kuwa-btn-ghost w-full py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+              >
+                <Pencil className="w-4 h-4" strokeWidth={2.2} />
+                この子の情報を直す
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
