@@ -1,8 +1,13 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Bell, BellOff, Smartphone } from "lucide-react";
-import { FEED_INTERVAL_OPTIONS, FOOD_OPTIONS, feedIntervalLabel } from "@/lib/breeding";
+import { Bell, BellOff, Info, Smartphone } from "lucide-react";
+import {
+  DEFAULT_SCHEDULE,
+  FEED_INTERVAL_OPTIONS,
+  FOOD_OPTIONS,
+  feedIntervalLabel,
+} from "@/lib/breeding";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Sheet } from "@/components/KuwaUI";
 import { useToast } from "@/components/ui/Toast";
@@ -23,7 +28,7 @@ function readPermission(): Perm {
 }
 
 export function ReminderSheet({ onClose }: { onClose: () => void }) {
-  const { reminder, setReminder } = useKuwagataStore();
+  const { reminder, setReminder, schedule, setSchedule } = useKuwagataStore();
   const { showToast } = useToast();
   // サーバー側では判定できないので unsupported を初期値にする
   const perm = useSyncExternalStore<Perm>(
@@ -45,7 +50,7 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <Sheet title="エサやりの設定" onClose={onClose}>
+    <Sheet title="設定" onClose={onClose}>
       {/* オン/オフ */}
       <button
         onClick={() => setReminder({ enabled: !reminder.enabled })}
@@ -172,6 +177,85 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
           )}
         </div>
       )}
+
+      {/* 育成の目安。飼育者ごとにやり方が違うので本人が決める */}
+      <div
+        className="rounded-2xl p-4"
+        style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+      >
+        <p className="font-maru text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+          育成の目安にする日数
+        </p>
+        <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          「そろそろ羽化」「掘り出しの目安」を出す基準です。種類・温度・やり方で
+          変わるので、ご自身のやり方に合わせて変えてください。
+        </p>
+
+        <div className="mt-3.5 space-y-3">
+          {(
+            [
+              { key: "pupaDaysMin", label: "蛹化から羽化まで (最短)", unit: "日" },
+              { key: "pupaDaysMax", label: "蛹化から羽化まで (最長)", unit: "日" },
+              { key: "digOutDays", label: "羽化から掘り出しまで", unit: "日" },
+              { key: "bottleChangeDays", label: "ビン交換の間隔", unit: "日" },
+            ] as const
+          ).map(({ key, label, unit }) => (
+            <div key={key} className="flex items-center gap-3">
+              <label className="text-xs flex-1 min-w-0" style={{ color: "var(--kuwa-ink)" }}>
+                {label}
+              </label>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={schedule[key]}
+                onChange={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  if (Number.isFinite(n) && n > 0) setSchedule({ [key]: n });
+                }}
+                className="kuwa-input w-24 text-right"
+                style={{ fontVariantNumeric: "tabular-nums" }}
+              />
+              <span className="text-xs flex-shrink-0" style={{ color: "var(--kuwa-ink-soft)" }}>
+                {unit}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setSchedule(DEFAULT_SCHEDULE)}
+          className="kuwa-btn-ghost w-full mt-3.5 py-2.5 text-xs active:scale-[0.98] transition-all"
+        >
+          はじめの値に戻す
+        </button>
+      </div>
+
+      {/* このアプリの助言について。個体を預かる以上、黙って断定しない */}
+      <div
+        className="rounded-2xl p-4"
+        style={{ background: "var(--kuwa-bark-bg)", border: "1px solid var(--kuwa-line)" }}
+      >
+        <p
+          className="font-maru text-sm font-bold flex items-center gap-2"
+          style={{ color: "var(--kuwa-bark)" }}
+        >
+          <Info className="w-4 h-4" strokeWidth={2.2} />
+          目安の数字について
+        </p>
+        <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          このアプリが出す日数の目安や読みものは、
+          <strong style={{ color: "var(--kuwa-ink)" }}>AIがまとめたもの</strong>
+          で、正しさを保証できるものではありません。種類・産地・温度・
+          菌糸の銘柄などで実際は大きく変わります。
+        </p>
+        <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          大切な個体のことは、
+          <strong style={{ color: "var(--kuwa-ink)" }}>ご自身の観察と信頼できる情報源で判断してください</strong>
+          。迷ったときは待つほうが安全です。掘り出しを早まると体が固まる前に
+          傷めることがあります。
+        </p>
+      </div>
 
       {/* 制約の説明 */}
       <div

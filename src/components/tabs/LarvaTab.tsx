@@ -5,9 +5,6 @@ import { AlertTriangle, Search, Sparkles, Worm } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Larva, LarvaStage } from "@/types";
 import {
-  BOTTLE_CHANGE_INTERVAL_DAYS,
-  DIG_OUT_DAYS,
-  PUPA_DAYS_MIN,
   STAGE_COLORS,
   STAGE_LABELS,
   STAGE_ORDER,
@@ -38,6 +35,7 @@ function LarvaThumb({ larva }: { larva: Larva }) {
 function LarvaCard({ larva, onClick }: { larva: Larva; onClick: () => void }) {
   const lines = useKuwagataStore((s) => s.lines);
   const beetles = useKuwagataStore((s) => s.beetles);
+  const schedule = useKuwagataStore((s) => s.schedule);
   const line = larva.lineId ? lines.find((l) => l.id === larva.lineId) : undefined;
   // 成虫の実在で判断する。成虫を消したらバッジも消え、登録し直せる
   const promoted =
@@ -48,16 +46,16 @@ function LarvaCard({ larva, onClick }: { larva: Larva; onClick: () => void }) {
   const days = daysSinceLastChange(larva);
 
   const needsChange =
-    larva.isAlive && isFeedingStage(larva.stage) && days != null && days >= BOTTLE_CHANGE_INTERVAL_DAYS;
+    larva.isAlive && isFeedingStage(larva.stage) && days != null && days >= schedule.bottleChangeDays;
 
   const pupaDays = larva.stage === "pupa" && larva.pupaDate ? daysBetween(larva.pupaDate) : null;
-  const emergeSoon = pupaDays != null && pupaDays >= PUPA_DAYS_MIN - 5;
+  const emergeSoon = pupaDays != null && pupaDays >= schedule.pupaDaysMin - 5;
 
   const digDays =
     larva.stage === "adult" && larva.emergedDate && !larva.dugOutDate
       ? daysBetween(larva.emergedDate)
       : null;
-  const digReady = digDays != null && digDays >= DIG_OUT_DAYS - 5;
+  const digReady = digDays != null && digDays >= schedule.digOutDays - 5;
 
   const alert = needsChange || emergeSoon || digReady;
 

@@ -14,7 +14,7 @@ import { FeedingReminder } from "@/components/FeedingReminder";
 import { ReminderSheet } from "@/components/ReminderSheet";
 import { BackupSheet } from "@/components/BackupSheet";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
-import { Bell, DatabaseBackup } from "lucide-react";
+import { DatabaseBackup, Settings } from "lucide-react";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { IS_PRODUCTION } from "@/lib/env";
 
@@ -83,11 +83,11 @@ export default function KuwagataPage() {
           </button>
           <button
             onClick={() => setShowReminder(true)}
-            aria-label="エサやりのお知らせ設定"
+            aria-label="設定"
             className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
             style={{ background: "var(--kuwa-card)", color: "var(--kuwa-bark)", border: "1px solid var(--kuwa-line)" }}
           >
-            <Bell className="w-[18px] h-[18px]" strokeWidth={2.2} />
+            <Settings className="w-[18px] h-[18px]" strokeWidth={2.2} />
           </button>
         </header>
 

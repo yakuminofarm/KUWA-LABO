@@ -149,6 +149,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
   const {
     larvae,
     lines,
+    schedule,
     updateLarva,
     deleteLarva,
     addBottleChange,
@@ -364,7 +365,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
                 {larva.stage === "prepupa"
                   ? "蛹室を作っている大事な時期です。ビンを振ったり掘ったりしないようにしましょう。"
                   : larva.pupaDate
-                  ? `蛹化から${daysBetween(larva.pupaDate)}日。羽化の目安は ${formatDate(expectedEmergeDate(larva.pupaDate))} 頃です。`
+                  ? `蛹化から${daysBetween(larva.pupaDate)}日。羽化の目安は ${formatDate(expectedEmergeDate(larva.pupaDate, schedule))} 頃です。`
                   : "蛹化日を記録すると、羽化の目安をお知らせできます。"}
               </p>
             </div>
@@ -385,7 +386,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
               <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
                 {larva.dugOutDate
                   ? `${formatDate(larva.dugOutDate)} に掘り出しました。`
-                  : `体が固まるまで待ちます。目安は ${formatDate(expectedDigOutDate(larva.emergedDate))} 頃 (羽化から${daysBetween(larva.emergedDate)}日経過)。`}
+                  : `体が固まるまで待ちます。目安は ${formatDate(expectedDigOutDate(larva.emergedDate, schedule))} 頃 (羽化から${daysBetween(larva.emergedDate)}日経過)。`}
               </p>
               {!larva.dugOutDate && (
                 <button

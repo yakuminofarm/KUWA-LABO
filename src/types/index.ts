@@ -154,6 +154,24 @@ export interface Expense {
   memo?: string;
 }
 
+/**
+ * 育成の目安にする日数。
+ *
+ * 飼育者ごとにやり方が違ううえ、種類・温度・菌糸の銘柄でも変わる。
+ * アプリが一つの正解を押しつけるところではないので、本人が決められるようにする。
+ * 既定値は飼育情報サイトで一般に言われている範囲の、安全側に寄せた値。
+ */
+export interface ScheduleSettings {
+  /** 蛹化からこの日数を過ぎたら羽化が近いとみなす */
+  pupaDaysMin: number;
+  /** 蛹化からこの日数までに羽化するのが目安 */
+  pupaDaysMax: number;
+  /** 羽化からこの日数たてば掘り出してよい */
+  digOutDays: number;
+  /** ビン交換の間隔 */
+  bottleChangeDays: number;
+}
+
 /** 給餌まわりの設定 (全個体に共通) */
 export interface ReminderSettings {
   enabled: boolean;

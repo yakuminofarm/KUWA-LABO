@@ -35,7 +35,7 @@ interface KuwagataHomeTabProps {
 
 export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   const {
-    beetles, lines, larvae, expenses, reminder,
+    beetles, lines, larvae, expenses, reminder, schedule,
     feedAllToday, toggleFedToday, loadSample, clearSample, hasSample,
   } = useKuwagataStore();
   // まだ1件も記録がない = 使い始めたばかりの人
@@ -49,7 +49,7 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   const aliveLarvae = larvae.filter((l) => l.isAlive && !isPupaStage(l.stage) && l.stage !== "adult");
   const alivePupae = larvae.filter((l) => l.isAlive && isPupaStage(l.stage));
   const activeLines = lines.filter((l) => l.status !== "finished");
-  const tasks = deriveUpcomingTasks(lines, larvae);
+  const tasks = deriveUpcomingTasks(lines, larvae, schedule);
   const summary = calcCostSummary(beetles, larvae, expenses);
 
   const topLarvae = [...larvae]
