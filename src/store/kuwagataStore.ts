@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Beetle, BottleChange, BreedingLine, Expense, Larva, ReminderSettings } from "@/types";
-import { todayStr } from "@/lib/breeding";
+import { needsFeeding, todayStr } from "@/lib/breeding";
 import { generateId } from "@/lib/utils";
 import { mockBeetles, mockExpenses, mockLarvae, mockLines } from "@/lib/mockData";
 import type { BackupData, ImportResult } from "@/lib/backup";
@@ -92,7 +92,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
       lines: mockLines,
       larvae: mockLarvae,
       expenses: mockExpenses,
-      reminder: { enabled: false, time: "19:00" },
+      reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー" },
 
       toggleFedToday: (id) =>
         set((s) => {
@@ -108,17 +108,18 @@ export const useKuwagataStore = create<KuwagataStore>()(
 
       feedAllToday: () => {
         const today = todayStr();
-        const pending = get().beetles.filter(
-          (b) => b.isAlive && b.soldPriceYen == null && b.matured && b.lastFedDate !== today
+        const { intervalDays } = get().reminder;
+        const due = new Set(
+          get()
+            .beetles.filter((b) => needsFeeding(b, intervalDays, today))
+            .map((b) => b.id)
         );
         set((s) => ({
           beetles: s.beetles.map((b) =>
-            b.isAlive && b.soldPriceYen == null && b.matured && b.lastFedDate !== today
-              ? { ...b, lastFedDate: today }
-              : b
+            due.has(b.id) ? { ...b, lastFedDate: today } : b
           ),
         }));
-        return pending.length;
+        return due.size;
       },
 
       setReminder: (r) => set((s) => ({ reminder: { ...s.reminder, ...r } })),
@@ -327,7 +328,8 @@ export const useKuwagataStore = create<KuwagataStore>()(
           lines: p?.lines?.length ? p.lines : current.lines,
           larvae: p?.larvae?.length ? p.larvae : current.larvae,
           expenses: p?.expenses?.length ? p.expenses : current.expenses,
-          reminder: p?.reminder ?? current.reminder,
+          // 設定は項目が増えることがあるので、保存済みの値を既定に重ねる
+          reminder: { ...current.reminder, ...(p?.reminder ?? {}) },
         };
       },
     }

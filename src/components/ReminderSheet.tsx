@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { Bell, BellOff, Smartphone } from "lucide-react";
+import { FEED_INTERVAL_OPTIONS, FOOD_OPTIONS, feedIntervalLabel } from "@/lib/breeding";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Sheet } from "@/components/KuwaUI";
 import { useToast } from "@/components/ui/Toast";
@@ -44,7 +45,7 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <Sheet title="エサやりのお知らせ" onClose={onClose}>
+    <Sheet title="エサやりの設定" onClose={onClose}>
       {/* オン/オフ */}
       <button
         onClick={() => setReminder({ enabled: !reminder.enabled })}
@@ -78,6 +79,56 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
           </p>
         </div>
       </button>
+
+      {/* エサ替えの間隔 */}
+      <div>
+        <label className="block text-sm font-medium mb-2" style={{ color: "var(--kuwa-ink)" }}>
+          エサ替えの間隔
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {FEED_INTERVAL_OPTIONS.map((d) => (
+            <button
+              key={d}
+              onClick={() => setReminder({ intervalDays: d })}
+              className="kuwa-chip"
+              data-on={reminder.intervalDays === d}
+            >
+              {feedIntervalLabel(d)}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          前回あげてからこの日数がたつと「エサまだ」になります。
+        </p>
+      </div>
+
+      {/* ふだんの餌 */}
+      <div>
+        <label className="block text-sm font-medium mb-2" style={{ color: "var(--kuwa-ink)" }}>
+          ふだん与えている餌
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {FOOD_OPTIONS.map((f) => (
+            <button
+              key={f}
+              onClick={() => setReminder({ foodType: f })}
+              className="kuwa-chip"
+              data-on={reminder.foodType === f}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <input
+          value={reminder.foodType}
+          onChange={(e) => setReminder({ foodType: e.target.value })}
+          placeholder="自由に入力もできます"
+          className="kuwa-input mt-2"
+        />
+        <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          個体ごとに変えたいときは、その子の詳細から上書きできます。
+        </p>
+      </div>
 
       {/* 時刻 */}
       <div>

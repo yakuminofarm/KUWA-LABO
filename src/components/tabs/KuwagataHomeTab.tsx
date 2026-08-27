@@ -32,9 +32,10 @@ interface KuwagataHomeTabProps {
 }
 
 export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
-  const { beetles, lines, larvae, expenses, feedAllToday } = useKuwagataStore();
+  const { beetles, lines, larvae, expenses, reminder, feedAllToday, toggleFedToday } =
+    useKuwagataStore();
   const { showToast } = useToast();
-  const feeding = feedingSummary(beetles);
+  const feeding = feedingSummary(beetles, reminder.intervalDays);
 
   const aliveBeetles = beetles.filter((b) => b.isAlive && !b.soldDate);
   const aliveLarvae = larvae.filter((l) => l.isAlive && !isPupaStage(l.stage) && l.stage !== "adult");
@@ -220,22 +221,38 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
             </div>
 
             {feeding.pending.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3.5">
-                {feeding.pending.slice(0, 8).map((b) => (
-                  <span
-                    key={b.id}
-                    className="kuwa-badge"
-                    style={{ background: "var(--kuwa-amber-soft)", color: "#8a5410" }}
-                  >
-                    {b.code}
-                  </span>
-                ))}
-                {feeding.pending.length > 8 && (
-                  <span className="kuwa-badge" style={{ color: "var(--kuwa-ink-soft)" }}>
-                    ほか{feeding.pending.length - 8}頭
-                  </span>
-                )}
-              </div>
+              <>
+                {/* 1頭ずつ済ませたいとき用。多頭飼育だと「まとめて」より
+                    こちらのほうが実態に合うことが多い */}
+                <div className="flex flex-wrap gap-1.5 mt-3.5">
+                  {feeding.pending.slice(0, 8).map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => {
+                        toggleFedToday(b.id);
+                        showToast(`${b.code} にエサをあげました`);
+                      }}
+                      aria-label={`${b.code} にエサをあげた`}
+                      className="kuwa-badge active:scale-90 transition-all"
+                      style={{ background: "var(--kuwa-amber-soft)", color: "#8a5410" }}
+                    >
+                      {b.code}
+                    </button>
+                  ))}
+                  {feeding.pending.length > 8 && (
+                    <button
+                      onClick={() => onNavigate("adults")}
+                      className="kuwa-badge active:scale-90 transition-all"
+                      style={{ color: "var(--kuwa-ink-soft)" }}
+                    >
+                      ほか{feeding.pending.length - 8}頭
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] mt-2" style={{ color: "var(--kuwa-ink-soft)" }}>
+                  番号をタップすると1頭ずつ記録できます
+                </p>
+              </>
             )}
           </div>
         </section>

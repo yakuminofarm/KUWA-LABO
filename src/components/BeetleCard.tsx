@@ -5,7 +5,7 @@ import { Beetle } from "@/types";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
 import { PhotoThumb } from "@/components/KuwaUI";
-import { genderColor, needsFeedingToday, todayStr } from "@/lib/breeding";
+import { foodFor, genderColor, needsFeeding, todayStr } from "@/lib/breeding";
 import { getGenderLabel } from "@/lib/utils";
 import { TOOL_IMAGE } from "@/lib/assets";
 
@@ -17,11 +17,15 @@ interface BeetleCardProps {
 export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
   const toggleFavorite = useKuwagataStore((s) => s.toggleFavorite);
   const toggleFedToday = useKuwagataStore((s) => s.toggleFedToday);
+  const reminder = useKuwagataStore((s) => s.reminder);
   const isSold = beetle.soldPriceYen != null;
   const inactive = isSold || !beetle.isAlive;
   const fedToday = beetle.lastFedDate === todayStr();
   const showFeed = beetle.matured && !inactive;
-  const pendingFeed = needsFeedingToday(beetle);
+  const pendingFeed = needsFeeding(beetle, reminder.intervalDays);
+  // ふだんと違う餌の個体だけ、一覧でも分かるようにする
+  const food = foodFor(beetle, reminder.foodType);
+  const oddFood = showFeed && food !== reminder.foodType;
 
   return (
     <button
@@ -75,6 +79,9 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
             {pendingFeed && (
               <span className="kuwa-badge font-maru bg-[#f0d49b] text-[#a3660f]">エサまだ</span>
             )}
+            {oddFood && (
+              <span className="kuwa-badge bg-[#e3ceaa] text-[#6b4423]">{food}</span>
+            )}
           </div>
         </div>
         <div className="flex flex-col items-center gap-2 flex-shrink-0">
@@ -108,7 +115,7 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
             <span
               role="button"
               tabIndex={0}
-              aria-label={fedToday ? "エサやり済み" : "エサをあげた"}
+              aria-label={fedToday ? "エサやりを取り消す" : `${beetle.code} にエサをあげた`}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleFedToday(beetle.id);
@@ -120,15 +127,15 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
                 }
               }}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
-                fedToday ? "" : "animate-kuwa-pop"
+                pendingFeed ? "animate-kuwa-pop" : ""
               }`}
               style={
-                fedToday
-                  ? { background: "var(--kuwa-moss)", color: "#fdf6e7" }
-                  : { background: "var(--kuwa-amber-soft)", color: "var(--kuwa-amber)" }
+                pendingFeed
+                  ? { background: "var(--kuwa-amber-soft)", color: "var(--kuwa-amber)" }
+                  : { background: "var(--kuwa-moss)", color: "#fdf6e7" }
               }
             >
-              {fedToday ? (
+              {!pendingFeed ? (
                 <Check className="w-[18px] h-[18px]" strokeWidth={3} />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element

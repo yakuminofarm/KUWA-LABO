@@ -49,7 +49,8 @@ export function FeedingReminder() {
       if (!isPastTime(time)) return;
 
       // 最新の一覧はストアから直接読む (レンダー中に ref を触らないため)
-      const { pending } = feedingSummary(useKuwagataStore.getState().beetles, today);
+      const { beetles, reminder: r } = useKuwagataStore.getState();
+      const { pending } = feedingSummary(beetles, r.intervalDays, today);
       if (pending.length === 0) return;
 
       writeNotifiedOn(today);

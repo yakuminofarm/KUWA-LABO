@@ -9,7 +9,7 @@ import { AddBeetleModal } from "@/components/AddBeetleModal";
 import { BeetleDetailModal } from "@/components/BeetleDetailModal";
 import { EmptyState, Fab } from "@/components/KuwaUI";
 import { EMPTY_IMAGE } from "@/lib/assets";
-import { needsFeedingToday } from "@/lib/breeding";
+import { needsFeeding } from "@/lib/breeding";
 
 type FilterKey = "alive" | "unfed" | "male" | "female" | "matured" | "favorite" | "sold";
 
@@ -32,11 +32,15 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "code",   label: "番号順" },
 ];
 
-function applyFilter(beetles: Beetle[], active: Set<FilterKey>): Beetle[] {
+function applyFilter(
+  beetles: Beetle[],
+  active: Set<FilterKey>,
+  intervalDays: number
+): Beetle[] {
   if (active.size === 0) return beetles;
   return beetles.filter((b) => {
     if (active.has("alive") && (!b.isAlive || b.soldPriceYen != null)) return false;
-    if (active.has("unfed") && !needsFeedingToday(b)) return false;
+    if (active.has("unfed") && !needsFeeding(b, intervalDays)) return false;
     if (active.has("sold") && b.soldPriceYen == null) return false;
     if (active.has("male") && b.gender !== "male") return false;
     if (active.has("female") && b.gender !== "female") return false;
@@ -59,7 +63,7 @@ function applySort(beetles: Beetle[], key: SortKey): Beetle[] {
 }
 
 export function AdultTab() {
-  const { beetles } = useKuwagataStore();
+  const { beetles, reminder } = useKuwagataStore();
   const [showAdd, setShowAdd] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -83,7 +87,10 @@ export function AdultTab() {
       b.species.includes(search) ||
       (b.locality ?? "").includes(search)
   );
-  const sorted = applySort(applyFilter(searched, activeFilters), sortKey);
+  const sorted = applySort(
+    applyFilter(searched, activeFilters, reminder.intervalDays),
+    sortKey
+  );
   const selected = beetles.find((b) => b.id === selectedId);
 
   return (

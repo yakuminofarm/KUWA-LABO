@@ -6,20 +6,48 @@ export function todayStr(d: Date = new Date()): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-/** 今日エサをあげる必要があるか。後食前・販売済み・飼育終了は対象外 */
-export function needsFeedingToday(b: Beetle, today = todayStr()): boolean {
-  if (!b.isAlive || b.soldPriceYen != null) return false;
-  if (!b.matured) return false;
-  return b.lastFedDate !== today;
+/** エサやりの対象になる個体か。後食前・販売済み・飼育終了は対象外 */
+function isFeedTarget(b: Beetle): boolean {
+  return b.isAlive && b.soldPriceYen == null && !!b.matured;
 }
 
-/** 今日の給餌対象と、そのうち未完了の数 */
-export function feedingSummary(beetles: Beetle[], today = todayStr()) {
-  const targets = beetles.filter(
-    (b) => b.isAlive && b.soldPriceYen == null && b.matured
-  );
-  const pending = targets.filter((b) => b.lastFedDate !== today);
+/**
+ * エサ替えが必要か。前回から intervalDays 日たっていれば必要とみなす。
+ * 記録が一度もなければ必要。intervalDays が 1 のときは
+ * 「日付が変われば必要」となり、間隔を設けていなかった頃と同じ挙動になる。
+ */
+export function needsFeeding(b: Beetle, intervalDays = 1, today = todayStr()): boolean {
+  if (!isFeedTarget(b)) return false;
+  if (!b.lastFedDate) return true;
+  return daysBetween(b.lastFedDate, new Date(today)) >= Math.max(1, intervalDays);
+}
+
+/** 給餌の対象と、そのうち交換が必要なもの */
+export function feedingSummary(beetles: Beetle[], intervalDays = 1, today = todayStr()) {
+  const targets = beetles.filter(isFeedTarget);
+  const pending = targets.filter((b) => needsFeeding(b, intervalDays, today));
   return { targets, pending, done: targets.length - pending.length };
+}
+
+/** この個体に与える餌。個体ごとの指定がなければ全体の既定を使う */
+export function foodFor(b: Beetle, fallback: string): string {
+  return b.foodType?.trim() || fallback;
+}
+
+/** ふだん使う餌の候補 */
+export const FOOD_OPTIONS = [
+  "プロゼリー",
+  "黒糖ゼリー",
+  "高タンパクゼリー",
+  "昆虫ゼリー",
+  "バナナ",
+];
+
+/** エサ替えの間隔の候補 (日) */
+export const FEED_INTERVAL_OPTIONS = [1, 2, 3, 4, 7];
+
+export function feedIntervalLabel(days: number): string {
+  return days === 1 ? "毎日" : `${days}日おき`;
 }
 
 /**

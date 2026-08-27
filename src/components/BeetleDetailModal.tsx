@@ -5,7 +5,14 @@ import { Check, CheckCircle2, HandCoins, Heart, Skull, Trash2, UtensilsCrossed, 
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Beetle } from "@/types";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
-import { formatYen, genderColor, larvaCost, todayStr } from "@/lib/breeding";
+import {
+  FOOD_OPTIONS,
+  foodFor,
+  formatYen,
+  genderColor,
+  larvaCost,
+  todayStr,
+} from "@/lib/breeding";
 import { formatDate, getGenderLabel } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { PhotoPicker, PhotoThumb } from "@/components/KuwaUI";
@@ -29,7 +36,7 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
 }
 
 export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModalProps) {
-  const { beetles, lines, larvae, updateBeetle, deleteBeetle, toggleFavorite, toggleFedToday } =
+  const { beetles, lines, larvae, reminder, updateBeetle, deleteBeetle, toggleFavorite, toggleFedToday } =
     useKuwagataStore();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -128,6 +135,43 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
                 </p>
               </div>
             </button>
+          )}
+
+          {/* この個体の餌。ふだんと違うものを与えている子だけ上書きする */}
+          {beetle.matured && beetle.isAlive && beetle.soldPriceYen == null && (
+            <div
+              className="rounded-2xl p-4"
+              style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+            >
+              <p className="font-maru text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+                この子の餌
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2.5">
+                <button
+                  onClick={() => updateBeetle(beetle.id, { foodType: undefined })}
+                  className="kuwa-chip"
+                  data-on={!beetle.foodType}
+                >
+                  ふだんと同じ ({reminder.foodType})
+                </button>
+                {FOOD_OPTIONS.filter((f) => f !== reminder.foodType).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => updateBeetle(beetle.id, { foodType: f })}
+                    className="kuwa-chip"
+                    data-on={beetle.foodType === f}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs mt-2.5" style={{ color: "var(--kuwa-ink-soft)" }}>
+                いま与えているのは{" "}
+                <strong style={{ color: "var(--kuwa-ink)" }}>
+                  {foodFor(beetle, reminder.foodType)}
+                </strong>
+              </p>
+            </div>
           )}
 
           {/* 今日のエサやり */}

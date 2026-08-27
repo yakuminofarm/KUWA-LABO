@@ -48,7 +48,8 @@ export interface Beetle {
   acquiredDate: string;    // 入手日
   priceYen?: number;       // 入手金額 (円)
   matured?: boolean;       // 後食済み (ブリード可能な成熟状態)
-  lastFedDate?: string;    // 最終給餌日 (YYYY-MM-DD)。日付が変わると未給餌に戻る
+  lastFedDate?: string;    // 最終給餌日 (YYYY-MM-DD)
+  foodType?: string;       // この個体だけ別の餌にする場合。未設定なら全体の既定を使う
   sourceLineId?: string;   // 出身ブリードライン
   sourceLarvaId?: string;  // 幼虫台帳から引き上げた場合の元レコード
   photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
@@ -143,8 +144,12 @@ export interface Expense {
   memo?: string;
 }
 
-/** 給餌リマインダーの設定 */
+/** 給餌まわりの設定 (全個体に共通) */
 export interface ReminderSettings {
   enabled: boolean;
   time: string;            // "HH:MM" (24時間表記)
+  /** 何日おきに与えるか。1なら毎日 */
+  intervalDays: number;
+  /** ふだん与えている餌。個体ごとに変えたいときは Beetle.foodType で上書きする */
+  foodType: string;
 }
