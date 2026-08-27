@@ -8,6 +8,7 @@ import {
   Download,
   FolderOpen,
   Image as ImageIcon,
+  RotateCcw,
   Save,
 } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
@@ -25,6 +26,7 @@ import {
 import { ViewerSave, getViewerSave, saveTextFile } from "@/lib/download";
 import { buildInventoryCsv, csvFileName } from "@/lib/csv";
 import { FileSpreadsheet } from "lucide-react";
+import { resetInstallHint } from "@/components/InstallHint";
 
 /** 取り込み待ちのファイル (中身を見せてから、どう入れるか選んでもらう) */
 type Pending = ParseResult & { fileName: string };
@@ -54,6 +56,7 @@ function Row({
 export function BackupSheet({ onClose }: { onClose: () => void }) {
   const snapshot = useKuwagataStore((s) => s.snapshot);
   const lines = useKuwagataStore((s) => s.lines);
+  const resetAll = useKuwagataStore((s) => s.resetAll);
   const replaceAll = useKuwagataStore((s) => s.replaceAll);
   const mergeAll = useKuwagataStore((s) => s.mergeAll);
   const { showToast } = useToast();
@@ -61,6 +64,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
   const [withPhotos, setWithPhotos] = useState(true);
   const [pending, setPending] = useState<Pending | null>(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   // 共有ページでは閲覧側の保存ダイアログ経由でないとファイルを渡せない
   const [viewerSave, setViewerSave] = useState<ViewerSave | null>(null);
@@ -395,6 +399,69 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
         記録はこの端末の中だけに保存されています。ブラウザの履歴やサイトデータを消すと
         いっしょに消えるので、ときどき書き出しておくと安心です。
       </p>
+
+      {/* ── いちばん危ないので最後に置く ── */}
+      <div
+        className="rounded-2xl p-4"
+        style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+      >
+        <p
+          className="font-maru text-sm font-bold flex items-center gap-2"
+          style={{ color: "var(--kuwa-ink)" }}
+        >
+          <RotateCcw className="w-4 h-4" strokeWidth={2.2} style={{ color: "var(--kuwa-clay)" }} />
+          すべて消して最初から
+        </p>
+        <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          記録も設定もすべて捨てて、初めて開いたときの状態に戻します。
+        </p>
+
+        {!confirmReset ? (
+          <button
+            onClick={() => setConfirmReset(true)}
+            className="kuwa-btn-ghost w-full mt-3 py-3 text-sm active:scale-[0.98] transition-all"
+          >
+            最初の状態に戻す
+          </button>
+        ) : (
+          <div
+            className="mt-3 rounded-xl p-3"
+            style={{ background: "var(--kuwa-clay-bg)", border: "1px solid rgba(163,80,47,0.3)" }}
+          >
+            <p
+              className="font-maru text-xs font-bold flex items-center gap-1.5"
+              style={{ color: "var(--kuwa-clay)" }}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" strokeWidth={2.4} />
+              元に戻せません
+            </p>
+            <p className="text-[11px] mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+              いまの{total}件がすべて消えます。残しておきたいものがあれば、
+              先に上の「ファイルに保存」でバックアップを取ってください。
+            </p>
+            <div className="flex gap-2 mt-2.5">
+              <button
+                onClick={() => {
+                  resetAll();
+                  resetInstallHint();
+                  setConfirmReset(false);
+                  showToast("最初の状態に戻しました");
+                  onClose();
+                }}
+                className="kuwa-btn-danger flex-1 py-2.5 text-sm active:scale-[0.98] transition-all"
+              >
+                すべて消す
+              </button>
+              <button
+                onClick={() => setConfirmReset(false)}
+                className="kuwa-btn-ghost px-4 py-2.5 text-sm active:scale-[0.98] transition-all"
+              >
+                やめる
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </Sheet>
   );
 }

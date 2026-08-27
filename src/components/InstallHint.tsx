@@ -95,6 +95,17 @@ function ShareGlyph() {
   );
 }
 
+/** 初期化のときに、閉じた記憶も一緒に消す (初めての人と同じ状態にするため) */
+export function resetInstallHint() {
+  try {
+    localStorage.removeItem(DISMISS_KEY);
+  } catch {
+    // 消せなくても実害はない
+  }
+  cached = null;
+  emit();
+}
+
 export function InstallHint() {
   const mode = useSyncExternalStore<Mode>(subscribe, getSnapshot, () => "hidden");
 

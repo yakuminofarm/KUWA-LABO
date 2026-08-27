@@ -69,6 +69,8 @@ interface KuwagataStore {
   clearSample: () => number;
   /** 見本の記録が残っているか */
   hasSample: () => boolean;
+  /** 記録も設定もすべて捨てて、初めて開いた状態に戻す */
+  resetAll: () => void;
 
   /** 今の記録をまるごと取り出す (バックアップ書き出し用) */
   snapshot: () => BackupData;
@@ -293,6 +295,15 @@ export const useKuwagataStore = create<KuwagataStore>()(
           s0.expenses.some((x) => x.isSample)
         );
       },
+
+      resetAll: () =>
+        set({
+          beetles: [],
+          lines: [],
+          larvae: [],
+          expenses: [],
+          reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー" },
+        }),
 
       snapshot: () => {
         const s = get();
