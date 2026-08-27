@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
+import { NAV_MASK, STAGE_IMAGE, TOOL_IMAGE } from "@/lib/assets";
 import {
   AlertTriangle,
   BookOpen,
@@ -21,6 +22,42 @@ import {
 import { SectionTitle, Sheet } from "@/components/KuwaUI";
 
 type CategoryFilter = "all" | ArticleCategory;
+
+/**
+ * カテゴリごとの絵。新しく描き起こさず、アプリが既に持っているものを充てる。
+ * ゼリー=日々の世話、産卵材=産卵、菌糸ビン=幼虫、幼虫の絵=温度 (効くのは幼虫期)、
+ * 成虫の絵=羽化後。販売だけ手持ちの絵が無く、ナビの硬貨を色付けして使う。
+ */
+const CATEGORY_IMAGE: Record<ArticleCategory, { src: string; mask?: boolean }> = {
+  "基礎": { src: TOOL_IMAGE.jelly },
+  "産卵": { src: TOOL_IMAGE.log },
+  "幼虫飼育": { src: TOOL_IMAGE.bottle },
+  "温度管理": { src: STAGE_IMAGE.L3 },
+  "羽化・成虫": { src: STAGE_IMAGE.adult },
+  "販売": { src: NAV_MASK.cost, mask: true },
+};
+
+/** 手持ちの絵をそのまま出す。マスク画像だけは色を付けて出す */
+function CategoryArt({ category, size }: { category: ArticleCategory; size: number }) {
+  const art = CATEGORY_IMAGE[category];
+  if (art.mask) {
+    return (
+      <span
+        aria-hidden
+        className="block flex-shrink-0"
+        style={{
+          width: size,
+          height: size,
+          background: "var(--kuwa-bark)",
+          WebkitMask: `url(${art.src}) center/contain no-repeat`,
+          mask: `url(${art.src}) center/contain no-repeat`,
+        }}
+      />
+    );
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={art.src} alt="" width={size} height={size} className="flex-shrink-0" />;
+}
 
 const CATEGORY_COLORS: Record<ArticleCategory, string> = {
   "基礎":       "bg-[#e4dbc9] text-[#6f6250]",
@@ -42,16 +79,24 @@ function ArticleReader({ article, onClose }: { article: Article; onClose: () => 
       }
       onClose={onClose}
     >
-      <p
-        className="text-sm font-semibold rounded-2xl px-4 py-4 leading-relaxed"
-        style={{
-          background: "var(--kuwa-amber-soft)",
-          color: "#6b4423",
-          textWrap: "pretty",
-        }}
+      {/* 読み始めの取っかかり。文字だけが続くと、どの話か掴む前に読み疲れる */}
+      <div
+        className="rounded-2xl px-4 py-4 flex items-start gap-3.5"
+        style={{ background: "var(--kuwa-amber-soft)" }}
       >
-        {article.lead}
-      </p>
+        <span
+          className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{ background: "rgba(255,253,246,0.7)" }}
+        >
+          <CategoryArt category={article.category} size={38} />
+        </span>
+        <p
+          className="text-sm font-semibold leading-relaxed"
+          style={{ color: "#6b4423", textWrap: "pretty" }}
+        >
+          {article.lead}
+        </p>
+      </div>
       <div className="space-y-4">
         {article.body.map((para, i) => (
           <p
@@ -227,6 +272,12 @@ export function ArticlesTab() {
               style={{ animationDelay: `${i * 30}ms` }}
             >
               <div className="flex items-center gap-2.5 mb-2">
+                <span
+                  className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "var(--kuwa-bark-bg)" }}
+                >
+                  <CategoryArt category={a.category} size={24} />
+                </span>
                 <span
                   className={`kuwa-badge font-maru flex-shrink-0 ${CATEGORY_COLORS[a.category]}`}
                 >
