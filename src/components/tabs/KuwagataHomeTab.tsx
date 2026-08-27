@@ -25,6 +25,7 @@ import {
   speciesGradient,
 } from "@/lib/breeding";
 import { formatDateShort } from "@/lib/utils";
+import { KuwaAppIcon } from "@/components/KuwagataSVG";
 import { useToast } from "@/components/ui/Toast";
 
 interface KuwagataHomeTabProps {
@@ -32,8 +33,14 @@ interface KuwagataHomeTabProps {
 }
 
 export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
-  const { beetles, lines, larvae, expenses, reminder, feedAllToday, toggleFedToday } =
-    useKuwagataStore();
+  const {
+    beetles, lines, larvae, expenses, reminder,
+    feedAllToday, toggleFedToday, loadSample, clearSample, hasSample,
+  } = useKuwagataStore();
+  // まだ1件も記録がない = 使い始めたばかりの人
+  const isEmpty =
+    beetles.length === 0 && lines.length === 0 && larvae.length === 0 && expenses.length === 0;
+  const sampleLoaded = hasSample();
   const { showToast } = useToast();
   const feeding = feedingSummary(beetles, reminder.intervalDays);
 
@@ -68,8 +75,80 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
     border: "1px solid var(--kuwa-line)",
   };
 
+  if (isEmpty) {
+    return (
+      <div className="space-y-5">
+        <div
+          className="rounded-[20px] p-6 text-center kuwa-shadow"
+          style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+        >
+          <KuwaAppIcon size={64} />
+          <h2 className="font-maru text-lg font-bold mt-3.5" style={{ color: "var(--kuwa-ink)" }}>
+            くわらぼへようこそ
+          </h2>
+          <p className="text-sm mt-2.5 leading-relaxed jp-wrap" style={{ color: "var(--kuwa-ink-soft)" }}>
+            クワガタの成虫・幼虫・蛹、ブリードの進み具合、エサやり、
+            かかったお金までまとめて記録できます。
+          </p>
+          <button
+            onClick={() => onNavigate("adults")}
+            className="kuwa-btn-primary w-full mt-4 py-3.5 text-sm active:scale-[0.98] transition-all"
+          >
+            まずは1頭 登録してみる
+          </button>
+        </div>
+
+        <div
+          className="rounded-2xl p-4"
+          style={{ background: "var(--kuwa-bark-bg)", border: "1px solid var(--kuwa-line)" }}
+        >
+          <p className="font-maru text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+            どんな画面か先に見たい方へ
+          </p>
+          <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+            見本の記録を入れて、ひととおり触ってみることができます。あとからまとめて消せます。
+          </p>
+          <button
+            onClick={() => {
+              loadSample();
+              showToast("見本の記録を入れました");
+            }}
+            className="kuwa-btn-ghost w-full mt-3 py-3 text-sm active:scale-[0.98] transition-all"
+          >
+            見本の記録を入れてみる
+          </button>
+        </div>
+
+        <p className="text-[11px] leading-relaxed px-1" style={{ color: "var(--kuwa-ink-soft)" }}>
+          記録はこの端末の中だけに保存されます。他の人には見えません。
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-7">
+      {/* 見本が入ったままだと自分の記録と混ざるので、消す道を常に見せておく */}
+      {sampleLoaded && (
+        <div
+          className="rounded-2xl px-4 py-3 flex items-center gap-3"
+          style={{ background: "var(--kuwa-bark-bg)", border: "1px solid var(--kuwa-line)" }}
+        >
+          <p className="text-xs flex-1 min-w-0" style={{ color: "var(--kuwa-ink-soft)" }}>
+            見本の記録が入っています
+          </p>
+          <button
+            onClick={() => {
+              const n = clearSample();
+              showToast(`見本${n}件を消しました`);
+            }}
+            className="kuwa-btn-ghost px-4 py-2 text-xs flex-shrink-0 active:scale-95 transition-all"
+          >
+            消す
+          </button>
+        </div>
+      )}
+
       {/* ヒーロー: 黒土と樹液 */}
       <div
         className="relative overflow-hidden rounded-[20px] p-6 text-white kuwa-shadow-lg"

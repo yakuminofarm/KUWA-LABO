@@ -63,6 +63,13 @@ interface KuwagataStore {
 
   getLarvaeByLine: (lineId: string) => Larva[];
 
+  /** 見本の記録を入れる (どんなアプリか試したい人向け) */
+  loadSample: () => void;
+  /** 見本として入れた記録だけをまとめて消す */
+  clearSample: () => number;
+  /** 見本の記録が残っているか */
+  hasSample: () => boolean;
+
   /** 今の記録をまるごと取り出す (バックアップ書き出し用) */
   snapshot: () => BackupData;
   /** 今の記録を捨てて、読み込んだ内容に入れ替える */
@@ -88,10 +95,11 @@ function appendNew<T extends { id: string }>(
 export const useKuwagataStore = create<KuwagataStore>()(
   persist(
     (set, get) => ({
-      beetles: mockBeetles,
-      lines: mockLines,
-      larvae: mockLarvae,
-      expenses: mockExpenses,
+      // 初期状態は空。見本は本人が望んだときだけ入れる
+      beetles: [],
+      lines: [],
+      larvae: [],
+      expenses: [],
       reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー" },
 
       toggleFedToday: (id) =>
@@ -252,6 +260,40 @@ export const useKuwagataStore = create<KuwagataStore>()(
       getLarvaeByLine: (lineId) =>
         get().larvae.filter((l) => l.lineId === lineId),
 
+      loadSample: () =>
+        set((st) => ({
+          beetles: [...st.beetles, ...mockBeetles],
+          lines: [...st.lines, ...mockLines],
+          larvae: [...st.larvae, ...mockLarvae],
+          expenses: [...st.expenses, ...mockExpenses],
+        })),
+
+      clearSample: () => {
+        const s0 = get();
+        const n =
+          s0.beetles.filter((x) => x.isSample).length +
+          s0.lines.filter((x) => x.isSample).length +
+          s0.larvae.filter((x) => x.isSample).length +
+          s0.expenses.filter((x) => x.isSample).length;
+        set((st) => ({
+          beetles: st.beetles.filter((x) => !x.isSample),
+          lines: st.lines.filter((x) => !x.isSample),
+          larvae: st.larvae.filter((x) => !x.isSample),
+          expenses: st.expenses.filter((x) => !x.isSample),
+        }));
+        return n;
+      },
+
+      hasSample: () => {
+        const s0 = get();
+        return (
+          s0.beetles.some((x) => x.isSample) ||
+          s0.lines.some((x) => x.isSample) ||
+          s0.larvae.some((x) => x.isSample) ||
+          s0.expenses.some((x) => x.isSample)
+        );
+      },
+
       snapshot: () => {
         const s = get();
         return {
@@ -324,10 +366,12 @@ export const useKuwagataStore = create<KuwagataStore>()(
         const p = persisted as Partial<KuwagataStore>;
         return {
           ...current,
-          beetles: p?.beetles?.length ? p.beetles : current.beetles,
-          lines: p?.lines?.length ? p.lines : current.lines,
-          larvae: p?.larvae?.length ? p.larvae : current.larvae,
-          expenses: p?.expenses?.length ? p.expenses : current.expenses,
+          // 空配列も「消した結果」として尊重する。件数で判断すると
+          // 全部消した人に見本が戻ってきてしまう
+          beetles: p?.beetles ?? current.beetles,
+          lines: p?.lines ?? current.lines,
+          larvae: p?.larvae ?? current.larvae,
+          expenses: p?.expenses ?? current.expenses,
           // 設定は項目が増えることがあるので、保存済みの値を既定に重ねる
           reminder: { ...current.reminder, ...(p?.reminder ?? {}) },
         };

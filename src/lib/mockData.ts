@@ -2,6 +2,7 @@ import { Beetle, BreedingLine, Expense, Larva } from "@/types";
 
 export const mockBeetles: Beetle[] = [
   {
+    isSample: true,
     id: "kb-1",
     code: "25OK-A1",
     name: "剛丸",
@@ -19,6 +20,7 @@ export const mockBeetles: Beetle[] = [
     notes: "顎太のかっこいい個体。2026年種親の主力。",
   },
   {
+    isSample: true,
     id: "kb-2",
     code: "25OK-A2",
     species: "オオクワガタ",
@@ -34,6 +36,7 @@ export const mockBeetles: Beetle[] = [
     notes: "A1と同血統別ライン。産卵実績あり。",
   },
   {
+    isSample: true,
     id: "kb-3",
     code: "25PH-B1",
     name: "パラ王",
@@ -51,6 +54,7 @@ export const mockBeetles: Beetle[] = [
     notes: "100mm超え。気性が荒いのでペアリングはハンドペアリング推奨。",
   },
   {
+    isSample: true,
     id: "kb-4",
     code: "25PH-B2",
     species: "パラワンオオヒラタ",
@@ -66,6 +70,7 @@ export const mockBeetles: Beetle[] = [
     notes: "",
   },
   {
+    isSample: true,
     id: "kb-5",
     code: "26NJ-C1",
     species: "ニジイロクワガタ",
@@ -81,6 +86,7 @@ export const mockBeetles: Beetle[] = [
     notes: "グリーン系。後食開始待ち。",
   },
   {
+    isSample: true,
     id: "kb-6",
     code: "26NJ-C2",
     species: "ニジイロクワガタ",
@@ -96,6 +102,7 @@ export const mockBeetles: Beetle[] = [
     notes: "",
   },
   {
+    isSample: true,
     id: "kb-7",
     code: "25SH-Z3",
     species: "スマトラオオヒラタ",
@@ -117,6 +124,7 @@ export const mockBeetles: Beetle[] = [
 
 export const mockLines: BreedingLine[] = [
   {
+    isSample: true,
     id: "kl-1",
     name: "2026-A",
     species: "オオクワガタ",
@@ -131,6 +139,7 @@ export const mockLines: BreedingLine[] = [
     notes: "初令12頭回収。プリンカップ→800cc菌糸へ順次投入。",
   },
   {
+    isSample: true,
     id: "kl-2",
     name: "2026-B",
     species: "パラワンオオヒラタ",
@@ -143,6 +152,7 @@ export const mockLines: BreedingLine[] = [
     notes: "ハンドペアリング成功。メスの潜り良好。",
   },
   {
+    isSample: true,
     id: "kl-3",
     name: "2026-C",
     species: "ニジイロクワガタ",
@@ -156,6 +166,7 @@ export const mockLines: BreedingLine[] = [
 
 export const mockLarvae: Larva[] = [
   {
+    isSample: true,
     id: "kv-1",
     code: "2026-A-01",
     lineId: "kl-1",
@@ -171,6 +182,7 @@ export const mockLarvae: Larva[] = [
     notes: "ライン一番の大型候補。",
   },
   {
+    isSample: true,
     id: "kv-2",
     code: "2026-A-02",
     lineId: "kl-1",
@@ -186,6 +198,7 @@ export const mockLarvae: Larva[] = [
     notes: "",
   },
   {
+    isSample: true,
     id: "kv-3",
     code: "2026-A-03",
     lineId: "kl-1",
@@ -200,6 +213,7 @@ export const mockLarvae: Larva[] = [
     notes: "小ぶりだが順調。",
   },
   {
+    isSample: true,
     id: "kv-4",
     code: "2026-A-04",
     lineId: "kl-1",
@@ -214,6 +228,7 @@ export const mockLarvae: Larva[] = [
     notes: "",
   },
   {
+    isSample: true,
     id: "kv-5",
     code: "2025-Z-07",
     species: "スマトラオオヒラタ",
@@ -231,6 +246,7 @@ export const mockLarvae: Larva[] = [
     notes: "45gから蛹化。羽化サイズに期待。",
   },
   {
+    isSample: true,
     id: "kv-7",
     code: "2026-A-05",
     lineId: "kl-1",
@@ -246,6 +262,7 @@ export const mockLarvae: Larva[] = [
     notes: "蛹室を作り始めた。振動を与えないよう棚の下段へ移動。",
   },
   {
+    isSample: true,
     id: "kv-6",
     code: "2025-Z-03",
     species: "スマトラオオヒラタ",
@@ -265,10 +282,10 @@ export const mockLarvae: Larva[] = [
 ];
 
 export const mockExpenses: Expense[] = [
-  { id: "ex-1", date: "2026-05-02", category: "ゼリー", amountYen: 1280, memo: "プロゼリー 50個入" },
-  { id: "ex-2", date: "2026-05-13", category: "産卵材", amountYen: 1800, memo: "植菌カワラ材 2本" },
-  { id: "ex-3", date: "2026-05-13", category: "マット", amountYen: 980, memo: "発酵マット 10L" },
-  { id: "ex-4", date: "2026-06-20", category: "器具・用品", amountYen: 2400, memo: "コバエシャッター 中 ×2" },
-  { id: "ex-5", date: "2026-07-28", category: "マット", amountYen: 1960, memo: "産卵用マット 20L" },
-  { id: "ex-6", date: "2026-08-10", category: "ゼリー", amountYen: 1280, memo: "プロゼリー 50個入" },
+  { isSample: true, id: "ex-1", date: "2026-05-02", category: "ゼリー", amountYen: 1280, memo: "プロゼリー 50個入" },
+  { isSample: true, id: "ex-2", date: "2026-05-13", category: "産卵材", amountYen: 1800, memo: "植菌カワラ材 2本" },
+  { isSample: true, id: "ex-3", date: "2026-05-13", category: "マット", amountYen: 980, memo: "発酵マット 10L" },
+  { isSample: true, id: "ex-4", date: "2026-06-20", category: "器具・用品", amountYen: 2400, memo: "コバエシャッター 中 ×2" },
+  { isSample: true, id: "ex-5", date: "2026-07-28", category: "マット", amountYen: 1960, memo: "産卵用マット 20L" },
+  { isSample: true, id: "ex-6", date: "2026-08-10", category: "ゼリー", amountYen: 1280, memo: "プロゼリー 50個入" },
 ];

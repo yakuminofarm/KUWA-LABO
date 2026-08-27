@@ -55,6 +55,8 @@ export interface Beetle {
   photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
   isAlive: boolean;
   isFavorite?: boolean;
+  /** 動作を試すために入れた見本の記録。まとめて消せるようにするための印 */
+  isSample?: boolean;
   soldDate?: string;       // 販売日
   soldPriceYen?: number;   // 販売金額 (円)
   soldTo?: string;         // 販売先 (店舗・知人など)
@@ -83,6 +85,9 @@ export interface BreedingLine {
   eggCount?: number;       // 採卵数
   larvaCount?: number;     // 割り出し幼虫数
   status: LineStatus;
+  /** 動作を試すために入れた見本の記録。まとめて消せるようにするための印 */
+  isSample?: boolean;
+
   notes: string;
 }
 
@@ -123,6 +128,8 @@ export interface Larva {
   promotedBeetleId?: string;
   photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
   isAlive: boolean;
+  /** 動作を試すために入れた見本の記録。まとめて消せるようにするための印 */
+  isSample?: boolean;
   notes: string;
 }
 
@@ -141,6 +148,9 @@ export interface Expense {
   date: string;
   category: ExpenseCategory;
   amountYen: number;
+  /** 動作を試すために入れた見本の記録。まとめて消せるようにするための印 */
+  isSample?: boolean;
+
   memo?: string;
 }
 
