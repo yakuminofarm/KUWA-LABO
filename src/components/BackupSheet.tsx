@@ -23,6 +23,8 @@ import {
   parseBackup,
 } from "@/lib/backup";
 import { ViewerSave, getViewerSave, saveTextFile } from "@/lib/download";
+import { buildInventoryCsv, csvFileName } from "@/lib/csv";
+import { FileSpreadsheet } from "lucide-react";
 
 /** 取り込み待ちのファイル (中身を見せてから、どう入れるか選んでもらう) */
 type Pending = ParseResult & { fileName: string };
@@ -51,6 +53,7 @@ function Row({
 
 export function BackupSheet({ onClose }: { onClose: () => void }) {
   const snapshot = useKuwagataStore((s) => s.snapshot);
+  const lines = useKuwagataStore((s) => s.lines);
   const replaceAll = useKuwagataStore((s) => s.replaceAll);
   const mergeAll = useKuwagataStore((s) => s.mergeAll);
   const { showToast } = useToast();
@@ -88,6 +91,14 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
     else if (result === "failed")
       showToast("保存できませんでした。コピーの方をお試しください", "error");
     // 断られた場合は本人の意思なので何も言わない
+  };
+
+  const saveCsv = async () => {
+    const d = snapshot();
+    const csv = buildInventoryCsv(d.beetles, d.larvae, lines);
+    const result = await saveTextFile(viewerSave, csvFileName(), csv, "text/csv");
+    if (result === "saved") showToast("一覧を書き出しました");
+    else if (result === "failed") showToast("書き出せませんでした", "error");
   };
 
   const copy = async () => {
@@ -155,7 +166,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
           style={{ color: "var(--kuwa-ink)" }}
         >
           <Save className="w-4 h-4" strokeWidth={2.2} style={{ color: "var(--kuwa-amber)" }} />
-          いまの記録を書き出す
+          バックアップを作る
         </p>
 
         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
@@ -207,7 +218,11 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
           </span>
         </button>
 
-        <div className="flex gap-2 mt-3">
+        <p className="text-[11px] mt-3 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          くわらぼに戻すための控えです。中身を読むためのものではありません。
+        </p>
+
+        <div className="flex gap-2 mt-2.5">
           <button
             onClick={save}
             disabled={total === 0}
@@ -226,6 +241,38 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
             コピー
           </button>
         </div>
+      </div>
+
+      {/* ── 表計算ソフト向け ── */}
+      <div
+        className="rounded-2xl p-4"
+        style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+      >
+        <p
+          className="font-maru text-sm font-bold flex items-center gap-2"
+          style={{ color: "var(--kuwa-ink)" }}
+        >
+          <FileSpreadsheet
+            className="w-4 h-4"
+            strokeWidth={2.2}
+            style={{ color: "var(--kuwa-moss)" }}
+          />
+          一覧を表にして書き出す
+        </p>
+        <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          Numbers や Excel で開ける形 (CSV) です。手持ちを一覧で眺めたり、
+          お店に見せたりするときに。
+        </p>
+        <button
+          onClick={saveCsv}
+          disabled={total === 0}
+          className="kuwa-btn-ghost w-full mt-3 py-3 text-sm active:scale-[0.98] transition-all disabled:opacity-40"
+        >
+          CSVで書き出す
+        </button>
+        <p className="text-[11px] mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          こちらは読みこみ直せません。機種変更や引っ越しには上のバックアップを使ってください。
+        </p>
       </div>
 
       {/* ── 読みこむ ── */}
