@@ -80,7 +80,13 @@ export default function KuwagataPage() {
           </button>
         </header>
 
-        <main className="px-4 pt-5 pb-24">
+        {/* 下余白は「ナビの高さ」ではなく「追加ボタンの上端」に合わせる。
+            ボタンは下から safe+76px の位置に高さ56pxで浮いているので、
+            96px では最後のカードが必ず潜り込む。76+56+余白16 で 148px。 */}
+        <main
+          className="px-4 pt-5"
+          style={{ paddingBottom: "calc(max(8px, env(safe-area-inset-bottom)) + 148px)" }}
+        >
           {activeTab === "home" && (
             <KuwagataHomeTab onNavigate={setActiveTab} />
           )}
