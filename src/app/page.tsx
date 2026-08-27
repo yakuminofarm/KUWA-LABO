@@ -53,29 +53,18 @@ export default function KuwagataPage() {
       <FeedingReminder />
       <ServiceWorkerRegistrar />
       <ForestBackdrop />
-
-      {/* 時計の帯を確実にヘッダーの色で埋める。
-          html の地色が使われない端末向けの保険で、
-          帯が無い環境では高さ0になるので何も起きない。 */}
-      <div
-        aria-hidden
-        className="fixed top-0 left-0 right-0 z-30 pointer-events-none"
-        style={{ height: "env(safe-area-inset-top)", background: "var(--kuwa-bark)" }}
-      />
       <div className="min-h-screen w-full max-w-md mx-auto">
         <header
-          className="sticky top-0 z-20 px-4 pb-3.5 flex items-center gap-2.5"
+          className="sticky top-0 z-20 px-4 py-3.5 flex items-center gap-2.5"
           style={{
-            background: "rgba(107, 68, 35, 0.95)",
+            background: "rgba(234, 217, 189, 0.9)",
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
-            borderBottom: "1px solid rgba(0, 0, 0, 0.14)",
-            // ホーム画面から開いたとき、時計の帯の下に潜らせる
-            paddingTop: "calc(env(safe-area-inset-top) + 14px)",
+            borderBottom: "1px solid var(--kuwa-line)",
           }}
         >
-          <KuwaAppIcon size={36} onDark />
-          <h1 className="font-maru text-lg font-bold flex-1 min-w-0 truncate" style={{ color: "#fdf6e7" }}>
+          <KuwaAppIcon size={36} />
+          <h1 className="font-maru text-lg font-bold flex-1 min-w-0 truncate" style={{ color: "var(--kuwa-ink)" }}>
             {TAB_TITLES[tab]}
           </h1>
           {/* テスト用の配信だと一目で分かるようにする。
@@ -83,7 +72,7 @@ export default function KuwagataPage() {
           {!IS_PRODUCTION && (
             <span
               className="kuwa-badge font-maru flex-shrink-0"
-              style={{ background: "#f0d49b", color: "#6b4423" }}
+              style={{ background: "var(--kuwa-clay)", color: "#fdf6e7" }}
             >
               テスト
             </span>
@@ -92,11 +81,7 @@ export default function KuwagataPage() {
             onClick={() => setShowBackup(true)}
             aria-label="データの持ち出し"
             className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-            style={{
-              background: "rgba(255, 253, 246, 0.18)",
-              color: "#f2ead6",
-              border: "1px solid rgba(253, 246, 231, 0.3)",
-            }}
+            style={{ background: "var(--kuwa-card)", color: "var(--kuwa-bark)", border: "1px solid var(--kuwa-line)" }}
           >
             <DatabaseBackup className="w-[18px] h-[18px]" strokeWidth={2.2} />
           </button>
@@ -104,11 +89,7 @@ export default function KuwagataPage() {
             onClick={() => setShowReminder(true)}
             aria-label="設定"
             className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-            style={{
-              background: "rgba(255, 253, 246, 0.18)",
-              color: "#f2ead6",
-              border: "1px solid rgba(253, 246, 231, 0.3)",
-            }}
+            style={{ background: "var(--kuwa-card)", color: "var(--kuwa-bark)", border: "1px solid var(--kuwa-line)" }}
           >
             <Settings className="w-[18px] h-[18px]" strokeWidth={2.2} />
           </button>

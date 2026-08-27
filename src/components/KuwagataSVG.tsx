@@ -1,4 +1,4 @@
-import { APP_ICON_SRC, HEADER_ICON_SRC, speciesImage } from "@/lib/assets";
+import { APP_ICON_SRC, speciesImage } from "@/lib/assets";
 
 /**
  * くわらぼのクワガタ表示。
@@ -7,14 +7,11 @@ import { APP_ICON_SRC, HEADER_ICON_SRC, speciesImage } from "@/lib/assets";
  */
 
 /** ヘッダー等のアプリアイコン (角丸タイル込みの画像) */
-/**
- * @param onDark 濃い地の上に置くとき。地色を苔色にしてクワガタを抜いた絵に替える
- */
-export function KuwaAppIcon({ size = 36, onDark = false }: { size?: number; onDark?: boolean }) {
+export function KuwaAppIcon({ size = 36 }: { size?: number }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={onDark ? HEADER_ICON_SRC : APP_ICON_SRC}
+      src={APP_ICON_SRC}
       alt=""
       width={size}
       height={size}

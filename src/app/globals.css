@@ -13,17 +13,6 @@ body {
   overscroll-behavior-y: none;
 }
 
-/*
- * ホーム画面から開いたとき、時計の帯の色はページの最下層 (html) が使われる。
- * body に色を置くとその色が最下層まで昇格してしまうので、html 側に
- * ヘッダーと同じ色を置いて、body の地色は body の中だけに留める。
- * 高さも 100% のままだと帯のぶん足りないので、safe-area を足しておく。
- */
-html {
-  background: var(--kuwa-bark);
-  min-height: calc(100% + env(safe-area-inset-top));
-}
-
 body {
   background: var(--kuwa-bg);
   color: var(--kuwa-ink);

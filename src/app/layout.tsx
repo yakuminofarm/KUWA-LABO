@@ -16,21 +16,14 @@ export const metadata: Metadata = {
   title: "くわらぼ",
   description: "クワガタのブリード・飼育管理アプリ",
   manifest: "/manifest.webmanifest",
-  appleWebApp: {
-    capable: true,
-    title: "くわらぼ",
-    // 時計の帯の下まで中身を伸ばす。default だと時計の領域が別扱いになり、
-    // ヘッダーをいくら伸ばしても地色の帯が残る。
-    // 潜り込むぶんはヘッダー側で safe-area の余白を取って避けている。
-    statusBarStyle: "black-translucent",
-  },
+  appleWebApp: { capable: true, title: "くわらぼ", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#6b4423",
+  themeColor: "#ead9bd",
   // ホーム画面から開いたときにノッチ下まで地色を回す
   viewportFit: "cover",
 };

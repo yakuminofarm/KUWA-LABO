@@ -49,21 +49,21 @@ export function KuwagataBottomNav({ activeTab, onChange }: KuwagataBottomNavProp
       <span
         aria-hidden
         className="absolute top-full left-0 right-0 h-24"
-        style={{ background: "var(--kuwa-bark)" }}
+        style={{ background: "var(--kuwa-bg)" }}
       />
       <div
         className="px-2 pb-safe"
         style={{
-          background: "rgba(107, 68, 35, 0.95)",
+          background: "rgba(234, 217, 189, 0.92)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
-          borderTop: "1px solid rgba(0, 0, 0, 0.14)",
+          borderTop: "1px solid var(--kuwa-line)",
         }}
       >
         <div className="flex">
           {visible.map(({ id, label, mask }) => {
             const isActive = activeTab === id;
-            const color = isActive ? "#fdf6e7" : "rgba(253, 246, 231, 0.55)";
+            const color = isActive ? "var(--kuwa-bark)" : "rgba(119, 100, 75, 0.6)";
             return (
               <button
                 key={id}
@@ -72,7 +72,7 @@ export function KuwagataBottomNav({ activeTab, onChange }: KuwagataBottomNavProp
               >
                 <span
                   className="px-2.5 py-1.5 rounded-xl transition-all duration-200"
-                  style={isActive ? { background: "rgba(255, 253, 246, 0.18)" } : undefined}
+                  style={isActive ? { background: "var(--kuwa-amber-soft)" } : undefined}
                 >
                   <TabIcon mask={mask} color={color} />
                 </span>
