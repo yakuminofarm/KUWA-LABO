@@ -26,6 +26,7 @@ import {
 } from "@/lib/breeding";
 import { formatDateShort } from "@/lib/utils";
 import { KuwaAppIcon } from "@/components/KuwagataSVG";
+import { InstallHint } from "@/components/InstallHint";
 import { useToast } from "@/components/ui/Toast";
 
 interface KuwagataHomeTabProps {
@@ -119,6 +120,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
           </button>
         </div>
 
+        <InstallHint />
+
         <p className="text-[11px] leading-relaxed px-1" style={{ color: "var(--kuwa-ink-soft)" }}>
           記録はこの端末の中だけに保存されます。他の人には見えません。
         </p>
@@ -128,6 +131,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
 
   return (
     <div className="space-y-7">
+      <InstallHint />
+
       {/* 見本が入ったままだと自分の記録と混ざるので、消す道を常に見せておく */}
       {sampleLoaded && (
         <div
