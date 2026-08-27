@@ -53,6 +53,15 @@ export default function KuwagataPage() {
       <FeedingReminder />
       <ServiceWorkerRegistrar />
       <ForestBackdrop />
+
+      {/* 時計の帯を確実にヘッダーの色で埋める。
+          html の地色が使われない端末向けの保険で、
+          帯が無い環境では高さ0になるので何も起きない。 */}
+      <div
+        aria-hidden
+        className="fixed top-0 left-0 right-0 z-30 pointer-events-none"
+        style={{ height: "env(safe-area-inset-top)", background: "var(--kuwa-bark)" }}
+      />
       <div className="min-h-screen w-full max-w-md mx-auto">
         <header
           className="sticky top-0 z-20 px-4 pb-3.5 flex items-center gap-2.5"
