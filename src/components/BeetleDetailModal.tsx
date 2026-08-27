@@ -406,6 +406,7 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
               </div>
             </div>
           ) : (
+            reminder.showCost && (
             <button
               onClick={() => setShowSellForm(true)}
               className="w-full py-3 rounded-xl border border-emerald-200 text-[#4f5f2a] text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
@@ -413,6 +414,7 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
               <HandCoins className="w-4 h-4" />
               販売を記録する
             </button>
+            )
           )}
 
           {relatedLines.length > 0 && (

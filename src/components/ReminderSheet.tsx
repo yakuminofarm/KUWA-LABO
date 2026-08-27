@@ -178,6 +178,36 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
         </div>
       )}
 
+      {/* 表示する画面。趣味で飼う人には売り買いの話が邪魔になる */}
+      <div
+        className="rounded-2xl p-4"
+        style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+      >
+        <p className="font-maru text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+          おかねの管理
+        </p>
+        <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          収支タブと販売の記録を使うかどうか。オフにすると、飼育の記録だけの
+          すっきりした画面になります。入れた金額は消えないので、いつでも戻せます。
+        </p>
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => setReminder({ showCost: true })}
+            className="kuwa-chip flex-1"
+            data-on={reminder.showCost}
+          >
+            使う
+          </button>
+          <button
+            onClick={() => setReminder({ showCost: false })}
+            className="kuwa-chip flex-1"
+            data-on={!reminder.showCost}
+          >
+            使わない
+          </button>
+        </div>
+      </div>
+
       {/* 育成の目安。飼育者ごとにやり方が違うので本人が決める */}
       <div
         className="rounded-2xl p-4"

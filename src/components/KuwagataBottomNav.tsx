@@ -1,6 +1,7 @@
 "use client";
 
 import { NAV_MASK } from "@/lib/assets";
+import { useKuwagataStore } from "@/store/kuwagataStore";
 
 export type KuwagataTabId = "home" | "adults" | "breeding" | "larvae" | "cost" | "articles";
 
@@ -37,6 +38,9 @@ function TabIcon({ mask, color }: { mask: string; color: string }) {
 }
 
 export function KuwagataBottomNav({ activeTab, onChange }: KuwagataBottomNavProps) {
+  const showCost = useKuwagataStore((s) => s.reminder.showCost);
+  const visible = showCost ? tabs : tabs.filter((t) => t.id !== "cost");
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 max-w-md mx-auto">
       {/* バウンドを抑えきれない端末向けの保険。ナビの下に地色を敷いておき、
@@ -57,7 +61,7 @@ export function KuwagataBottomNav({ activeTab, onChange }: KuwagataBottomNavProp
         }}
       >
         <div className="flex">
-          {tabs.map(({ id, label, mask }) => {
+          {visible.map(({ id, label, mask }) => {
             const isActive = activeTab === id;
             const color = isActive ? "var(--kuwa-bark)" : "rgba(119, 100, 75, 0.6)";
             return (

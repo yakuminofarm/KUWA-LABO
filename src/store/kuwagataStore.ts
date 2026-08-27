@@ -114,7 +114,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
       lines: [],
       larvae: [],
       expenses: [],
-      reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー" },
+      reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー", showCost: true },
       schedule: { ...DEFAULT_SCHEDULE },
 
       toggleFedToday: (id) =>
@@ -317,7 +317,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           lines: [],
           larvae: [],
           expenses: [],
-          reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー" },
+          reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー", showCost: true },
       schedule: { ...DEFAULT_SCHEDULE },
         }),
 

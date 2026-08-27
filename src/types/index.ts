@@ -180,4 +180,9 @@ export interface ReminderSettings {
   intervalDays: number;
   /** ふだん与えている餌。個体ごとに変えたいときは Beetle.foodType で上書きする */
   foodType: string;
+  /**
+   * おかねの管理を見せるか。
+   * 趣味として飼う人には売り買いの話が邪魔になるので、丸ごと隠せるようにする。
+   */
+  showCost: boolean;
 }

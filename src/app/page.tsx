@@ -17,6 +17,7 @@ import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { DatabaseBackup, Settings } from "lucide-react";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { IS_PRODUCTION } from "@/lib/env";
+import { useKuwagataStore } from "@/store/kuwagataStore";
 
 const TAB_TITLES: Record<KuwagataTabId, string> = {
   home: "くわらぼ",
@@ -40,6 +41,9 @@ function StorageFullNotice() {
 
 export default function KuwagataPage() {
   const [activeTab, setActiveTab] = useState<KuwagataTabId>("home");
+  const showCost = useKuwagataStore((s) => s.reminder.showCost);
+  // 収支を開いたまま設定で隠すと、行き場のない画面が残る
+  const tab: KuwagataTabId = !showCost && activeTab === "cost" ? "home" : activeTab;
   const [showReminder, setShowReminder] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
 
@@ -61,7 +65,7 @@ export default function KuwagataPage() {
         >
           <KuwaAppIcon size={36} />
           <h1 className="font-maru text-lg font-bold flex-1 min-w-0 truncate" style={{ color: "var(--kuwa-ink)" }}>
-            {TAB_TITLES[activeTab]}
+            {TAB_TITLES[tab]}
           </h1>
           {/* テスト用の配信だと一目で分かるようにする。
               記録は配信ごとに別なので、間違えたまま入力すると行方が分からなくなる */}
@@ -98,17 +102,17 @@ export default function KuwagataPage() {
           className="px-4 pt-5"
           style={{ paddingBottom: "calc(max(8px, env(safe-area-inset-bottom)) + 148px)" }}
         >
-          {activeTab === "home" && (
+          {tab === "home" && (
             <KuwagataHomeTab onNavigate={setActiveTab} />
           )}
-          {activeTab === "adults" && <AdultTab />}
-          {activeTab === "breeding" && <BreedingTab />}
-          {activeTab === "larvae" && <LarvaTab />}
-          {activeTab === "cost" && <CostTab />}
-          {activeTab === "articles" && <ArticlesTab />}
+          {tab === "adults" && <AdultTab />}
+          {tab === "breeding" && <BreedingTab />}
+          {tab === "larvae" && <LarvaTab />}
+          {tab === "cost" && <CostTab />}
+          {tab === "articles" && <ArticlesTab />}
         </main>
 
-        <KuwagataBottomNav activeTab={activeTab} onChange={setActiveTab} />
+        <KuwagataBottomNav activeTab={tab} onChange={setActiveTab} />
 
         {showReminder && <ReminderSheet onClose={() => setShowReminder(false)} />}
         {showBackup && <BackupSheet onClose={() => setShowBackup(false)} />}

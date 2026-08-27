@@ -523,6 +523,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
         </section>
       )}
 
+      {reminder.showCost && (
+        <>
       {/* 収支: 画面下部の色の重心 */}
       <section className="pb-1">
         <button
@@ -566,6 +568,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
           </div>
         </button>
       </section>
+        </>
+      )}
     </div>
   );
 }
