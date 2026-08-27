@@ -57,10 +57,10 @@ export default function KuwagataPage() {
         <header
           className="sticky top-0 z-20 px-4 pb-3.5 flex items-center gap-2.5"
           style={{
-            background: "rgba(85, 104, 47, 0.94)",
+            background: "rgba(107, 68, 35, 0.95)",
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
-            borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
+            borderBottom: "1px solid rgba(0, 0, 0, 0.14)",
             // ホーム画面から開いたとき、時計の帯の下に潜らせる
             paddingTop: "calc(env(safe-area-inset-top) + 14px)",
           }}

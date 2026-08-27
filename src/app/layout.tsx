@@ -23,7 +23,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#55682f",
+  themeColor: "#6b4423",
   // ホーム画面から開いたときにノッチ下まで地色を回す
   viewportFit: "cover",
 };
