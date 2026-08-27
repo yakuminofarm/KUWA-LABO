@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CheckCircle2, HandCoins, Heart, Skull, Trash2, UtensilsCrossed, X } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  HandCoins,
+  Heart,
+  Pencil,
+  Skull,
+  Trash2,
+  UtensilsCrossed,
+  X,
+} from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Beetle } from "@/types";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
@@ -10,12 +20,20 @@ import {
   foodFor,
   formatYen,
   genderColor,
+  SPECIES_OPTIONS,
   larvaCost,
   todayStr,
 } from "@/lib/breeding";
 import { formatDate, getGenderLabel } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { PhotoPicker, PhotoThumb } from "@/components/KuwaUI";
+import {
+  BeetleFields,
+  BeetleFormState,
+  beetleToForm,
+  formToBeetle,
+  isBeetleFormValid,
+} from "@/components/BeetleFields";
 
 const inputCls =
   "kuwa-input";
@@ -40,6 +58,18 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
     useKuwagataStore();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<BeetleFormState | null>(null);
+
+  const saveEdit = () => {
+    if (!form || !isBeetleFormValid(form)) return;
+    const patch = formToBeetle(form);
+    // 後食は専用の導線があるので、編集では触らない
+    delete (patch as Partial<typeof patch>).matured;
+    updateBeetle(beetle.id, patch);
+    setEditing(false);
+    showToast("書きかえました");
+  };
   const [showSellForm, setShowSellForm] = useState(false);
   const [sellForm, setSellForm] = useState({
     date: new Date().toISOString().split("T")[0],
@@ -224,6 +254,27 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
             </button>
           )}
 
+          {editing ? (
+            <div className="space-y-3.5">
+              <BeetleFields form={form!} onChange={setForm} showMatured={false} />
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={saveEdit}
+                  disabled={!form || !isBeetleFormValid(form)}
+                  className="kuwa-btn-primary flex-1 py-3 text-sm active:scale-[0.98] transition-all disabled:opacity-40"
+                >
+                  保存する
+                </button>
+                <button
+                  onClick={() => setEditing(false)}
+                  className="kuwa-btn-ghost px-5 py-3 text-sm active:scale-[0.98] transition-all"
+                >
+                  やめる
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
           <div className="bg-[#e3ceaa]/55 rounded-2xl px-4 py-1">
             <InfoRow label="種類" value={beetle.species} />
             <InfoRow label="産地・血統" value={beetle.locality} />
@@ -257,7 +308,23 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
               }
             />
           </div>
+              <button
+                onClick={() => {
+                  setForm(beetleToForm(beetle, SPECIES_OPTIONS));
+                  setEditing(true);
+                }}
+                className="kuwa-btn-ghost w-full mt-3 py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+              >
+                <Pencil className="w-4 h-4" strokeWidth={2.2} />
+                この子の情報を直す
+              </button>
+            </>
+          )}
 
+          {/* 編集中は、記録や状態を変える操作を伏せる。
+              メモが二重に出るうえ、書きかけのまま別の操作に進めてしまうため */}
+          {!editing && (
+            <>
           {/* 販売記録 */}
           {beetle.soldPriceYen != null ? (
             <div className="bg-[#d7e0b8]/60 rounded-2xl px-4 py-3.5">
@@ -391,6 +458,8 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
               {confirmDelete ? "ほんとうに消す" : "削除"}
             </button>
           </div>
+            </>
+          )}
         </div>
       </div>
     </div>
