@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, CalendarDays, Clock, Compass, ExternalLink as ExternalLinkIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpen,
+  CalendarDays,
+  Clock,
+  Compass,
+  ExternalLink as ExternalLinkIcon,
+} from "lucide-react";
 import {
   ARTICLES,
   ARTICLE_CATEGORIES,
@@ -55,7 +62,7 @@ function ArticleReader({ article, onClose }: { article: Article; onClose: () => 
           </p>
         ))}
       </div>
-      <div className="flex flex-wrap gap-2 pb-4">
+      <div className="flex flex-wrap gap-2">
         {article.tags.map((t) => (
           <span
             key={t}
@@ -66,6 +73,59 @@ function ArticleReader({ article, onClose }: { article: Article; onClose: () => 
           </span>
         ))}
       </div>
+
+      {/* 出典。確かめて書いたものと、そうでないものを読み手が見分けられるようにする */}
+      {article.sources?.length ? (
+        <div
+          className="rounded-2xl p-4 mb-4"
+          style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+        >
+          <p
+            className="font-maru text-sm font-bold flex items-center gap-2"
+            style={{ color: "var(--kuwa-ink)" }}
+          >
+            <BookOpen className="w-4 h-4" strokeWidth={2.2} style={{ color: "var(--kuwa-moss)" }} />
+            参考にした情報源
+          </p>
+          <ul className="mt-2.5 space-y-2">
+            {article.sources.map((src) => (
+              <li key={src.url}>
+                <a
+                  href={src.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs leading-relaxed underline break-all"
+                  style={{ color: "var(--kuwa-bark)" }}
+                >
+                  {src.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] mt-3 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+            本文はこれらを読んでまとめたものです。数字は情報源によって幅があるため、
+            最終的にはご自身の環境の記録で判断してください。
+          </p>
+        </div>
+      ) : (
+        <div
+          className="rounded-2xl p-4 mb-4"
+          style={{ background: "var(--kuwa-clay-bg)", border: "1px solid rgba(163,80,47,0.3)" }}
+        >
+          <p
+            className="font-maru text-sm font-bold flex items-center gap-2"
+            style={{ color: "var(--kuwa-clay)" }}
+          >
+            <AlertTriangle className="w-4 h-4" strokeWidth={2.4} />
+            この記事は出典を確認していません
+          </p>
+          <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+            AIが一般知識でまとめたもので、裏づけを取っていません。数字や手順を
+            鵜呑みにせず、専門店や飼育情報サイトで確かめてください。順次
+            書き直していきます。
+          </p>
+        </div>
+      )}
     </Sheet>
   );
 }
