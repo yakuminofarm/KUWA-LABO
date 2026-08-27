@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useKuwagataStore } from "@/store/kuwagataStore";
 import {
   AlertTriangle,
   BookOpen,
@@ -137,8 +138,23 @@ export function ArticlesTab() {
   const month = new Date().getMonth() + 1;
   const topics = MONTHLY_TOPICS[month] ?? [];
 
+  // おかねの管理を使わない人には、売り買いの話を出さない
+  const showCost = useKuwagataStore((s) => s.reminder.showCost);
+  const articles = showCost ? ARTICLES : ARTICLES.filter((a) => a.category !== "販売");
+  const categories = showCost
+    ? ARTICLE_CATEGORIES
+    : ARTICLE_CATEGORIES.filter((c) => c !== "販売");
+  const links = showCost ? EXTERNAL_LINKS : EXTERNAL_LINKS.filter((l) => !l.commercial);
+  const visibleTopics = showCost ? topics : topics.filter((t) => !t.commercial);
+
+  // 「販売」で絞り込んだまま設定を変えると、空の一覧が残る
+  const activeCategory: CategoryFilter =
+    !showCost && category === "販売" ? "all" : category;
+
   const filtered =
-    category === "all" ? ARTICLES : ARTICLES.filter((a) => a.category === category);
+    activeCategory === "all"
+      ? articles
+      : articles.filter((a) => a.category === activeCategory);
 
   return (
     <div className="space-y-7">
@@ -157,7 +173,7 @@ export function ArticlesTab() {
           </p>
         </div>
         <div className="mt-4 space-y-4">
-          {topics.map((t, i) => (
+          {visibleTopics.map((t, i) => (
             <div key={i} className="flex gap-3.5">
               <span
                 className="font-maru w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
@@ -190,11 +206,11 @@ export function ArticlesTab() {
         </div>
 
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 mb-3">
-          {(["all", ...ARTICLE_CATEGORIES] as CategoryFilter[]).map((c) => (
+          {(["all", ...categories] as CategoryFilter[]).map((c) => (
             <button
               key={c}
               onClick={() => setCategory(c)}
-              data-on={category === c}
+              data-on={activeCategory === c}
               className="kuwa-chip kuwa-chip-amber font-maru"
             >
               {c === "all" ? "すべて" : c}
@@ -252,7 +268,7 @@ export function ArticlesTab() {
           最新のニュースや相場は外部サイトで。タップで検索が開きます。
         </p>
         <div className="kuwa-card overflow-hidden">
-          {EXTERNAL_LINKS.map((l, i) => (
+          {links.map((l, i) => (
             <a
               key={l.label}
               href={l.url}

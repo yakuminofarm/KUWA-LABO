@@ -138,7 +138,7 @@ export const ARTICLES: Article[] = [
       "初めて餌(ゼリー)を食べ始めることを「後食(ごしょく・こうしょく)」と呼びます。後食開始はブリード可能になる最初のサインで、そこからさらに1ヶ月ほど経つと安定して成熟します。",
       "このアプリでは成虫登録時に「後食済み」フラグを付けられます。ペアリング計画を立てるとき、後食済みかどうかで種親候補を絞り込むと事故が減ります。",
       "未成熟のままペアリングすると、交尾拒否やメス殺し(特にヒラタ系)のリスクが上がります。オスの気性が荒い種類では、成熟していてもハンドペアリング(目の前で交尾を確認する方式)が安全です。",
-      "販売する場合も「羽化日」と「後食の有無」は買い手が最も気にする情報です。記録を残しておくと、そのまま出品情報に使えます。",
+      "「羽化日」と「後食の有無」は、あとから思い出せない情報の代表です。人に譲るときも聞かれるので、その場で記録しておくと後が楽になります。",
     ],
     readMinutes: 3,
     tags: ["後食", "休眠", "ペアリング", "羽化日"],
@@ -203,6 +203,8 @@ export const ARTICLES: Article[] = [
 export interface MonthlyTopic {
   title: string;
   detail: string;
+  /** 売り買いの話。おかねの管理を使わない人には出さない */
+  commercial?: boolean;
 }
 
 export const MONTHLY_TOPICS: Record<number, MonthlyTopic[]> = {
@@ -273,6 +275,8 @@ export interface ExternalLink {
   label: string;
   description: string;
   url: string;
+  /** 売り買いの話。おかねの管理を使わない人には出さない */
+  commercial?: boolean;
 }
 
 function searchUrl(query: string): string {
@@ -287,11 +291,13 @@ export const EXTERNAL_LINKS: ExternalLink[] = [
   },
   {
     label: "昆虫即売イベント情報",
+    commercial: true,
     description: "各地の即売会・昆虫フェスの開催予定を探す",
     url: searchUrl("昆虫 即売イベント クワガタ 開催"),
   },
   {
     label: "生体相場をチェック",
+    commercial: true,
     description: "出品前に同種・同サイズの相場を確認",
     url: searchUrl("クワガタ 生体 販売 相場"),
   },
