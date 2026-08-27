@@ -16,6 +16,7 @@ import { BackupSheet } from "@/components/BackupSheet";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { Bell, DatabaseBackup } from "lucide-react";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
+import { IS_PRODUCTION } from "@/lib/env";
 
 const TAB_TITLES: Record<KuwagataTabId, string> = {
   home: "くわらぼ",
@@ -59,9 +60,19 @@ export default function KuwagataPage() {
           }}
         >
           <KuwaAppIcon size={36} />
-          <h1 className="font-maru text-lg font-bold flex-1" style={{ color: "var(--kuwa-ink)" }}>
+          <h1 className="font-maru text-lg font-bold flex-1 min-w-0 truncate" style={{ color: "var(--kuwa-ink)" }}>
             {TAB_TITLES[activeTab]}
           </h1>
+          {/* テスト用の配信だと一目で分かるようにする。
+              記録は配信ごとに別なので、間違えたまま入力すると行方が分からなくなる */}
+          {!IS_PRODUCTION && (
+            <span
+              className="kuwa-badge font-maru flex-shrink-0"
+              style={{ background: "var(--kuwa-clay)", color: "#fdf6e7" }}
+            >
+              テスト
+            </span>
+          )}
           <button
             onClick={() => setShowBackup(true)}
             aria-label="データの持ち出し"
