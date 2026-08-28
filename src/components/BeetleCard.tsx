@@ -86,9 +86,6 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
                 {beetle.sizeMm}mm
               </span>
             )}
-            {beetle.matured && !inactive && (
-              <span className="kuwa-badge bg-[#d7e0b8] text-[#55682f]">後食済み</span>
-            )}
             {pendingFeed && (
               <span className="kuwa-badge font-maru bg-[#f0d49b] text-[#a3660f]">
                 {ago ? `エサまだ・${ago}` : "エサまだ"}
