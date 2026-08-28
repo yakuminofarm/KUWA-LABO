@@ -5,7 +5,14 @@ import { Beetle } from "@/types";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
 import { PhotoThumb } from "@/components/KuwaUI";
-import { foodFor, genderColor, needsFeeding, todayStr } from "@/lib/breeding";
+import {
+  feedAgoLabel,
+  feedIntervalLabel,
+  foodFor,
+  genderColor,
+  needsFeeding,
+  todayStr,
+} from "@/lib/breeding";
 import { getGenderLabel } from "@/lib/utils";
 import { TOOL_IMAGE } from "@/lib/assets";
 
@@ -23,9 +30,15 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
   const fedToday = beetle.lastFedDate === todayStr();
   const showFeed = beetle.matured && !inactive;
   const pendingFeed = needsFeeding(beetle, reminder.intervalDays);
-  // ふだんと違う餌の個体だけ、一覧でも分かるようにする
+  // ふだんと違う餌・間隔の個体だけ、一覧でも分かるようにする
   const food = foodFor(beetle, reminder.foodType);
   const oddFood = showFeed && food !== reminder.foodType;
+  const oddInterval =
+    showFeed && beetle.feedIntervalDays != null
+      ? feedIntervalLabel(beetle.feedIntervalDays)
+      : null;
+  // 「あと何日おけるか」の判断材料として、前回からの日数を出す
+  const ago = feedAgoLabel(beetle);
 
   return (
     <button
@@ -77,7 +90,17 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
               <span className="kuwa-badge bg-[#d7e0b8] text-[#55682f]">後食済み</span>
             )}
             {pendingFeed && (
-              <span className="kuwa-badge font-maru bg-[#f0d49b] text-[#a3660f]">エサまだ</span>
+              <span className="kuwa-badge font-maru bg-[#f0d49b] text-[#a3660f]">
+                {ago ? `エサまだ・${ago}` : "エサまだ"}
+              </span>
+            )}
+            {/* まだ期限が来ていない子は、いつあげたかだけ控えめに出す
+                (今日あげた子は右のチェックで分かるので出さない) */}
+            {showFeed && !pendingFeed && !fedToday && ago && (
+              <span className="kuwa-badge bg-[#e8dcc6] text-[#8b7a64]">エサ {ago}</span>
+            )}
+            {oddInterval && (
+              <span className="kuwa-badge bg-[#e3ceaa] text-[#6b4423]">{oddInterval}</span>
             )}
             {oddFood && (
               <span className="kuwa-badge bg-[#e3ceaa] text-[#6b4423]">{food}</span>

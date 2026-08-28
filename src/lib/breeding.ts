@@ -36,6 +36,19 @@ export function feedIntervalFor(b: Beetle, fallback: number): number {
   return Math.max(1, b.feedIntervalDays ?? fallback);
 }
 
+/** 前回の給餌から何日たったか。記録がなければ null */
+export function daysSinceFed(b: Beetle, today = todayStr()): number | null {
+  if (!b.lastFedDate) return null;
+  return Math.max(0, daysBetween(b.lastFedDate, new Date(today)));
+}
+
+/** 「今日」「3日前」など。記録がなければ null */
+export function feedAgoLabel(b: Beetle, today = todayStr()): string | null {
+  const d = daysSinceFed(b, today);
+  if (d == null) return null;
+  return d === 0 ? "今日" : `${d}日前`;
+}
+
 /** 給餌の対象と、そのうち交換が必要なもの */
 export function feedingSummary(beetles: Beetle[], intervalDays = 1, today = todayStr()) {
   const targets = beetles.filter(isFeedTarget);

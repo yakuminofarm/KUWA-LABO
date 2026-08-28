@@ -17,6 +17,7 @@ import { Beetle } from "@/types";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
 import {
   FEED_INTERVAL_OPTIONS,
+  feedAgoLabel,
   FOOD_OPTIONS,
   feedIntervalFor,
   feedIntervalLabel,
@@ -280,7 +281,7 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
                   {beetle.lastFedDate === todayStr()
                     ? "日付が変わるとまた未完了に戻ります"
                     : beetle.lastFedDate
-                    ? `前回は ${formatDate(beetle.lastFedDate)}`
+                    ? `前回は ${formatDate(beetle.lastFedDate)} (${feedAgoLabel(beetle)})`
                     : "まだ記録がありません"}
                 </p>
               </div>
