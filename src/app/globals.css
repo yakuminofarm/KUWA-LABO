@@ -136,6 +136,13 @@ textarea { font-size: 16px; }
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .kuwa-input::placeholder { color: #b3a189; }
+/* 数の欄は狭いので、増減の矢印を出さない (スマホでは押しにくく、使わない) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 /* 検索欄: 左にアイコン分の余白 (.kuwa-input の padding を上書きするため後に定義) */
 .kuwa-input-search { padding-left: 44px; }
 .kuwa-input:focus {

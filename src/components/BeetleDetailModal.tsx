@@ -17,6 +17,7 @@ import {
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Beetle } from "@/types";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
+import { MoneyInput } from "@/components/KuwaUI";
 import {
   FEED_INTERVAL_OPTIONS,
   JELLY_PER_FEED_OPTIONS,
@@ -435,13 +436,10 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
                   onChange={(e) => setSellForm({ ...sellForm, date: e.target.value })}
                   className={inputCls}
                 />
-                <input
-                  type="number"
-                  min="0"
+                <MoneyInput
                   value={sellForm.price}
-                  onChange={(e) => setSellForm({ ...sellForm, price: e.target.value })}
-                  placeholder="販売額 (円)"
-                  className={inputCls}
+                  onChange={(v) => setSellForm({ ...sellForm, price: v })}
+                  placeholder="販売額"
                 />
               </div>
               <input

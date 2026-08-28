@@ -2,6 +2,7 @@
 
 import { Beetle, DatePrecision, Gender } from "@/types";
 import { DateField } from "@/components/DateField";
+import { MoneyInput } from "@/components/KuwaUI";
 import { SpeciesSelect } from "@/components/SpeciesSelect";
 
 /**
@@ -268,13 +269,10 @@ export function BeetleFields({
 
       <div>
         <label className="block text-sm font-medium text-[#40352a] mb-1">入手金額 (円)</label>
-        <input
-          type="number"
-          min="0"
+        <MoneyInput
           value={form.priceYen}
-          onChange={(e) => set({ priceYen: e.target.value })}
-          placeholder="例: 15000 (収支管理に反映されます)"
-          className={inputCls}
+          onChange={(v) => set({ priceYen: v })}
+          placeholder="15000 (収支管理に反映されます)"
         />
       </div>
 

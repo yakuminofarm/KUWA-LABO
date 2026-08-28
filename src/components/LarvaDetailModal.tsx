@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { useKuwagataStore } from "@/store/kuwagataStore";
+import { MoneyInput } from "@/components/KuwaUI";
 import { BottleChange, Gender, Larva } from "@/types";
 import {
   SPECIES_OPTIONS,
@@ -120,13 +121,10 @@ function BottleChangeForm({
         </select>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <input
-          type="number"
-          min="0"
+        <MoneyInput
           value={form.costYen}
-          onChange={(e) => setForm({ ...form, costYen: e.target.value })}
-          placeholder="ビン代 (円)"
-          className={inputCls}
+          onChange={(v) => setForm({ ...form, costYen: v })}
+          placeholder="ビン代"
         />
         <input
           value={form.memo}

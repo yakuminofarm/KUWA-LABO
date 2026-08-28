@@ -19,7 +19,7 @@ import {
 } from "@/lib/breeding";
 import { formatDateShort, generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
-import { SectionTitle } from "@/components/KuwaUI";
+import { MoneyInput, SectionTitle } from "@/components/KuwaUI";
 
 interface ExpenseFormState {
   date: string;
@@ -76,33 +76,30 @@ function ExpenseForm({
           ))}
         </select>
       </div>
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid gap-2" style={{ gridTemplateColumns: "1fr 76px 56px" }}>
+        <MoneyInput
+          value={form.amountYen}
+          onChange={(v) => setForm({ ...form, amountYen: v })}
+          placeholder="金額"
+        />
         <input
           type="number"
           min="0"
-          value={form.amountYen}
-          onChange={(e) => setForm({ ...form, amountYen: e.target.value })}
-          placeholder="金額 (円)"
-          className="kuwa-input"
+          step="0.5"
+          inputMode="decimal"
+          value={form.quantity}
+          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+          placeholder="数"
+          className="kuwa-input text-center"
+          style={{ paddingLeft: 4, paddingRight: 4 }}
         />
-        <div className="flex gap-2">
-          <input
-            type="number"
-            min="0"
-            step="0.5"
-            inputMode="decimal"
-            value={form.quantity}
-            onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-            placeholder="数 (任意)"
-            className="kuwa-input flex-1 min-w-0"
-          />
-          <input
-            value={form.unit}
-            onChange={(e) => setForm({ ...form, unit: e.target.value })}
-            placeholder={DEFAULT_UNIT[form.category]}
-            className="kuwa-input w-[68px] flex-shrink-0 text-center"
-          />
-        </div>
+        <input
+          value={form.unit}
+          onChange={(e) => setForm({ ...form, unit: e.target.value })}
+          placeholder={DEFAULT_UNIT[form.category]}
+          className="kuwa-input text-center"
+          style={{ paddingLeft: 4, paddingRight: 4 }}
+        />
       </div>
 
       {/* 数を入れておくと単価が分かり、月にいくら要るかの見当がつく */}

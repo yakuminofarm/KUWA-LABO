@@ -268,3 +268,43 @@ export function PhotoThumb({
     </div>
   );
 }
+
+/**
+ * 金額の入力欄。
+ * 桁が多いと読み違えるので、3桁ごとに区切って ¥ を頭に出す。
+ * 中身は数字だけの文字列で持ち、表示のときだけ整形する。
+ */
+export function MoneyInput({
+  value,
+  onChange,
+  placeholder,
+  className,
+}: {
+  /** 数字だけの文字列。空文字は未入力 */
+  value: string;
+  onChange: (digits: string) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const shown = value === "" ? "" : Number(value).toLocaleString("ja-JP");
+  return (
+    <div className={`relative ${className ?? ""}`}>
+      <span
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold pointer-events-none"
+        style={{ color: "var(--kuwa-ink-soft)" }}
+      >
+        ¥
+      </span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={shown}
+        // 区切りの「,」を打たれても、貼り付けられても、数字だけ残す
+        onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}
+        placeholder={placeholder}
+        className="kuwa-input"
+        style={{ paddingLeft: 30 }}
+      />
+    </div>
+  );
+}

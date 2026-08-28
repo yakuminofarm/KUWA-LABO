@@ -2,6 +2,7 @@
 
 import { DatePrecision, Gender, Larva, LarvaStage } from "@/types";
 import { DateField } from "@/components/DateField";
+import { MoneyInput } from "@/components/KuwaUI";
 import { STAGE_LABELS, STAGE_ORDER } from "@/lib/breeding";
 import { SpeciesSelect } from "@/components/SpeciesSelect";
 import { useKuwagataStore } from "@/store/kuwagataStore";
@@ -283,13 +284,10 @@ export function LarvaFields({
 
       <div>
         <label className="block text-sm font-medium text-[#40352a] mb-1">入手金額 (円)</label>
-        <input
-          type="number"
-          min="0"
+        <MoneyInput
           value={form.priceYen}
-          onChange={(e) => set({ priceYen: e.target.value })}
+          onChange={(v) => set({ priceYen: v })}
           placeholder="購入した幼虫の場合"
-          className={inputCls}
         />
       </div>
 
