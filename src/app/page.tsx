@@ -13,8 +13,9 @@ import { KuwaAppIcon } from "@/components/KuwagataSVG";
 import { FeedingReminder } from "@/components/FeedingReminder";
 import { ReminderSheet } from "@/components/ReminderSheet";
 import { BackupSheet } from "@/components/BackupSheet";
+import { GuideSheet } from "@/components/GuideSheet";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
-import { DatabaseBackup, Settings } from "lucide-react";
+import { CircleQuestionMark, DatabaseBackup, Settings } from "lucide-react";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { IS_PRODUCTION } from "@/lib/env";
 import { useKuwagataStore } from "@/store/kuwagataStore";
@@ -46,6 +47,7 @@ export default function KuwagataPage() {
   const tab: KuwagataTabId = !showCost && activeTab === "cost" ? "home" : activeTab;
   const [showReminder, setShowReminder] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   return (
     <ToastProvider>
@@ -77,6 +79,14 @@ export default function KuwagataPage() {
               テスト
             </span>
           )}
+          <button
+            onClick={() => setShowGuide(true)}
+            aria-label="使い方"
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+            style={{ background: "var(--kuwa-card)", color: "var(--kuwa-bark)", border: "1px solid var(--kuwa-line)" }}
+          >
+            <CircleQuestionMark className="w-[18px] h-[18px]" strokeWidth={2.2} />
+          </button>
           <button
             onClick={() => setShowBackup(true)}
             aria-label="データの持ち出し"
@@ -116,6 +126,7 @@ export default function KuwagataPage() {
 
         {showReminder && <ReminderSheet onClose={() => setShowReminder(false)} />}
         {showBackup && <BackupSheet onClose={() => setShowBackup(false)} />}
+        {showGuide && <GuideSheet onClose={() => setShowGuide(false)} />}
       </div>
     </ToastProvider>
   );

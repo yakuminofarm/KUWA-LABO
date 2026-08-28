@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   CalendarClock,
   ChevronRight,
@@ -8,11 +9,13 @@ import {
   Sparkles,
   UtensilsCrossed,
   Worm,
+  BookOpen,
 } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { KuwagataTabId } from "@/components/KuwagataBottomNav";
 import { HERO_BG_SRC, NAV_MASK, PUPA_MASK, TOOL_IMAGE } from "@/lib/assets";
 import { SectionTitle } from "@/components/KuwaUI";
+import { GuideSheet } from "@/components/GuideSheet";
 import {
   LINE_STATUS_COLORS,
   LINE_STATUS_LABELS,
@@ -38,6 +41,7 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
     beetles, lines, larvae, expenses, reminder, schedule,
     feedAllToday, toggleFedToday, loadSample, clearSample, hasSample,
   } = useKuwagataStore();
+  const [showGuide, setShowGuide] = useState(false);
   // まだ1件も記録がない = 使い始めたばかりの人
   const isEmpty =
     beetles.length === 0 && lines.length === 0 && larvae.length === 0 && expenses.length === 0;
@@ -97,6 +101,13 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
           >
             まずは1頭 登録してみる
           </button>
+          <button
+            onClick={() => setShowGuide(true)}
+            className="kuwa-btn-ghost w-full mt-2 py-3 text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+          >
+            <BookOpen className="w-4 h-4" strokeWidth={2.2} />
+            使い方を見る
+          </button>
         </div>
 
         <div
@@ -125,6 +136,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
         <p className="text-[11px] leading-relaxed px-1" style={{ color: "var(--kuwa-ink-soft)" }}>
           記録はこの端末の中だけに保存されます。他の人には見えません。
         </p>
+
+        {showGuide && <GuideSheet onClose={() => setShowGuide(false)} />}
       </div>
     );
   }
