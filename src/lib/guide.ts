@@ -20,6 +20,8 @@ export type GuideBlock = (
 
 export interface GuideSection {
   id: string;
+  /** 収支タブを隠している人には出さない章 */
+  only?: GuideVisibility;
   /** lucide のアイコン名。GuideSheet 側で対応表を持つ */
   icon: string;
   title: string;
@@ -34,7 +36,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
   {
     id: "tabs",
     icon: "grid",
-    title: "6つのタブ",
+    title: "下のタブの役割",
     blocks: [
       { kind: "text", text: "画面の下にタブがあります。役割で分かれています。" },
       {
@@ -188,6 +190,33 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         kind: "tip",
         text: "ブリーダーごとにやり方が違うので、この日数はあくまで初期値です。ご自身のやり方に合わせて変えてください。",
+      },
+    ],
+  },
+  {
+    id: "quantity",
+    icon: "calc",
+    title: "使う量から、ひと月のめやすを出す",
+    only: "cost",
+    blocks: [
+      {
+        kind: "text",
+        text: "買ったものの数を入れておくと単価が分かり、ひと月にどれくらい要るかの見当がつきます。どれも任意なので、面倒なら金額だけで構いません。",
+      },
+      {
+        kind: "list",
+        items: [
+          { term: "買った数", text: "収支の記録に「数」と単位を入れると、1個あたりいくらかが出ます。" },
+          { term: "1回にあげる数", text: "成虫の詳細から、その子にあげるゼリーの数を決められます。半分・1個・2個から選べます。" },
+        ],
+      },
+      {
+        kind: "text",
+        text: "この2つがそろうと、収支タブに「ひと月のめやす」が出ます。いまの頭数と間隔から、ゼリーが月に何個・いくらぶん要りそうかの見込みです。",
+      },
+      {
+        kind: "tip",
+        text: "ダニ避けスプレーのように個体ごとに分けられないものは、いまの生体数で割った「1頭あたり」を出します。幼虫のまとまりも頭数ぶんで数えます。",
       },
     ],
   },

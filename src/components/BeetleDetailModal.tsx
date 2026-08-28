@@ -18,6 +18,9 @@ import { Beetle } from "@/types";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
 import {
   FEED_INTERVAL_OPTIONS,
+  JELLY_PER_FEED_OPTIONS,
+  jellyCountLabel,
+  jellyPerFeed,
   feedAgoLabel,
   FOOD_OPTIONS,
   feedIntervalFor,
@@ -237,6 +240,27 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
                 <strong style={{ color: "var(--kuwa-ink)" }}>
                   {feedIntervalLabel(feedIntervalFor(beetle, reminder.intervalDays))}
                 </strong>
+              </p>
+
+              {/* 使う数が分かると、月に何個要るかの見当がつく。
+                  細かく付けたくない人はそのままで構わない (未設定は1個) */}
+              <p className="font-maru text-sm font-bold mt-4" style={{ color: "var(--kuwa-ink)" }}>
+                1回にあげる数
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2.5">
+                {JELLY_PER_FEED_OPTIONS.map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => updateBeetle(beetle.id, { jellyPerFeed: n })}
+                    className="kuwa-chip"
+                    data-on={jellyPerFeed(beetle) === n}
+                  >
+                    {jellyCountLabel(n)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs mt-2.5" style={{ color: "var(--kuwa-ink-soft)" }}>
+                収支の「ひと月のめやす」に使います。入れなくても構いません。
               </p>
             </div>
           )}

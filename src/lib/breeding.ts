@@ -295,6 +295,91 @@ export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   "その他",
 ];
 
+/** 費目ごとの数の単位。ユーザーが変えたければ上書きできる */
+export const DEFAULT_UNIT: Record<ExpenseCategory, string> = {
+  "ゼリー": "個",
+  "菌糸ビン": "本",
+  "マット": "袋",
+  "産卵材": "本",
+  "器具・用品": "個",
+  "その他": "個",
+};
+
+export function unitOf(e: Expense): string {
+  return e.unit?.trim() || DEFAULT_UNIT[e.category];
+}
+
+/** 1個あたりいくらか。数が入っていなければ出せない */
+export function unitPrice(e: Expense): number | null {
+  if (!e.quantity || e.quantity <= 0) return null;
+  return e.amountYen / e.quantity;
+}
+
+/**
+ * 直近に買ったものから単価を拾う。
+ * 同じ費目を何度も買っていれば、いちばん新しい記録を使う。
+ */
+export function latestUnitPrice(
+  expenses: Expense[],
+  category: ExpenseCategory
+): number | null {
+  const withQty = expenses
+    .filter((e) => e.category === category && unitPrice(e) != null)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  return withQty.length > 0 ? unitPrice(withQty[0]) : null;
+}
+
+/** 半分に割ってあげることがあるので 0.5 刻み */
+export const JELLY_PER_FEED_OPTIONS = [0.5, 1, 1.5, 2];
+
+export function jellyCountLabel(n: number): string {
+  return n === 0.5 ? "半分" : `${n}個`;
+}
+
+/** 1回にあげるゼリーの数。未設定は1個 */
+export function jellyPerFeed(b: Beetle): number {
+  const n = b.jellyPerFeed;
+  return n != null && n > 0 ? n : 1;
+}
+
+export interface JellyForecast {
+  /** エサやりの対象になっている頭数 */
+  targets: number;
+  /** 1か月あたりの個数 */
+  perMonth: number;
+  /** 単価が分かっていれば1か月あたりの金額 */
+  costPerMonth: number | null;
+}
+
+/**
+ * いまの頭数・間隔・1回の数から、ゼリーが1か月にどれだけ要るかを見積もる。
+ * 実績ではなく見込みなので、あくまで買い置きの目安として出す。
+ */
+export function jellyForecast(
+  beetles: Beetle[],
+  intervalDays: number,
+  unitYen: number | null
+): JellyForecast {
+  const targets = beetles.filter(isFeedTarget);
+  const perMonth = targets.reduce(
+    (sum, b) => sum + (jellyPerFeed(b) / feedIntervalFor(b, intervalDays)) * 30,
+    0
+  );
+  return {
+    targets: targets.length,
+    perMonth,
+    costPerMonth: unitYen == null ? null : perMonth * unitYen,
+  };
+}
+
+/**
+ * みんなで使うものを1頭あたりに割る。
+ * ダニ避けスプレーのように、どの個体に使ったか分けられない出費が対象。
+ */
+export function perHeadShare(totalYen: number, heads: number): number | null {
+  return heads > 0 ? totalYen / heads : null;
+}
+
 export function formatYen(n: number): string {
   return `¥${Math.round(n).toLocaleString("ja-JP")}`;
 }

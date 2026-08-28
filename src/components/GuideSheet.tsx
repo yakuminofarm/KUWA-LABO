@@ -6,6 +6,7 @@ import {
   Heart,
   HelpCircle,
   LayoutGrid,
+  Calculator,
   Lightbulb,
   Plus,
   Sprout,
@@ -22,6 +23,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string; strokeWidt
   heart: Heart,
   sprout: Sprout,
   calendar: CalendarCheck,
+  calc: Calculator,
   backup: DatabaseBackup,
   help: HelpCircle,
 };
@@ -103,7 +105,7 @@ export function GuideSheet({ onClose }: { onClose: () => void }) {
           </p>
         </div>
 
-        {GUIDE_SECTIONS.map((sec, i) => {
+        {GUIDE_SECTIONS.filter((sec) => !sec.only || (sec.only === "cost") === showCost).map((sec, i) => {
           const Icon = ICONS[sec.icon] ?? HelpCircle;
           return (
             <section key={sec.id}>

@@ -60,6 +60,8 @@ export interface Beetle {
   foodType?: string;       // この個体だけ別の餌にする場合。未設定なら全体の既定を使う
   /** この個体だけ間隔を変える場合 (日)。未設定なら全体の既定を使う */
   feedIntervalDays?: number;
+  /** 1回にあげるゼリーの数。未設定は1個。大きなオスは2個、小さなメスは半分 */
+  jellyPerFeed?: number;
   sourceLineId?: string;   // 出身ブリードライン
   sourceLarvaId?: string;  // 幼虫台帳から引き上げた場合の元レコード
   photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
@@ -166,6 +168,10 @@ export interface Expense {
   date: string;
   category: ExpenseCategory;
   amountYen: number;
+  /** 買った数。単価を出すために使う。未入力でも金額だけで成立する */
+  quantity?: number;
+  /** 数の単位 (個・袋・本など)。未設定なら費目ごとの既定 */
+  unit?: string;
   /** 動作を試すために入れた見本の記録。まとめて消せるようにするための印 */
   isSample?: boolean;
 

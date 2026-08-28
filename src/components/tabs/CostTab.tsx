@@ -1,14 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, HandCoins, Pencil, Plus, Receipt, Trash2, Worm, X } from "lucide-react";
+import { Calculator, CheckCircle2, HandCoins, Pencil, Plus, Receipt, Trash2, Worm, X } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Expense, ExpenseCategory } from "@/types";
 import {
   EXPENSE_CATEGORIES,
   calcCostSummary,
   formatYen,
+  DEFAULT_UNIT,
+  jellyForecast,
   larvaCost,
+  latestUnitPrice,
+  perHeadShare,
+  totalHeads,
+  unitOf,
+  unitPrice,
 } from "@/lib/breeding";
 import { formatDateShort, generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
@@ -18,6 +25,8 @@ interface ExpenseFormState {
   date: string;
   category: ExpenseCategory;
   amountYen: string;
+  quantity: string;
+  unit: string;
   memo: string;
 }
 
@@ -26,6 +35,8 @@ function emptyForm(): ExpenseFormState {
     date: new Date().toISOString().split("T")[0],
     category: "ゼリー",
     amountYen: "",
+    quantity: "",
+    unit: "",
     memo: "",
   };
 }
@@ -74,13 +85,42 @@ function ExpenseForm({
           placeholder="金額 (円)"
           className="kuwa-input"
         />
-        <input
-          value={form.memo}
-          onChange={(e) => setForm({ ...form, memo: e.target.value })}
-          placeholder="メモ (任意)"
-          className="kuwa-input"
-        />
+        <div className="flex gap-2">
+          <input
+            type="number"
+            min="0"
+            step="0.5"
+            inputMode="decimal"
+            value={form.quantity}
+            onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+            placeholder="数 (任意)"
+            className="kuwa-input flex-1 min-w-0"
+          />
+          <input
+            value={form.unit}
+            onChange={(e) => setForm({ ...form, unit: e.target.value })}
+            placeholder={DEFAULT_UNIT[form.category]}
+            className="kuwa-input w-[68px] flex-shrink-0 text-center"
+          />
+        </div>
       </div>
+
+      {/* 数を入れておくと単価が分かり、月にいくら要るかの見当がつく */}
+      {form.quantity !== "" && form.amountYen !== "" && Number(form.quantity) > 0 && (
+        <p className="text-xs px-1" style={{ color: "var(--kuwa-ink-soft)" }}>
+          1{form.unit.trim() || DEFAULT_UNIT[form.category]}あたり{" "}
+          <strong style={{ color: "var(--kuwa-ink)" }}>
+            {formatYen(Number(form.amountYen) / Number(form.quantity))}
+          </strong>
+        </p>
+      )}
+
+      <input
+        value={form.memo}
+        onChange={(e) => setForm({ ...form, memo: e.target.value })}
+        placeholder="メモ (任意)"
+        className="kuwa-input"
+      />
       <div className="flex gap-2.5">
         <button
           onClick={onCancel}
@@ -103,7 +143,7 @@ function ExpenseForm({
 }
 
 export function CostTab() {
-  const { beetles, larvae, expenses, addExpense, updateExpense, deleteExpense } =
+  const { beetles, larvae, expenses, reminder, addExpense, updateExpense, deleteExpense } =
     useKuwagataStore();
   const { showToast } = useToast();
   const [showAdd, setShowAdd] = useState(false);
@@ -123,6 +163,18 @@ export function CostTab() {
   ].filter((b) => b.amount > 0);
   const maxAmount = Math.max(1, ...breakdown.map((b) => b.amount));
 
+  // ひと月のめやす。実績ではなく、いまの頭数と間隔からの見込み
+  const jellyUnit = latestUnitPrice(expenses, "ゼリー");
+  const forecast = jellyForecast(beetles, reminder.intervalDays, jellyUnit);
+
+  // どの個体に使ったか分けられない出費は、生体数で割ってめやすにする
+  const heads =
+    beetles.filter((b) => b.isAlive && b.soldPriceYen == null).length +
+    totalHeads(larvae.filter((l) => l.isAlive));
+  const sharedYen =
+    (summary.expenseByCategory["器具・用品"] ?? 0) + (summary.expenseByCategory["その他"] ?? 0);
+  const sharePerHead = perHeadShare(sharedYen, heads);
+
   const soldBeetles = beetles
     .filter((b) => b.soldPriceYen != null)
     .sort((a, b) => (b.soldDate ?? "").localeCompare(a.soldDate ?? ""));
@@ -140,6 +192,8 @@ export function CostTab() {
       date: form.date,
       category: form.category,
       amountYen: parseInt(form.amountYen),
+      quantity: form.quantity ? Number(form.quantity) : undefined,
+      unit: form.unit.trim() || undefined,
       memo: form.memo || undefined,
     };
     addExpense(expense);
@@ -152,6 +206,8 @@ export function CostTab() {
       date: form.date,
       category: form.category,
       amountYen: parseInt(form.amountYen),
+      quantity: form.quantity ? Number(form.quantity) : undefined,
+      unit: form.unit.trim() || undefined,
       memo: form.memo || undefined,
     });
     setEditingId(null);
@@ -214,6 +270,53 @@ export function CostTab() {
           </div>
         </div>
       </div>
+
+      {/* ひと月のめやす */}
+      {(forecast.targets > 0 || sharePerHead != null) && (
+        <section>
+          <div className="mb-3 px-0.5">
+            <SectionTitle icon={Calculator} color="var(--kuwa-moss)">
+              ひと月のめやす
+            </SectionTitle>
+          </div>
+          <div className="kuwa-card p-5 space-y-4">
+            {forecast.targets > 0 && (
+              <div>
+                <p className="text-sm" style={{ color: "var(--kuwa-ink)" }}>
+                  ゼリー
+                </p>
+                <p className="text-lg font-bold mt-0.5" style={{ color: "var(--kuwa-moss)", fontVariantNumeric: "tabular-nums" }}>
+                  約 {Math.ceil(forecast.perMonth)}個
+                  {forecast.costPerMonth != null && (
+                    <span className="text-sm ml-2" style={{ color: "var(--kuwa-ink-soft)" }}>
+                      {formatYen(forecast.costPerMonth)}
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+                  エサやりの対象 {forecast.targets}頭 の間隔と、1回にあげる数から出した見込みです。
+                  {jellyUnit == null && " ゼリーを買った記録に数を入れると、金額も出ます。"}
+                </p>
+              </div>
+            )}
+
+            {sharePerHead != null && (
+              <div>
+                <p className="text-sm" style={{ color: "var(--kuwa-ink)" }}>
+                  みんなで使うもの (1頭あたり)
+                </p>
+                <p className="text-lg font-bold mt-0.5" style={{ color: "var(--kuwa-bark)", fontVariantNumeric: "tabular-nums" }}>
+                  {formatYen(sharePerHead)}
+                </p>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+                  ダニ避けスプレーのように個体ごとに分けられない出費 {formatYen(sharedYen)} を、
+                  いまの {heads}頭 で割ったものです。
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* 支出の内訳 */}
       {breakdown.length > 0 && (
@@ -392,6 +495,8 @@ export function CostTab() {
                     date: e.date,
                     category: e.category,
                     amountYen: String(e.amountYen),
+                    quantity: e.quantity != null ? String(e.quantity) : "",
+                    unit: e.unit ?? "",
                     memo: e.memo ?? "",
                   }}
                   onSubmit={(form) => handleEdit(e.id, form)}
@@ -414,6 +519,17 @@ export function CostTab() {
                     </p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--kuwa-ink-soft)" }}>
                       {formatDateShort(e.date)}
+                      {/* 数を入れてあれば単価も出す。次に買うときの比較に使える */}
+                      {unitPrice(e) != null && (
+                        <>
+                          {" ・ "}
+                          {e.quantity}
+                          {unitOf(e)}
+                          {" ("}
+                          {formatYen(unitPrice(e)!)}/{unitOf(e)}
+                          {")"}
+                        </>
+                      )}
                     </p>
                   </div>
                   <p
