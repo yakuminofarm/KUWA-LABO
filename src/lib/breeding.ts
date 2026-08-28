@@ -311,7 +311,7 @@ export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
 export const DEFAULT_UNIT: Record<ExpenseCategory, string> = {
   "ゼリー": "個",
   "菌糸ビン": "本",
-  "マット": "袋",
+  "マット": "L",
   "産卵材": "本",
   "器具・用品": "個",
   "その他": "個",
@@ -325,6 +325,35 @@ export function unitOf(e: Expense): string {
 export function unitPrice(e: Expense): number | null {
   if (!e.quantity || e.quantity <= 0) return null;
   return e.amountYen / e.quantity;
+}
+
+export interface PackBreakdown {
+  /** 単価 × 購入数 */
+  totalYen: number;
+  /** 入り数 × 購入数。ぜんぶでいくつ */
+  totalQty: number;
+  /** 単価 ÷ 入り数。1個あたりの値段 */
+  perUnitYen: number;
+}
+
+/**
+ * 「50個入り ¥900 を2袋」から、合計と1個あたりを出す。
+ * 購入数が空なら1つ買ったものとして扱う (いちばん多い買い方なので)。
+ * 入り数が空なら1つ入りとして扱う (産卵材のように袋で数えないもの)。
+ */
+export function packBreakdown(
+  packPriceYen: number | null,
+  perPack: number | null,
+  packs: number | null
+): PackBreakdown | null {
+  if (packPriceYen == null || packPriceYen <= 0) return null;
+  const n = packs != null && packs > 0 ? packs : 1;
+  const per = perPack != null && perPack > 0 ? perPack : 1;
+  return {
+    totalYen: packPriceYen * n,
+    totalQty: per * n,
+    perUnitYen: packPriceYen / per,
+  };
 }
 
 /**

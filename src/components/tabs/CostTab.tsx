@@ -9,6 +9,7 @@ import {
   calcCostSummary,
   formatYen,
   DEFAULT_UNIT,
+  packBreakdown,
   jellyForecast,
   larvaCost,
   latestUnitPrice,
@@ -25,7 +26,9 @@ interface ExpenseFormState {
   date: string;
   category: ExpenseCategory;
   amountYen: string;
-  quantity: string;
+  packPrice: string;
+  perPack: string;
+  packs: string;
   unit: string;
   memo: string;
 }
@@ -35,10 +38,72 @@ function emptyForm(): ExpenseFormState {
     date: new Date().toISOString().split("T")[0],
     category: "ゼリー",
     amountYen: "",
-    quantity: "",
+    packPrice: "",
+    perPack: "",
+    packs: "",
     unit: "",
     memo: "",
   };
+}
+
+/** 入力から保存する値を組み立てる。内訳があれば合計と総数はそこから出す */
+function expenseValues(f: ExpenseFormState) {
+  const packPrice = numOrNull(f.packPrice);
+  const perPack = numOrNull(f.perPack);
+  const packs = numOrNull(f.packs);
+  const b = packBreakdown(packPrice, perPack, packs);
+  return {
+    date: f.date,
+    category: f.category,
+    amountYen: b ? Math.round(b.totalYen) : parseInt(f.amountYen),
+    quantity: b ? b.totalQty : undefined,
+    unit: f.unit.trim() || undefined,
+    packPriceYen: packPrice ?? undefined,
+    perPack: perPack ?? undefined,
+    packs: packs ?? undefined,
+  };
+}
+
+function numOrNull(v: string): number | null {
+  const n = Number(v);
+  return v.trim() === "" || Number.isNaN(n) ? null : n;
+}
+
+/** 数字だけを受ける小さな欄。矢印は globals.css で消してある */
+function NumBox({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <input
+      type="number"
+      min="0"
+      step="0.5"
+      inputMode="decimal"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="kuwa-input text-center"
+      style={{ paddingLeft: 4, paddingRight: 4 }}
+    />
+  );
+}
+
+/** 数字の欄が並ぶと、どれが何か分からなくなるので小さく見出しを付ける */
+function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[11px] mb-1 px-0.5" style={{ color: "var(--kuwa-ink-soft)" }}>
+        {label}
+      </p>
+      {children}
+    </div>
+  );
 }
 
 function ExpenseForm({
@@ -53,7 +118,14 @@ function ExpenseForm({
   submitLabel: string;
 }) {
   const [form, setForm] = useState(initial);
-  const canSubmit = form.amountYen !== "" && parseInt(form.amountYen) > 0;
+  const breakdown = packBreakdown(
+    numOrNull(form.packPrice),
+    numOrNull(form.perPack),
+    numOrNull(form.packs)
+  );
+  const unitLabel = form.unit.trim() || DEFAULT_UNIT[form.category];
+  // 内訳が入っていればそこから合計を出す。入っていなければ金額を直に受ける
+  const canSubmit = breakdown != null || (form.amountYen !== "" && parseInt(form.amountYen) > 0);
   return (
     <div
       className="rounded-2xl p-4 space-y-3"
@@ -76,40 +148,77 @@ function ExpenseForm({
           ))}
         </select>
       </div>
-      <div className="grid gap-2" style={{ gridTemplateColumns: "1fr 76px 56px" }}>
-        <MoneyInput
-          value={form.amountYen}
-          onChange={(v) => setForm({ ...form, amountYen: v })}
-          placeholder="金額"
-        />
-        <input
-          type="number"
-          min="0"
-          step="0.5"
-          inputMode="decimal"
-          value={form.quantity}
-          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-          placeholder="数"
-          className="kuwa-input text-center"
-          style={{ paddingLeft: 4, paddingRight: 4 }}
-        />
-        <input
-          value={form.unit}
-          onChange={(e) => setForm({ ...form, unit: e.target.value })}
-          placeholder={DEFAULT_UNIT[form.category]}
-          className="kuwa-input text-center"
-          style={{ paddingLeft: 4, paddingRight: 4 }}
-        />
+      {/* 「50個入り ¥900 を2袋」のまま入れられるようにする。
+          合計と1個あたりは計算で出すので、暗算しなくてよい */}
+      <div>
+        <p className="text-xs font-semibold mb-1.5 px-0.5" style={{ color: "var(--kuwa-ink)" }}>
+          買ったもの
+        </p>
+        <div className="grid gap-2" style={{ gridTemplateColumns: "1fr 72px" }}>
+          <Labeled label="単価">
+            <MoneyInput
+              value={form.packPrice}
+              onChange={(v) => setForm({ ...form, packPrice: v })}
+              placeholder="900"
+            />
+          </Labeled>
+          <Labeled label="購入数">
+            <NumBox
+              value={form.packs}
+              onChange={(v) => setForm({ ...form, packs: v })}
+              placeholder="1"
+            />
+          </Labeled>
+        </div>
+        <div className="grid gap-2 mt-2" style={{ gridTemplateColumns: "1fr 72px" }}>
+          <Labeled label="入り数">
+            <NumBox
+              value={form.perPack}
+              onChange={(v) => setForm({ ...form, perPack: v })}
+              placeholder="50"
+            />
+          </Labeled>
+          <Labeled label="単位">
+            <input
+              value={form.unit}
+              onChange={(e) => setForm({ ...form, unit: e.target.value })}
+              placeholder={DEFAULT_UNIT[form.category]}
+              className="kuwa-input text-center"
+              style={{ paddingLeft: 4, paddingRight: 4 }}
+            />
+          </Labeled>
+        </div>
       </div>
 
-      {/* 数を入れておくと単価が分かり、月にいくら要るかの見当がつく */}
-      {form.quantity !== "" && form.amountYen !== "" && Number(form.quantity) > 0 && (
-        <p className="text-xs px-1" style={{ color: "var(--kuwa-ink-soft)" }}>
-          1{form.unit.trim() || DEFAULT_UNIT[form.category]}あたり{" "}
-          <strong style={{ color: "var(--kuwa-ink)" }}>
-            {formatYen(Number(form.amountYen) / Number(form.quantity))}
-          </strong>
-        </p>
+      {breakdown ? (
+        <div className="rounded-xl px-3.5 py-3" style={{ background: "var(--kuwa-bark-bg)" }}>
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs" style={{ color: "var(--kuwa-ink-soft)" }}>
+              合計
+            </span>
+            <span
+              className="text-lg font-bold"
+              style={{ color: "var(--kuwa-ink)", fontVariantNumeric: "tabular-nums" }}
+            >
+              {formatYen(breakdown.totalYen)}
+            </span>
+          </div>
+          <p className="text-xs mt-1" style={{ color: "var(--kuwa-ink-soft)" }}>
+            1{unitLabel}あたり{" "}
+            <strong style={{ color: "var(--kuwa-ink)" }}>{formatYen(breakdown.perUnitYen)}</strong>
+            {" ・ ぜんぶで "}
+            {breakdown.totalQty}
+            {unitLabel}
+          </p>
+        </div>
+      ) : (
+        <Labeled label="金額">
+          <MoneyInput
+            value={form.amountYen}
+            onChange={(v) => setForm({ ...form, amountYen: v })}
+            placeholder="金額"
+          />
+        </Labeled>
       )}
 
       <input
@@ -186,11 +295,7 @@ export function CostTab() {
   const handleAdd = (form: ExpenseFormState) => {
     const expense: Expense = {
       id: generateId(),
-      date: form.date,
-      category: form.category,
-      amountYen: parseInt(form.amountYen),
-      quantity: form.quantity ? Number(form.quantity) : undefined,
-      unit: form.unit.trim() || undefined,
+      ...expenseValues(form),
       memo: form.memo || undefined,
     };
     addExpense(expense);
@@ -200,11 +305,7 @@ export function CostTab() {
 
   const handleEdit = (id: string, form: ExpenseFormState) => {
     updateExpense(id, {
-      date: form.date,
-      category: form.category,
-      amountYen: parseInt(form.amountYen),
-      quantity: form.quantity ? Number(form.quantity) : undefined,
-      unit: form.unit.trim() || undefined,
+      ...expenseValues(form),
       memo: form.memo || undefined,
     });
     setEditingId(null);
@@ -492,7 +593,9 @@ export function CostTab() {
                     date: e.date,
                     category: e.category,
                     amountYen: String(e.amountYen),
-                    quantity: e.quantity != null ? String(e.quantity) : "",
+                    packPrice: e.packPriceYen != null ? String(e.packPriceYen) : "",
+                    perPack: e.perPack != null ? String(e.perPack) : "",
+                    packs: e.packs != null ? String(e.packs) : "",
                     unit: e.unit ?? "",
                     memo: e.memo ?? "",
                   }}
@@ -520,11 +623,11 @@ export function CostTab() {
                       {unitPrice(e) != null && (
                         <>
                           {" ・ "}
-                          {e.quantity}
-                          {unitOf(e)}
-                          {" ("}
-                          {formatYen(unitPrice(e)!)}/{unitOf(e)}
-                          {")"}
+                          {/* 「50個入りを2袋」のように買い方が残っていれば、そう見せる */}
+                          {e.perPack != null && e.packs != null && e.packs > 1
+                            ? `${e.perPack}${unitOf(e)}入り × ${e.packs}`
+                            : `${e.quantity}${unitOf(e)}`}
+                          {` (${formatYen(unitPrice(e)!)}/${unitOf(e)})`}
                         </>
                       )}
                     </p>

@@ -174,10 +174,19 @@ export interface Expense {
   date: string;
   category: ExpenseCategory;
   amountYen: number;
-  /** 買った数。単価を出すために使う。未入力でも金額だけで成立する */
+  /**
+   * ぜんぶでいくつ買ったか (入り数 × 購入数)。
+   * 1個あたりの値段を出すために使う。未入力でも金額だけで成立する。
+   */
   quantity?: number;
-  /** 数の単位 (個・袋・本など)。未設定なら費目ごとの既定 */
+  /** 数の単位 (個・本・L など)。未設定なら費目ごとの既定 */
   unit?: string;
+  /** 1袋・1本の値段。ゼリーなら「50個入り1袋の値段」 */
+  packPriceYen?: number;
+  /** 1袋に何個入っているか。袋で数えないもの (産卵材など) は未設定 */
+  perPack?: number;
+  /** いくつ買ったか (袋数・本数) */
+  packs?: number;
   /** 動作を試すために入れた見本の記録。まとめて消せるようにするための印 */
   isSample?: boolean;
 
