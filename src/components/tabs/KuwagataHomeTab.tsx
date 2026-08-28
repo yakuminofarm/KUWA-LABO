@@ -35,6 +35,7 @@ import {
   tasksByDate,
   totalHeads,
   daysBetween,
+  homeHeadline,
 } from "@/lib/breeding";
 import { formatDateShort } from "@/lib/utils";
 import { KuwaAppIcon } from "@/components/KuwagataSVG";
@@ -89,6 +90,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
     day: "numeric",
     weekday: "short",
   });
+  // 毎日まったく同じ見出しだと死んで見えるので、やることの有無と季節で回す
+  const headline = homeHeadline(tasks.length > 0);
 
   // アイコンは移動先のタブと同じものを使う (同じ意味には同じ絵)
   const stats = [
@@ -237,7 +240,7 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
             {dateLabel}
           </p>
           <h2 className="font-maru text-[22px] font-bold mt-1.5 leading-snug">
-            今日も<span style={{ color: "var(--kuwa-gold)" }}>ブリード日和</span>
+            今日も<span style={{ color: "var(--kuwa-gold)" }}>{headline}</span>
           </h2>
           <p
             className="text-xs mt-2"

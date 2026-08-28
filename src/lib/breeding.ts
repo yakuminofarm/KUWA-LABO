@@ -478,6 +478,46 @@ export function isSelfReared(b: Beetle): boolean {
   return b.sourceLarvaId != null;
 }
 
+/**
+ * ホームの見出し「今日も○○」の○○部分。
+ * 毎日まったく同じ言葉だと、日々開くアプリとしては死んで見える。
+ * かといって実際の状況と噛み合わない浮かれた言葉を出すと逆に安っぽいので、
+ * 「やることがあるか」と「季節」で意味の合う言葉に絞ったうえで、
+ * その中を日付で機械的に回す。乱数は使わない — 同じ日に開き直しても
+ * 表示がぶれると、見出しの信頼感が薄れるため。
+ */
+const HEADLINE_BUSY: Record<"spring" | "summer" | "autumn" | "winter", string[]> = {
+  spring: ["動き出しの季節", "産卵日和", "ペアリング日和", "支度の頃合い"],
+  summer: ["温度管理の踏んばりどき", "ビン交換シーズン", "夏越えの正念場", "汗ばむ作業日"],
+  autumn: ["割り出し日和", "涼やかな作業日和", "実りの作業日", "食欲の秋"],
+  winter: ["越冬支度の頃", "見守りの季節", "静かな作業日", "温度管理のかんどころ"],
+};
+
+const HEADLINE_CALM: Record<"spring" | "summer" | "autumn" | "winter", string[]> = {
+  spring: ["のどかな春日和", "静かな芽吹きの日", "穏やかな1日", "観察日和"],
+  summer: ["穏やかな夏の日", "のんびり日和", "涼み日和", "静かな午後"],
+  autumn: ["実りの秋日和", "のんびり観察日和", "静かな秋の日", "穏やかな1日"],
+  winter: ["こたつ日和", "静かな冬の日", "見守り日和", "穏やかな1日"],
+};
+
+function seasonOf(month: number): "spring" | "summer" | "autumn" | "winter" {
+  if (month >= 3 && month <= 5) return "spring";
+  if (month >= 6 && month <= 8) return "summer";
+  if (month >= 9 && month <= 11) return "autumn";
+  return "winter";
+}
+
+/** 1/1 からの通算日数。閏年のずれは許容 (見出しの見た目にしか使わないため) */
+function dayOfYear(d: Date): number {
+  const start = new Date(d.getFullYear(), 0, 0);
+  return Math.floor((d.getTime() - start.getTime()) / 86400000);
+}
+
+export function homeHeadline(hasTasks: boolean, today: Date = new Date()): string {
+  const pool = (hasTasks ? HEADLINE_BUSY : HEADLINE_CALM)[seasonOf(today.getMonth() + 1)];
+  return pool[dayOfYear(today) % pool.length];
+}
+
 export function formatYen(n: number): string {
   return `¥${Math.round(n).toLocaleString("ja-JP")}`;
 }

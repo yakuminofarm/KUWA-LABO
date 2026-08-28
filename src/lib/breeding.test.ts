@@ -5,6 +5,7 @@ import {
   feedIntervalFor,
   formatYen,
   headCount,
+  homeHeadline,
   jellyForecast,
   larvaCost,
   larvaCostPerHead,
@@ -198,5 +199,39 @@ describe("formatYen", () => {
   it("3桁区切りで¥を頭に付ける", () => {
     expect(formatYen(1234567)).toBe("¥1,234,567");
     expect(formatYen(0)).toBe("¥0");
+  });
+});
+
+describe("homeHeadline (ホームの見出し)", () => {
+  it("同じ日に何度呼んでも同じ言葉になる (乱数を使わない)", () => {
+    const d = new Date(2026, 5, 15); // 6月15日
+    expect(homeHeadline(true, d)).toBe(homeHeadline(true, d));
+  });
+
+  it("やることの有無で言葉が変わる", () => {
+    const d = new Date(2026, 5, 15);
+    expect(homeHeadline(true, d)).not.toBe(homeHeadline(false, d));
+  });
+
+  it("日が変われば言葉も変わりうる (1年通して固定にならない)", () => {
+    const seen = new Set<string>();
+    for (let day = 0; day < 365; day++) {
+      const d = new Date(2026, 0, 1 + day);
+      seen.add(homeHeadline(true, d));
+    }
+    expect(seen.size).toBeGreaterThan(1);
+  });
+
+  it("春と冬では違うプールから選ばれる (季節と噛み合わない言葉を出さない)", () => {
+    const spring = homeHeadline(false, new Date(2026, 3, 1));
+    const winter = homeHeadline(false, new Date(2026, 0, 1));
+    expect(spring).not.toBe(winter);
+  });
+
+  it("空文字にはならない", () => {
+    for (const month of [0, 3, 6, 9]) {
+      expect(homeHeadline(true, new Date(2026, month, 1)).length).toBeGreaterThan(0);
+      expect(homeHeadline(false, new Date(2026, month, 1)).length).toBeGreaterThan(0);
+    }
   });
 });
