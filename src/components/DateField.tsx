@@ -38,22 +38,14 @@ export function DateField({
   const rough = precision === "month";
 
   return (
-    <div>
+    // グリッドの中では既定で min-width:auto になり、日付欄の最小幅ぶん
+    // 列が広がって隣にはみ出す。縮めるよう明示しておく
+    <div style={{ minWidth: 0 }}>
       <div className="flex items-center gap-2 mb-1">
-        <label className="block text-sm font-medium text-[#40352a] flex-1">
+        <label className="block text-sm font-medium text-[#40352a] flex-1 min-w-0 truncate">
           {label}
           {required && " *"}
         </label>
-        {clearable && value && (
-          <button
-            type="button"
-            onClick={() => onChange("", undefined)}
-            className="text-[11px] font-semibold px-2 py-1 rounded-lg"
-            style={{ color: "var(--kuwa-ink-soft)" }}
-          >
-            空欄に戻す
-          </button>
-        )}
         <button
           type="button"
           onClick={() =>
@@ -63,7 +55,7 @@ export function DateField({
               : onChange(value ? `${value.slice(0, 7)}-01` : "", "month")
           }
           // 主役はあくまで日付欄なので、チップは小さめにして添え物に見せる
-          className="kuwa-chip"
+          className="kuwa-chip flex-shrink-0"
           style={{ padding: "4px 11px", fontSize: 11 }}
           data-on={rough}
         >
@@ -78,6 +70,18 @@ export function DateField({
         }
         className="kuwa-input"
       />
+      {/* 見出しの行に3つ並べると、狭い列では見出しが折り返して崩れる。
+          消す操作は使う頻度が低いので下に置く */}
+      {clearable && value && (
+        <button
+          type="button"
+          onClick={() => onChange("", undefined)}
+          className="text-[11px] font-semibold mt-1 underline underline-offset-2"
+          style={{ color: "var(--kuwa-ink-soft)" }}
+        >
+          日付を消す
+        </button>
+      )}
       {hint && (
         <p className="text-[11px] mt-1" style={{ color: "var(--kuwa-ink-soft)" }}>
           {hint}

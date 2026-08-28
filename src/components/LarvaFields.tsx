@@ -188,7 +188,7 @@ export function LarvaFields({
           onChange={(v, p) => set({ hatchDate: v, hatchDatePrecision: p })}
           clearable
         />
-        <div>
+        <div style={{ minWidth: 0 }}>
           <label className="block text-sm font-medium text-[#40352a] mb-1">頭数</label>
           <input
             type="number"
