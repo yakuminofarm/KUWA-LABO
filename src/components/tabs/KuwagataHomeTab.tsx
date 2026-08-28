@@ -10,12 +10,15 @@ import {
   UtensilsCrossed,
   Worm,
   BookOpen,
+  Trophy,
 } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { KuwagataTabId } from "@/components/KuwagataBottomNav";
 import { HERO_BG_SRC, NAV_MASK, PUPA_MASK, TOOL_IMAGE } from "@/lib/assets";
 import { SectionTitle } from "@/components/KuwaUI";
 import { GuideSheet } from "@/components/GuideSheet";
+import { RecordsSheet } from "@/components/RecordsSheet";
+import { SpeciesAvatar } from "@/components/KuwagataSVG";
 import {
   LINE_STATUS_COLORS,
   LINE_STATUS_LABELS,
@@ -26,6 +29,7 @@ import {
   formatYen,
   latestWeight,
   speciesGradient,
+  speciesRecords,
   totalHeads,
 } from "@/lib/breeding";
 import { formatDateShort } from "@/lib/utils";
@@ -43,6 +47,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
     feedAllToday, toggleFedToday, loadSample, clearSample, hasSample,
   } = useKuwagataStore();
   const [showGuide, setShowGuide] = useState(false);
+  const [showRecords, setShowRecords] = useState(false);
+  const records = speciesRecords(beetles);
   // まだ1件も記録がない = 使い始めたばかりの人
   const isEmpty =
     beetles.length === 0 && lines.length === 0 && larvae.length === 0 && expenses.length === 0;
@@ -537,6 +543,53 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
         </section>
       )}
 
+      {/* 自己ベスト。収支を隠している人にも残る「積み上がっていく」手ごたえ */}
+      {records.length > 0 && (
+        <section>
+          <button
+            onClick={() => setShowRecords(true)}
+            className="w-full flex items-center gap-2 mb-3 px-0.5 active:scale-[0.99] transition-all"
+          >
+            <SectionTitle icon={Trophy} color="var(--kuwa-gold)">
+              自己ベスト
+            </SectionTitle>
+            <ChevronRight className="w-4 h-4" style={{ color: "var(--kuwa-bark)", opacity: 0.55 }} />
+          </button>
+          <button
+            onClick={() => setShowRecords(true)}
+            className="kuwa-card w-full p-4 space-y-2.5 text-left active:scale-[0.98] transition-all"
+          >
+            {records.slice(0, 3).map((r) => {
+              const top = r.bred ?? r.wild;
+              return (
+                <div key={r.species} className="flex items-center gap-2.5">
+                  <span className="w-8 h-8 flex-shrink-0">
+                    <SpeciesAvatar species={r.species} />
+                  </span>
+                  <span className="text-sm min-w-0 flex-1 truncate" style={{ color: "var(--kuwa-ink)" }}>
+                    {r.species}
+                  </span>
+                  <span
+                    className="text-base font-bold flex-shrink-0"
+                    style={{ color: "var(--kuwa-bark)", fontVariantNumeric: "tabular-nums" }}
+                  >
+                    {top?.sizeMm}
+                    <span className="text-xs font-semibold ml-0.5" style={{ opacity: 0.6 }}>
+                      mm
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+            {records.length > 3 && (
+              <p className="text-xs pt-0.5" style={{ color: "var(--kuwa-ink-soft)" }}>
+                ほか {records.length - 3}種
+              </p>
+            )}
+          </button>
+        </section>
+      )}
+
       {reminder.showCost && (
         <>
       {/* 収支: 画面下部の色の重心 */}
@@ -584,6 +637,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
       </section>
         </>
       )}
+
+      {showRecords && <RecordsSheet onClose={() => setShowRecords(false)} />}
     </div>
   );
 }

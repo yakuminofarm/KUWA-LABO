@@ -380,6 +380,63 @@ export function perHeadShare(totalYen: number, heads: number): number | null {
   return heads > 0 ? totalYen / heads : null;
 }
 
+/**
+ * 野外採集個体かどうか。累代が WD のものだけ。
+ * WF1 は「野外個体から採れた子」なので飼育品として数える。
+ */
+export function isWildCaught(b: Beetle): boolean {
+  return (b.generation ?? "").trim().toUpperCase() === "WD";
+}
+
+export interface SpeciesRecord {
+  species: string;
+  /** 飼育品の自己ベスト */
+  bred?: Beetle;
+  /** 野外品の自己ベスト */
+  wild?: Beetle;
+  /** その種で記録した頭数 (体長が入っているもの) */
+  measured: number;
+}
+
+/**
+ * 種ごとの自己ベスト。
+ * 飼育品と野外品は育て方の話がまったく違うので分けて出す。
+ * 明示的に外した個体と、体長が入っていない個体は数えない。
+ */
+export function speciesRecords(beetles: Beetle[]): SpeciesRecord[] {
+  const bySpecies = new Map<string, Beetle[]>();
+  for (const b of beetles) {
+    if (b.sizeMm == null || b.excludeFromRecord) continue;
+    const list = bySpecies.get(b.species) ?? [];
+    list.push(b);
+    bySpecies.set(b.species, list);
+  }
+
+  const best = (list: Beetle[]) =>
+    list.length === 0
+      ? undefined
+      : list.reduce((a, b) => ((b.sizeMm ?? 0) > (a.sizeMm ?? 0) ? b : a));
+
+  return [...bySpecies.entries()]
+    .map(([species, list]) => ({
+      species,
+      bred: best(list.filter((b) => !isWildCaught(b))),
+      wild: best(list.filter(isWildCaught)),
+      measured: list.length,
+    }))
+    // 大きい種から並べる。自分の主戦場が上に来るように
+    .sort((a, b) => bestSize(b) - bestSize(a));
+}
+
+function bestSize(r: SpeciesRecord): number {
+  return Math.max(r.bred?.sizeMm ?? 0, r.wild?.sizeMm ?? 0);
+}
+
+/** 自分で羽化させた個体か。幼虫から引き上げたものだけ */
+export function isSelfReared(b: Beetle): boolean {
+  return b.sourceLarvaId != null;
+}
+
 export function formatYen(n: number): string {
   return `¥${Math.round(n).toLocaleString("ja-JP")}`;
 }

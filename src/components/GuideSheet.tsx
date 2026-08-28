@@ -10,6 +10,7 @@ import {
   Lightbulb,
   Plus,
   Sprout,
+  Trophy,
   UtensilsCrossed,
 } from "lucide-react";
 import { Sheet } from "@/components/KuwaUI";
@@ -24,6 +25,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string; strokeWidt
   sprout: Sprout,
   calendar: CalendarCheck,
   calc: Calculator,
+  trophy: Trophy,
   backup: DatabaseBackup,
   help: HelpCircle,
 };

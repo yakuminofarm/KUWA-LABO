@@ -9,6 +9,7 @@ import {
   Heart,
   Pencil,
   Skull,
+  Trophy,
   Trash2,
   UtensilsCrossed,
   X,
@@ -510,6 +511,23 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
                 {beetle.notes}
               </p>
             </div>
+          )}
+
+          {/* 譲り受けた大きな個体を自分の記録にしたくない人向け。
+              ふだんは触らなくてよいので、目立たない場所に置く */}
+          {beetle.sizeMm != null && (
+            <button
+              onClick={() =>
+                updateBeetle(beetle.id, { excludeFromRecord: !beetle.excludeFromRecord })
+              }
+              className="w-full text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+              style={{ color: "var(--kuwa-ink-soft)" }}
+            >
+              <Trophy className="w-3.5 h-3.5" strokeWidth={2.2} />
+              {beetle.excludeFromRecord
+                ? "自己ベストに数えていません (もどす)"
+                : "自己ベストに数えない"}
+            </button>
           )}
 
           <div className="flex gap-2 pb-2">

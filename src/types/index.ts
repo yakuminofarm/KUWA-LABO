@@ -67,6 +67,12 @@ export interface Beetle {
   photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
   isAlive: boolean;
   isFavorite?: boolean;
+  /**
+   * 自己ベストの集計から外す。
+   * 譲り受けた大きな個体を自分の記録にしたくないときや、
+   * 体長を打ち間違えたまま残しておきたいときに使う。
+   */
+  excludeFromRecord?: boolean;
   /** 動作を試すために入れた見本の記録。まとめて消せるようにするための印 */
   isSample?: boolean;
   soldDate?: string;       // 販売日
