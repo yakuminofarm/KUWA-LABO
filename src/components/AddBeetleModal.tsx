@@ -17,14 +17,16 @@ import {
 
 interface AddBeetleModalProps {
   onClose: () => void;
+  /** 複製のとき、あらかじめ埋めておく内容 */
+  initial?: BeetleFormState;
 }
 
-export function AddBeetleModal({ onClose }: AddBeetleModalProps) {
+export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
   const addBeetle = useKuwagataStore((s) => s.addBeetle);
   const { showToast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [form, setForm] = useState<BeetleFormState>(emptyBeetleForm);
+  const [form, setForm] = useState<BeetleFormState>(initial ?? emptyBeetleForm);
   const [photoUrl, setPhotoUrl] = useState<string | undefined>();
 
   const canSubmit = isBeetleFormValid(form);

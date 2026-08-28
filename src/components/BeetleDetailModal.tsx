@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   Check,
+  Copy,
   CheckCircle2,
   HandCoins,
   Heart,
@@ -45,6 +46,8 @@ const inputCls =
 interface BeetleDetailModalProps {
   beetle: Beetle;
   onClose: () => void;
+  /** この子をもとに新しく登録する。渡されなければボタンを出さない */
+  onDuplicate?: (beetle: Beetle) => void;
 }
 
 function InfoRow({ label, value }: { label: string; value?: string }) {
@@ -57,7 +60,7 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
   );
 }
 
-export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModalProps) {
+export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: BeetleDetailModalProps) {
   const { beetles, lines, larvae, reminder, updateBeetle, deleteBeetle, toggleFavorite, toggleFedToday } =
     useKuwagataStore();
   const { showToast } = useToast();
@@ -352,6 +355,17 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
                 <Pencil className="w-4 h-4" strokeWidth={2.2} />
                 この子の情報を直す
               </button>
+              {/* 同じ親から何頭も羽化したとき、種類・産地・累代・親を
+                  毎回入れ直すのは骨が折れる */}
+              {onDuplicate && (
+                <button
+                  onClick={() => onDuplicate(beetle)}
+                  className="kuwa-btn-ghost w-full mt-2 py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+                >
+                  <Copy className="w-4 h-4" strokeWidth={2.2} />
+                  この子をもとに登録する
+                </button>
+              )}
             </>
           )}
 

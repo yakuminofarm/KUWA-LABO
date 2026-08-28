@@ -279,6 +279,17 @@ export function LarvaTab() {
               ? "条件をゆるめてもう一度さがしてみましょう"
               : "ブリードの割り出しを記録すると、ここに自動で並びます"
           }
+          action={
+            search || stageFilter !== "all"
+              ? {
+                  label: "条件をすべて外す",
+                  onClick: () => {
+                    setSearch("");
+                    setStageFilter("all");
+                  },
+                }
+              : undefined
+          }
         />
       ) : (
         <div className="space-y-6">

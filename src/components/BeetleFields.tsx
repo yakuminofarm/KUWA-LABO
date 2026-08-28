@@ -71,6 +71,41 @@ export function beetleToForm(b: Beetle, speciesOptions: readonly string[]): Beet
   };
 }
 
+/**
+ * 同じ親から採れた兄弟をまとめて登録するための複製。
+ * 血統にかかわる情報は引き継ぎ、その個体だけのもの (愛称・体長・写真・
+ * エサやりや販売の記録) は引き継がない。管理番号は末尾の数字を1つ進める。
+ * 入手金額も引き継がない。同じ金額を頭数ぶん写すと、支払っていない額まで
+ * 総支出に積み上がってしまうため。
+ */
+export function duplicateBeetleForm(
+  b: Beetle,
+  speciesOptions: readonly string[],
+  existingCodes: readonly string[]
+): BeetleFormState {
+  return {
+    ...beetleToForm(b, speciesOptions),
+    code: nextCode(b.code, existingCodes),
+    name: "",
+    sizeMm: "",
+    priceYen: "",
+  };
+}
+
+/** "26OK-A1" → "26OK-A2"。すでにある番号は飛ばす。数字が無ければ空にする */
+export function nextCode(code: string, existing: readonly string[]): string {
+  const m = code.match(/^(.*?)(\d+)$/);
+  if (!m) return "";
+  const [, head, digits] = m;
+  const taken = new Set(existing);
+  for (let n = parseInt(digits, 10) + 1; n < parseInt(digits, 10) + 200; n++) {
+    // 元が "01" なら "02" になるよう桁を保つ
+    const candidate = head + String(n).padStart(digits.length, "0");
+    if (!taken.has(candidate)) return candidate;
+  }
+  return "";
+}
+
 export function formToBeetle(f: BeetleFormState): Omit<Beetle, "id" | "isAlive"> {
   const species = f.species === "その他" ? f.customSpecies.trim() || "その他" : f.species;
   return {

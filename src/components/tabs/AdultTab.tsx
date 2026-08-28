@@ -9,7 +9,8 @@ import { AddBeetleModal } from "@/components/AddBeetleModal";
 import { BeetleDetailModal } from "@/components/BeetleDetailModal";
 import { EmptyState, Fab } from "@/components/KuwaUI";
 import { EMPTY_IMAGE } from "@/lib/assets";
-import { needsFeeding } from "@/lib/breeding";
+import { SPECIES_OPTIONS, needsFeeding } from "@/lib/breeding";
+import { BeetleFormState, duplicateBeetleForm } from "@/components/BeetleFields";
 
 type FilterKey = "alive" | "unfed" | "male" | "female" | "matured" | "favorite" | "sold";
 
@@ -68,6 +69,7 @@ export function AdultTab() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<Set<FilterKey>>(new Set());
+  const [duplicateOf, setDuplicateOf] = useState<BeetleFormState | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("newest");
 
   const toggleFilter = (key: FilterKey) => {
@@ -158,6 +160,18 @@ export function AdultTab() {
               ? "条件をゆるめてもう一度さがしてみましょう"
               : "右下の＋から、最初の1頭を迎え入れましょう"
           }
+          // チップを1つずつ外させると、どれが効いているのか探すことになる
+          action={
+            search || activeFilters.size > 0
+              ? {
+                  label: "条件をすべて外す",
+                  onClick: () => {
+                    setSearch("");
+                    setActiveFilters(new Set());
+                  },
+                }
+              : undefined
+          }
         />
       ) : (
         <div className="space-y-3">
@@ -171,9 +185,27 @@ export function AdultTab() {
 
       <Fab onClick={() => setShowAdd(true)} label="成虫を登録" />
 
-      {showAdd && <AddBeetleModal onClose={() => setShowAdd(false)} />}
+      {showAdd && (
+        <AddBeetleModal
+          onClose={() => {
+            setShowAdd(false);
+            setDuplicateOf(null);
+          }}
+          initial={duplicateOf ?? undefined}
+        />
+      )}
       {selected && (
-        <BeetleDetailModal beetle={selected} onClose={() => setSelectedId(null)} />
+        <BeetleDetailModal
+          beetle={selected}
+          onClose={() => setSelectedId(null)}
+          onDuplicate={(b) => {
+            setDuplicateOf(
+              duplicateBeetleForm(b, SPECIES_OPTIONS, beetles.map((x) => x.code))
+            );
+            setSelectedId(null);
+            setShowAdd(true);
+          }}
+        />
       )}
     </div>
   );

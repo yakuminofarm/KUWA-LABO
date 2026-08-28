@@ -36,6 +36,7 @@ export function EmptyState({
   image,
   title,
   hint,
+  action,
 }: {
   icon: LucideIcon;
   color: string;
@@ -43,6 +44,8 @@ export function EmptyState({
   image?: string;
   title: string;
   hint?: string;
+  /** 「絞り込みを外す」のように、その場で状況を抜け出せる操作 */
+  action?: { label: string; onClick: () => void };
 }) {
   return (
     <div className="kuwa-card px-6 py-9 text-center">
@@ -67,6 +70,14 @@ export function EmptyState({
         <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)", textWrap: "pretty" }}>
           {hint}
         </p>
+      )}
+      {action && (
+        <button
+          onClick={action.onClick}
+          className="kuwa-btn-ghost mt-4 px-5 py-2.5 text-sm active:scale-[0.98] transition-all"
+        >
+          {action.label}
+        </button>
       )}
     </div>
   );
