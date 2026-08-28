@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CalendarClock,
   ChevronRight,
@@ -11,6 +11,8 @@ import {
   Worm,
   BookOpen,
   Trophy,
+  Newspaper,
+  Lightbulb,
 } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { KuwagataTabId } from "@/components/KuwagataBottomNav";
@@ -37,6 +39,9 @@ import {
   daysBetween,
   homeHeadline,
 } from "@/lib/breeding";
+import { dailyTrivia } from "@/lib/trivia";
+import { fetchTodayNews } from "@/lib/news";
+import { NewsItem } from "@/lib/newsFeed";
 import { formatDateShort } from "@/lib/utils";
 import { KuwaAppIcon } from "@/components/KuwagataSVG";
 import { InstallHint } from "@/components/InstallHint";
@@ -92,6 +97,18 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   });
   // 毎日まったく同じ見出しだと死んで見えるので、やることの有無と季節で回す
   const headline = homeHeadline(tasks.length > 0);
+  // 雑学は同期で必ず出せるので既定にしておき、ニュースが取れたら差し替える
+  const trivia = dailyTrivia();
+  const [news, setNews] = useState<NewsItem | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetchTodayNews().then((item) => {
+      if (alive) setNews(item);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // アイコンは移動先のタブと同じものを使う (同じ意味には同じ絵)
   const stats = [
@@ -250,6 +267,45 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
               ? `やることが ${tasks.length}件。忘れないうちにチェックを`
               : "作業予定はありません。ゆっくり観察を楽しみましょう"}
           </p>
+
+          {/* やることの下に、もう1行。ニュースが取れていればそれを、
+              取れなければ (オフライン・取得先の不調・まだ読み込み中) は
+              アプリ内に持っている雑学を出す。どちらも空になることはない */}
+          {news ? (
+            <a
+              href={news.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-start gap-1.5 mt-2.5 active:opacity-70 transition-opacity"
+            >
+              <Newspaper
+                className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"
+                strokeWidth={2.2}
+                style={{ color: "rgba(247,232,203,0.55)" }}
+              />
+              <span
+                className="text-[11px] leading-relaxed"
+                style={{ color: "rgba(247,232,203,0.6)", textWrap: "pretty" }}
+              >
+                {news.title}
+                {news.source && ` (${news.source})`}
+              </span>
+            </a>
+          ) : (
+            <div className="flex items-start gap-1.5 mt-2.5">
+              <Lightbulb
+                className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"
+                strokeWidth={2.2}
+                style={{ color: "rgba(247,232,203,0.55)" }}
+              />
+              <span
+                className="text-[11px] leading-relaxed"
+                style={{ color: "rgba(247,232,203,0.6)", textWrap: "pretty" }}
+              >
+                {trivia}
+              </span>
+            </div>
+          )}
 
           <div className="grid grid-cols-4 gap-2 mt-5">
             {stats.map((s) => (
