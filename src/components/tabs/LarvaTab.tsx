@@ -16,6 +16,8 @@ import {
   latestBottleChange,
   latestWeight,
   speciesGradient,
+  headCount,
+  totalHeads,
 } from "@/lib/breeding";
 import { getGenderLabel } from "@/lib/utils";
 import { AddLarvaModal } from "@/components/AddLarvaModal";
@@ -82,6 +84,12 @@ function LarvaCard({ larva, onClick }: { larva: Larva; onClick: () => void }) {
               <span className={`kuwa-badge font-maru flex-shrink-0 ${STAGE_COLORS[larva.stage]}`}>
                 {STAGE_LABELS[larva.stage]}
               </span>
+              {/* まとまりは1頭ぶんのカードに見えてしまうので、頭数を出す */}
+              {headCount(larva) > 1 && (
+                <span className="kuwa-badge font-maru flex-shrink-0 bg-[#e3ceaa] text-[#6b4423]">
+                  {headCount(larva)}頭
+                </span>
+              )}
               {!larva.isAlive && (
                 <span className="kuwa-badge font-maru bg-[#ded5c6] text-[#7a7062]">飼育終了</span>
               )}
@@ -225,7 +233,7 @@ export function LarvaTab() {
     },
   ].filter((g) => g.items.length > 0);
 
-  const total = filtered.length;
+  const total = totalHeads(filtered);
   const selected = larvae.find((l) => l.id === selectedId);
 
   return (

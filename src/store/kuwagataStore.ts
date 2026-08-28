@@ -9,7 +9,7 @@ import {
   ReminderSettings,
   ScheduleSettings,
 } from "@/types";
-import { DEFAULT_SCHEDULE, needsFeeding, todayStr } from "@/lib/breeding";
+import { DEFAULT_SCHEDULE, headCount, needsFeeding, todayStr } from "@/lib/breeding";
 import { generateId } from "@/lib/utils";
 import { mockBeetles, mockExpenses, mockLarvae, mockLines } from "@/lib/mockData";
 import type { BackupData, ImportResult } from "@/lib/backup";
@@ -62,6 +62,11 @@ interface KuwagataStore {
    * すでに引き上げずみなら何もせず undefined を返す。
    */
   promoteLarva: (larvaId: string, details: PromoteDetails) => Beetle | undefined;
+  /**
+   * まとまりから1頭を切り出して別レコードにする。
+   * 切り出した側の id を返す。1頭しかないまとまりでは何もしない。
+   */
+  splitLarva: (larvaId: string) => string | undefined;
   updateLarva: (id: string, updates: Partial<Larva>) => void;
   deleteLarva: (id: string) => void;
   getLarva: (id: string) => Larva | undefined;
@@ -190,6 +195,8 @@ export const useKuwagataStore = create<KuwagataStore>()(
         if (larva.promotedBeetleId && s.beetles.some((b) => b.id === larva.promotedBeetleId)) {
           return undefined;
         }
+        // まとまりのまま引き上げると、残りの頭数の行方が分からなくなる
+        if (headCount(larva) > 1) return undefined;
 
         const beetle: Beetle = {
           id: generateId(),
@@ -220,6 +227,35 @@ export const useKuwagataStore = create<KuwagataStore>()(
           ),
         }));
         return beetle;
+      },
+
+      splitLarva: (larvaId) => {
+        const s = get();
+        const larva = s.larvae.find((l) => l.id === larvaId);
+        if (!larva || headCount(larva) <= 1) return undefined;
+
+        const id = generateId();
+        // 費用は元のまとまりに残す。分けて写すと、ビン交換の記録と
+        // 金額の対応が崩れるうえ、総支出も合わなくなる
+        const one: Larva = {
+          ...larva,
+          id,
+          code: `${larva.code}-${headCount(larva)}`,
+          count: 1,
+          priceYen: undefined,
+          bottleChanges: [],
+          promotedBeetleId: undefined,
+        };
+
+        set((st) => ({
+          larvae: [
+            ...st.larvae.map((l) =>
+              l.id === larvaId ? { ...l, count: headCount(l) - 1 } : l
+            ),
+            one,
+          ],
+        }));
+        return id;
       },
 
       updateLarva: (id, updates) =>

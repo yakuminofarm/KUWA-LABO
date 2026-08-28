@@ -10,6 +10,7 @@ import {
   LINE_STATUS_ORDER,
   daysBetween,
   speciesGradient,
+  totalHeads,
 } from "@/lib/breeding";
 import { formatDateShort } from "@/lib/utils";
 import { AddLineModal } from "@/components/AddLineModal";
@@ -23,7 +24,7 @@ function LineCard({ line, onClick }: { line: BreedingLine; onClick: () => void }
   const { beetles, getLarvaeByLine } = useKuwagataStore();
   const male = line.maleId ? beetles.find((b) => b.id === line.maleId) : undefined;
   const female = line.femaleId ? beetles.find((b) => b.id === line.femaleId) : undefined;
-  const larvaeCount = getLarvaeByLine(line.id).filter((l) => l.isAlive).length;
+  const larvaeCount = totalHeads(getLarvaeByLine(line.id).filter((l) => l.isAlive));
 
   const elapsed =
     line.status === "laying" && line.setDate

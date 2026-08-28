@@ -26,6 +26,7 @@ import {
   formatYen,
   latestWeight,
   speciesGradient,
+  totalHeads,
 } from "@/lib/breeding";
 import { formatDateShort } from "@/lib/utils";
 import { KuwaAppIcon } from "@/components/KuwagataSVG";
@@ -70,8 +71,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   // アイコンは移動先のタブと同じものを使う (同じ意味には同じ絵)
   const stats = [
     { label: "成虫",   value: aliveBeetles.length, unit: "頭", mask: NAV_MASK.adult,    tab: "adults" as const },
-    { label: "幼虫",   value: aliveLarvae.length,  unit: "頭", mask: NAV_MASK.rearing,  tab: "larvae" as const },
-    { label: "蛹",     value: alivePupae.length,   unit: "頭", mask: PUPA_MASK,         tab: "larvae" as const },
+    { label: "幼虫",   value: totalHeads(aliveLarvae), unit: "頭", mask: NAV_MASK.rearing,  tab: "larvae" as const },
+    { label: "蛹",     value: totalHeads(alivePupae),  unit: "頭", mask: PUPA_MASK,         tab: "larvae" as const },
     { label: "ライン", value: activeLines.length,  unit: "本", mask: NAV_MASK.breeding, tab: "breeding" as const },
   ];
 

@@ -122,6 +122,13 @@ export interface Larva {
   lineId?: string;         // 出身ライン
   species: KuwagataSpecies | string;
   stage: LarvaStage;
+  /**
+   * このレコードが表している頭数。未設定は1頭。
+   * 産卵セットを割り出すと一度に20頭ということもあるので、
+   * 1レコードでまとめて持てるようにしている。
+   * 大きくなって個別に追いたくなったら「1頭を切り出す」で分ける。
+   */
+  count?: number;
   gender: Gender;          // 雌雄判別結果
   hatchDate?: string;      // 孵化日 (または割り出し日)
   hatchDatePrecision?: DatePrecision;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { CheckCircle2, Pencil, Plus, Split, Trash2, X } from "lucide-react";
 import {
   CartesianGrid,
   Line,
@@ -24,6 +24,8 @@ import {
   isFeedingStage,
   isPupaStage,
   larvaCost,
+  larvaCostPerHead,
+  headCount,
 } from "@/lib/breeding";
 import { formatDate, formatDateShort, generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
@@ -163,6 +165,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
     addBottleChange,
     updateBottleChange,
     deleteBottleChange,
+    splitLarva,
   } = useKuwagataStore();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -438,9 +441,44 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
             </div>
           )}
 
-          {/* 羽化後: 成虫台帳へ引き上げる */}
-          {larva.stage === "adult" && larva.emergedDate && (
+          {/* まとまりの操作。1頭ずつ追いたくなったらここから分ける */}
+          {headCount(larva) > 1 && (
+            <div className="rounded-2xl px-4 py-3.5" style={{ background: "var(--kuwa-bark-bg)" }}>
+              <p className="font-maru text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+                {headCount(larva)}頭 のまとまり
+              </p>
+              <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+                大きくなった子や、体重を個別に追いたい子は切り出せます。
+                残りは {headCount(larva) - 1}頭 になります。
+              </p>
+              {larvaCost(larva) > 0 && (
+                <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+                  かかった費用 {formatYen(larvaCost(larva))} は、このまとまりに残ります
+                  (1頭あたり {formatYen(larvaCostPerHead(larva))})。
+                </p>
+              )}
+              <button
+                onClick={() => {
+                  const id = splitLarva(larva.id);
+                  if (id) showToast("1頭を切り出しました");
+                }}
+                className="kuwa-btn-ghost w-full mt-3 py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+              >
+                <Split className="w-4 h-4" strokeWidth={2.2} />
+                1頭を切り出す
+              </button>
+            </div>
+          )}
+
+          {/* 羽化後: 成虫台帳へ引き上げる (まとまりのままでは引き上げない) */}
+          {larva.stage === "adult" && larva.emergedDate && headCount(larva) === 1 && (
             <PromoteLarvaForm larva={larva} />
+          )}
+          {larva.stage === "adult" && larva.emergedDate && headCount(larva) > 1 && (
+            <p className="text-xs leading-relaxed px-1" style={{ color: "var(--kuwa-ink-soft)" }}>
+              成虫台帳へ引き上げるには、先に1頭を切り出してください。
+              まとまりのまま引き上げると、残りの子の行方が分からなくなります。
+            </p>
           )}
 
           {/* 雌雄判別 */}

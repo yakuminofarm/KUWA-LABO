@@ -305,6 +305,21 @@ export function larvaCost(larva: Larva): number {
   return (larva.priceYen ?? 0) + bottles;
 }
 
+/** このレコードが表している頭数。未設定は1頭 */
+export function headCount(larva: Larva): number {
+  return Math.max(1, Math.floor(larva.count ?? 1));
+}
+
+/** レコードの頭数を合計する。まとまりは頭数ぶん数える */
+export function totalHeads(larvae: Larva[]): number {
+  return larvae.reduce((sum, l) => sum + headCount(l), 0);
+}
+
+/** まとまりの費用を1頭あたりに割る。表示にだけ使う (保存はしない) */
+export function larvaCostPerHead(larva: Larva): number {
+  return Math.round(larvaCost(larva) / headCount(larva));
+}
+
 export interface CostSummary {
   beetlePurchase: number;   // 成虫の入手金額合計
   larvaPurchase: number;    // 幼虫の入手金額合計

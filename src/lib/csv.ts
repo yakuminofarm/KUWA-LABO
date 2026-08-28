@@ -1,5 +1,5 @@
 import { Beetle, BreedingLine, DatePrecision, Larva } from "@/types";
-import { STAGE_LABELS, larvaCost, latestWeight } from "@/lib/breeding";
+import { STAGE_LABELS, headCount, larvaCost, latestWeight } from "@/lib/breeding";
 import { getGenderLabel } from "@/lib/utils";
 
 /**
@@ -20,6 +20,7 @@ function cell(v: string | number | undefined | null): string {
 const HEADERS = [
   "区分",
   "管理番号",
+  "頭数",
   "愛称",
   "種類",
   "産地・血統",
@@ -50,6 +51,7 @@ function beetleRow(b: Beetle, larvae: Larva[]): (string | number | undefined)[] 
   return [
     "成虫",
     b.code,
+    1,
     b.name,
     b.species,
     b.locality,
@@ -80,6 +82,7 @@ function larvaRow(l: Larva, lines: BreedingLine[]): (string | number | undefined
   return [
     group,
     l.code,
+    headCount(l),
     undefined,
     l.species,
     undefined,

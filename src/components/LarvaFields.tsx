@@ -19,6 +19,7 @@ export interface LarvaFormState {
   species: string;
   customSpecies: string;
   stage: LarvaStage;
+  count: string;
   gender: Gender;
   hatchDate: string;
   hatchDatePrecision?: DatePrecision;
@@ -40,6 +41,7 @@ export function emptyLarvaForm(): LarvaFormState {
     species: "オオクワガタ",
     customSpecies: "",
     stage: "L1",
+    count: "1",
     gender: "unknown",
     hatchDate: new Date().toISOString().split("T")[0],
     priceYen: "",
@@ -59,6 +61,7 @@ export function larvaToForm(l: Larva, speciesOptions: readonly string[]): LarvaF
     species: known ? l.species : "その他",
     customSpecies: known ? "" : l.species,
     stage: l.stage,
+    count: String(l.count ?? 1),
     gender: l.gender,
     hatchDate: l.hatchDate ?? "",
     hatchDatePrecision: l.hatchDatePrecision,
@@ -80,6 +83,7 @@ export function formToLarva(
     lineId: f.lineId || undefined,
     species,
     stage: f.stage,
+    count: Math.max(1, parseInt(f.count, 10) || 1),
     gender: f.gender,
     hatchDate: f.hatchDate || undefined,
     hatchDatePrecision: f.hatchDate ? f.hatchDatePrecision : undefined,
@@ -183,6 +187,26 @@ export function LarvaFields({
           onChange={(v, p) => set({ hatchDate: v, hatchDatePrecision: p })}
           clearable
         />
+        <div>
+          <label className="block text-sm font-medium text-[#40352a] mb-1">頭数</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            min="1"
+            step="1"
+            value={form.count}
+            onChange={(e) => set({ count: e.target.value })}
+            className={inputCls}
+          />
+        </div>
+      </div>
+
+      <p className="text-[11px] -mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+        割り出しで何頭も採れたときは、まとめて1つの記録にできます。
+        大きくなって1頭ずつ追いたくなったら、あとから切り出せます。
+      </p>
+
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-[#40352a] mb-1">雌雄</label>
           <div className="flex gap-1.5">
