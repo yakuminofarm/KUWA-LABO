@@ -1,4 +1,4 @@
-import { Beetle, BreedingLine, Larva } from "@/types";
+import { Beetle, BreedingLine, DatePrecision, Larva } from "@/types";
 import { STAGE_LABELS, larvaCost, latestWeight } from "@/lib/breeding";
 import { getGenderLabel } from "@/lib/utils";
 
@@ -61,8 +61,8 @@ function beetleRow(b: Beetle, larvae: Larva[]): (string | number | undefined)[] 
     undefined,
     undefined,
     undefined,
-    b.emergedDate,
-    b.acquiredDate,
+    csvDate(b.emergedDate, b.emergedDatePrecision),
+    csvDate(b.acquiredDate, b.acquiredDatePrecision),
     b.priceYen,
     src ? larvaCost(src) : undefined,
     b.matured ? "済" : "まだ",
@@ -89,7 +89,7 @@ function larvaRow(l: Larva, lines: BreedingLine[]): (string | number | undefined
     l.emergedSizeMm,
     latestWeight(l),
     line?.name,
-    l.hatchDate,
+    csvDate(l.hatchDate, l.hatchDatePrecision),
     l.pupaDate,
     l.emergedDate,
     undefined,
@@ -102,6 +102,12 @@ function larvaRow(l: Larva, lines: BreedingLine[]): (string | number | undefined
     undefined,
     l.notes,
   ];
+}
+
+/** 月までしか分かっていない日付は "2026-08" のように月までで書き出す */
+function csvDate(date?: string, precision?: DatePrecision): string | undefined {
+  if (!date) return date;
+  return precision === "month" ? date.slice(0, 7) : date;
 }
 
 export function buildInventoryCsv(

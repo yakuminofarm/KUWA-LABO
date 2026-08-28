@@ -354,7 +354,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
             {larva.hatchDate && (
               <div className="flex justify-between">
                 <span className="text-[#8b7a64]">孵化 / 割出日</span>
-                <span className="font-semibold text-[#31241a]">{formatDate(larva.hatchDate)}</span>
+                <span className="font-semibold text-[#31241a]">{formatDate(larva.hatchDate, larva.hatchDatePrecision)}</span>
               </div>
             )}
             {larva.pupaDate && (

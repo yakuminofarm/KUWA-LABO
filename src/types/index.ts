@@ -35,6 +35,12 @@ export type KuwagataSpecies =
   | "その他";
 
 /** 成虫個体 */
+/**
+ * 日付をどこまで思い出せているか。
+ * 省略時は日まで正確。"month" は「その月ごろ」までしか分かっていない。
+ */
+export type DatePrecision = "month";
+
 export interface Beetle {
   id: string;
   code: string;            // 管理番号 (例: 26OK-A1)
@@ -45,7 +51,9 @@ export interface Beetle {
   gender: Gender;
   sizeMm?: number;         // 体長 (mm)
   emergedDate?: string;    // 羽化日
+  emergedDatePrecision?: DatePrecision;
   acquiredDate: string;    // 入手日
+  acquiredDatePrecision?: DatePrecision;
   priceYen?: number;       // 入手金額 (円)
   matured?: boolean;       // 後食済み (ブリード可能な成熟状態)
   lastFedDate?: string;    // 最終給餌日 (YYYY-MM-DD)
@@ -116,6 +124,7 @@ export interface Larva {
   stage: LarvaStage;
   gender: Gender;          // 雌雄判別結果
   hatchDate?: string;      // 孵化日 (または割り出し日)
+  hatchDatePrecision?: DatePrecision;
   priceYen?: number;       // 入手金額 (購入幼虫の場合、円)
   bottleChanges: BottleChange[];
   pupaDate?: string;       // 蛹化日

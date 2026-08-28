@@ -320,8 +320,8 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
               </span>
             </div>
             <InfoRow label="体長" value={beetle.sizeMm != null ? `${beetle.sizeMm} mm` : undefined} />
-            <InfoRow label="羽化日" value={beetle.emergedDate ? formatDate(beetle.emergedDate) : undefined} />
-            <InfoRow label="入手日" value={formatDate(beetle.acquiredDate)} />
+            <InfoRow label="羽化日" value={beetle.emergedDate ? formatDate(beetle.emergedDate, beetle.emergedDatePrecision) : undefined} />
+            <InfoRow label="入手日" value={formatDate(beetle.acquiredDate, beetle.acquiredDatePrecision)} />
             <InfoRow label="入手金額" value={beetle.priceYen != null ? formatYen(beetle.priceYen) : undefined} />
             {sourceLarva && (
               <InfoRow

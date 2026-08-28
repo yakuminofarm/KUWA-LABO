@@ -1,6 +1,7 @@
 "use client";
 
-import { Gender, Larva, LarvaStage } from "@/types";
+import { DatePrecision, Gender, Larva, LarvaStage } from "@/types";
+import { DateField } from "@/components/DateField";
 import { STAGE_LABELS, STAGE_ORDER } from "@/lib/breeding";
 import { SpeciesSelect } from "@/components/SpeciesSelect";
 import { useKuwagataStore } from "@/store/kuwagataStore";
@@ -20,6 +21,7 @@ export interface LarvaFormState {
   stage: LarvaStage;
   gender: Gender;
   hatchDate: string;
+  hatchDatePrecision?: DatePrecision;
   priceYen: string;
   pupaDate: string;
   emergedDate: string;
@@ -59,6 +61,7 @@ export function larvaToForm(l: Larva, speciesOptions: readonly string[]): LarvaF
     stage: l.stage,
     gender: l.gender,
     hatchDate: l.hatchDate ?? "",
+    hatchDatePrecision: l.hatchDatePrecision,
     priceYen: l.priceYen != null ? String(l.priceYen) : "",
     pupaDate: l.pupaDate ?? "",
     emergedDate: l.emergedDate ?? "",
@@ -79,6 +82,7 @@ export function formToLarva(
     stage: f.stage,
     gender: f.gender,
     hatchDate: f.hatchDate || undefined,
+    hatchDatePrecision: f.hatchDate ? f.hatchDatePrecision : undefined,
     priceYen: f.priceYen ? parseInt(f.priceYen, 10) : undefined,
     pupaDate: f.pupaDate || undefined,
     emergedDate: f.emergedDate || undefined,
@@ -172,15 +176,13 @@ export function LarvaFields({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-[#40352a] mb-1">孵化 / 割出日</label>
-          <input
-            type="date"
-            value={form.hatchDate}
-            onChange={(e) => set({ hatchDate: e.target.value })}
-            className={inputCls}
-          />
-        </div>
+        <DateField
+          label="孵化 / 割出日"
+          value={form.hatchDate}
+          precision={form.hatchDatePrecision}
+          onChange={(v, p) => set({ hatchDate: v, hatchDatePrecision: p })}
+          clearable
+        />
         <div>
           <label className="block text-sm font-medium text-[#40352a] mb-1">雌雄</label>
           <div className="flex gap-1.5">

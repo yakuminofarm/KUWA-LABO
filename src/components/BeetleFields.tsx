@@ -1,6 +1,7 @@
 "use client";
 
-import { Beetle, Gender } from "@/types";
+import { Beetle, DatePrecision, Gender } from "@/types";
+import { DateField } from "@/components/DateField";
 import { SpeciesSelect } from "@/components/SpeciesSelect";
 
 /**
@@ -20,7 +21,9 @@ export interface BeetleFormState {
   gender: Gender;
   sizeMm: string;
   emergedDate: string;
+  emergedDatePrecision?: DatePrecision;
   acquiredDate: string;
+  acquiredDatePrecision?: DatePrecision;
   priceYen: string;
   matured: boolean;
   notes: string;
@@ -59,7 +62,9 @@ export function beetleToForm(b: Beetle, speciesOptions: readonly string[]): Beet
     gender: b.gender,
     sizeMm: b.sizeMm != null ? String(b.sizeMm) : "",
     emergedDate: b.emergedDate ?? "",
+    emergedDatePrecision: b.emergedDatePrecision,
     acquiredDate: b.acquiredDate,
+    acquiredDatePrecision: b.acquiredDatePrecision,
     priceYen: b.priceYen != null ? String(b.priceYen) : "",
     matured: !!b.matured,
     notes: b.notes ?? "",
@@ -77,7 +82,9 @@ export function formToBeetle(f: BeetleFormState): Omit<Beetle, "id" | "isAlive">
     gender: f.gender,
     sizeMm: f.sizeMm ? parseFloat(f.sizeMm) : undefined,
     emergedDate: f.emergedDate || undefined,
+    emergedDatePrecision: f.emergedDate ? f.emergedDatePrecision : undefined,
     acquiredDate: f.acquiredDate,
+    acquiredDatePrecision: f.acquiredDatePrecision,
     priceYen: f.priceYen ? parseInt(f.priceYen, 10) : undefined,
     matured: f.matured,
     notes: f.notes.trim(),
@@ -191,27 +198,24 @@ export function BeetleFields({
             className={inputCls}
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-[#40352a] mb-1">羽化日</label>
-          <input
-            type="date"
-            value={form.emergedDate}
-            onChange={(e) => set({ emergedDate: e.target.value })}
-            className={inputCls}
-          />
-        </div>
+        <DateField
+          label="羽化日"
+          value={form.emergedDate}
+          precision={form.emergedDatePrecision}
+          onChange={(v, p) => set({ emergedDate: v, emergedDatePrecision: p })}
+          clearable
+          hint="買った個体などで分からなければ空欄でOK"
+        />
       </div>
 
       <div className={showMatured ? "grid grid-cols-2 gap-3 items-end" : ""}>
-        <div>
-          <label className="block text-sm font-medium text-[#40352a] mb-1">入手日 *</label>
-          <input
-            type="date"
-            value={form.acquiredDate}
-            onChange={(e) => set({ acquiredDate: e.target.value })}
-            className={inputCls}
-          />
-        </div>
+        <DateField
+          label="入手日"
+          required
+          value={form.acquiredDate}
+          precision={form.acquiredDatePrecision}
+          onChange={(v, p) => set({ acquiredDate: v, acquiredDatePrecision: p })}
+        />
         {showMatured && (
           <button
             type="button"
