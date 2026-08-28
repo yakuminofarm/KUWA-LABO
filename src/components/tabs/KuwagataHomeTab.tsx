@@ -270,13 +270,20 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
 
           {/* やることの下に、もう1行。ニュースが取れていればそれを、
               取れなければ (オフライン・取得先の不調・まだ読み込み中) は
-              アプリ内に持っている雑学を出す。どちらも空になることはない */}
+              アプリ内に持っている雑学を出す。どちらも空になることはない。
+              見出しはどちらの場合も「今日のトピックス」で固定する */}
+          <p
+            className="text-[10px] font-bold tracking-wider mt-3"
+            style={{ color: "rgba(247,232,203,0.45)" }}
+          >
+            今日のトピックス
+          </p>
           {news ? (
             <a
               href={news.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-start gap-1.5 mt-2.5 active:opacity-70 transition-opacity"
+              className="flex items-start gap-1.5 mt-1 active:opacity-70 transition-opacity"
             >
               <Newspaper
                 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"
@@ -292,7 +299,7 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
               </span>
             </a>
           ) : (
-            <div className="flex items-start gap-1.5 mt-2.5">
+            <div className="flex items-start gap-1.5 mt-1">
               <Lightbulb
                 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"
                 strokeWidth={2.2}
