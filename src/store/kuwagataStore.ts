@@ -49,6 +49,11 @@ interface KuwagataStore {
   schedule: ScheduleSettings;
   setSchedule: (s: Partial<ScheduleSettings>) => void;
 
+  /** 最後にバックアップを書き出した日時 (ISO)。まだ一度もしていなければ未設定 */
+  lastBackupAt?: string;
+  /** バックアップの書き出し・コピーが成功したときに呼ぶ */
+  recordBackup: () => void;
+
   addLine: (line: BreedingLine) => void;
   updateLine: (id: string, updates: Partial<BreedingLine>) => void;
   deleteLine: (id: string) => void;
@@ -121,6 +126,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
       expenses: [],
       reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー", showCost: true },
       schedule: { ...DEFAULT_SCHEDULE },
+      lastBackupAt: undefined,
 
       toggleFedToday: (id) =>
         set((s) => {
@@ -153,6 +159,8 @@ export const useKuwagataStore = create<KuwagataStore>()(
       setReminder: (r) => set((s) => ({ reminder: { ...s.reminder, ...r } })),
 
       setSchedule: (v) => set((s) => ({ schedule: { ...s.schedule, ...v } })),
+
+      recordBackup: () => set({ lastBackupAt: new Date().toISOString() }),
 
       addBeetle: (beetle) => set((s) => ({ beetles: [...s.beetles, beetle] })),
 
@@ -354,7 +362,8 @@ export const useKuwagataStore = create<KuwagataStore>()(
           larvae: [],
           expenses: [],
           reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー", showCost: true },
-      schedule: { ...DEFAULT_SCHEDULE },
+          schedule: { ...DEFAULT_SCHEDULE },
+          lastBackupAt: undefined,
         }),
 
       snapshot: () => {
@@ -438,6 +447,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           // 設定は項目が増えることがあるので、保存済みの値を既定に重ねる
           reminder: { ...current.reminder, ...(p?.reminder ?? {}) },
           schedule: { ...current.schedule, ...(p?.schedule ?? {}) },
+          lastBackupAt: p?.lastBackupAt ?? current.lastBackupAt,
         };
       },
     }

@@ -18,6 +18,7 @@ import { HERO_BG_SRC, NAV_MASK, PUPA_MASK, TOOL_IMAGE } from "@/lib/assets";
 import { SectionTitle } from "@/components/KuwaUI";
 import { GuideSheet } from "@/components/GuideSheet";
 import { RecordsSheet } from "@/components/RecordsSheet";
+import { BackupSheet } from "@/components/BackupSheet";
 import { TaskCalendar } from "@/components/TaskCalendar";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
 import {
@@ -33,6 +34,7 @@ import {
   speciesRecords,
   tasksByDate,
   totalHeads,
+  daysBetween,
 } from "@/lib/breeding";
 import { formatDateShort } from "@/lib/utils";
 import { KuwaAppIcon } from "@/components/KuwagataSVG";
@@ -45,17 +47,28 @@ interface KuwagataHomeTabProps {
 
 export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   const {
-    beetles, lines, larvae, expenses, reminder, schedule,
+    beetles, lines, larvae, expenses, reminder, schedule, lastBackupAt,
     feedAllToday, toggleFedToday, loadSample, clearSample, hasSample,
   } = useKuwagataStore();
   const [showGuide, setShowGuide] = useState(false);
   const [showRecords, setShowRecords] = useState(false);
+  const [showBackupPrompt, setShowBackupPrompt] = useState(false);
   const [taskView, setTaskView] = useState<"list" | "calendar">("list");
   const records = speciesRecords(beetles);
   // まだ1件も記録がない = 使い始めたばかりの人
   const isEmpty =
     beetles.length === 0 && lines.length === 0 && larvae.length === 0 && expenses.length === 0;
   const sampleLoaded = hasSample();
+  // 見本を除いた実データの件数。見本しかない人に「消えると困る」と
+  // 促しても意味がない
+  const realCount =
+    beetles.filter((b) => !b.isSample).length +
+    lines.filter((l) => !l.isSample).length +
+    larvae.filter((l) => !l.isSample).length +
+    expenses.filter((e) => !e.isSample).length;
+  // ある程度たまっていて、しばらく書き出していない人にだけそっと促す
+  const needsBackupNudge =
+    realCount >= 5 && (!lastBackupAt || daysBetween(lastBackupAt) >= 14);
   const { showToast } = useToast();
   const feeding = feedingSummary(beetles, reminder.intervalDays);
 
@@ -173,6 +186,27 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
             className="kuwa-btn-ghost px-4 py-2 text-xs flex-shrink-0 active:scale-95 transition-all"
           >
             消す
+          </button>
+        </div>
+      )}
+
+      {/* 端末の中だけの保存なので、書き出さないと機種変更で消える。
+          記録が少しでもある人にだけ、しばらく経ってから静かに促す */}
+      {needsBackupNudge && (
+        <div
+          className="rounded-2xl px-4 py-3 flex items-center gap-3"
+          style={{ background: "var(--kuwa-bark-bg)", border: "1px solid var(--kuwa-line)" }}
+        >
+          <p className="text-xs flex-1 min-w-0 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+            {lastBackupAt
+              ? "しばらくバックアップを書き出していません"
+              : "まだバックアップを書き出していません"}
+          </p>
+          <button
+            onClick={() => setShowBackupPrompt(true)}
+            className="kuwa-btn-ghost px-4 py-2 text-xs flex-shrink-0 active:scale-95 transition-all"
+          >
+            書き出す
           </button>
         </div>
       )}
@@ -661,6 +695,7 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
       )}
 
       {showRecords && <RecordsSheet onClose={() => setShowRecords(false)} />}
+      {showBackupPrompt && <BackupSheet onClose={() => setShowBackupPrompt(false)} />}
     </div>
   );
 }

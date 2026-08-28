@@ -59,6 +59,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
   const resetAll = useKuwagataStore((s) => s.resetAll);
   const replaceAll = useKuwagataStore((s) => s.replaceAll);
   const mergeAll = useKuwagataStore((s) => s.mergeAll);
+  const recordBackup = useKuwagataStore((s) => s.recordBackup);
   const { showToast } = useToast();
 
   const [withPhotos, setWithPhotos] = useState(true);
@@ -91,9 +92,12 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
 
   const save = async () => {
     const result = await saveTextFile(viewerSave, backupFileName(), json.text);
-    if (result === "saved") showToast("バックアップを書き出しました");
-    else if (result === "failed")
+    if (result === "saved") {
+      showToast("バックアップを書き出しました");
+      recordBackup();
+    } else if (result === "failed") {
       showToast("保存できませんでした。コピーの方をお試しください", "error");
+    }
     // 断られた場合は本人の意思なので何も言わない
   };
 
@@ -109,6 +113,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
     try {
       await navigator.clipboard.writeText(json.text);
       showToast("コピーしました。メモ帳などに貼って保存してください");
+      recordBackup();
     } catch {
       showToast("コピーできませんでした", "error");
     }
