@@ -14,7 +14,23 @@ npm install
 npm run dev      # http://localhost:3000
 npm run build    # 本番ビルド
 npm run lint
+npm test         # ロジックのテスト (Vitest)
 ```
+
+## テスト
+
+`src/**/*.test.ts(x)` に、計算まわりを中心にテストを置いている。
+とくにお金がからむ箇所は、二重計上を防ぐガードそのものをテストしている。
+
+- `src/lib/breeding.test.ts` — 収支の集計、頭数の計算、ひと月のめやす、
+  単価の内訳など、純粋な計算関数
+- `src/store/kuwagataStore.test.ts` — 幼虫→成虫の引き上げ・まとまりの
+  切り出しで、費用を二重に写さないこと
+- `src/components/BeetleFields.test.ts` — 個体の複製で入手金額を
+  引き継がないこと、管理番号の自動採番
+
+新しく計算やガードを足すときは、まずここに1本足す。UIの見た目は
+毎回人が見て確かめてきたが、数字の整合はそれでは追いきれない。
 
 ## 配信先
 
