@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { Beetle, Larva } from "@/types";
 import {
+  beetleRanking,
   calcCostSummary,
   feedIntervalFor,
   formatYen,
+  groupBySpecies,
   headCount,
   homeHeadline,
   jellyForecast,
@@ -12,6 +14,7 @@ import {
   needsFeeding,
   packBreakdown,
   perHeadShare,
+  rankedSpeciesOptions,
   totalHeads,
 } from "@/lib/breeding";
 
@@ -233,5 +236,70 @@ describe("homeHeadline (ホームの見出し)", () => {
       expect(homeHeadline(true, new Date(2026, month, 1)).length).toBeGreaterThan(0);
       expect(homeHeadline(false, new Date(2026, month, 1)).length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("beetleRanking (サイズランキング)", () => {
+  it("体長の大きい順に並べる", () => {
+    const list = [
+      beetle({ id: "a", sizeMm: 70 }),
+      beetle({ id: "b", sizeMm: 90 }),
+      beetle({ id: "c", sizeMm: 80 }),
+    ];
+    expect(beetleRanking(list).map((b) => b.id)).toEqual(["b", "c", "a"]);
+  });
+
+  it("体長が無い・自己ベストから外した個体は対象にしない (speciesRecords と同じ条件)", () => {
+    const list = [
+      beetle({ id: "a", sizeMm: 90 }),
+      beetle({ id: "b", sizeMm: undefined }),
+      beetle({ id: "c", sizeMm: 95, excludeFromRecord: true }),
+    ];
+    expect(beetleRanking(list).map((b) => b.id)).toEqual(["a"]);
+  });
+
+  it("種類・性別・飼育/野外で絞り込める", () => {
+    const list = [
+      beetle({ id: "a", species: "オオクワガタ", gender: "male", sizeMm: 90, generation: "CBF1" }),
+      beetle({ id: "b", species: "オオクワガタ", gender: "female", sizeMm: 50, generation: "CBF1" }),
+      beetle({ id: "c", species: "ヒラタクワガタ", gender: "male", sizeMm: 70, generation: "WD" }),
+    ];
+    expect(beetleRanking(list, { species: "オオクワガタ" }).map((b) => b.id)).toEqual(["a", "b"]);
+    expect(beetleRanking(list, { gender: "male" }).map((b) => b.id)).toEqual(["a", "c"]);
+    expect(beetleRanking(list, { origin: "wild" }).map((b) => b.id)).toEqual(["c"]);
+    expect(beetleRanking(list, { origin: "bred" }).map((b) => b.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("rankedSpeciesOptions", () => {
+  it("記録のある種類だけを五十音順で返す (マスタの全種類は使わない)", () => {
+    const list = [
+      beetle({ id: "a", species: "ヒラタクワガタ", sizeMm: 70 }),
+      beetle({ id: "b", species: "オオクワガタ", sizeMm: 90 }),
+      beetle({ id: "c", species: "ノコギリクワガタ", sizeMm: undefined }), // 対象外
+    ];
+    expect(rankedSpeciesOptions(list)).toEqual(["オオクワガタ", "ヒラタクワガタ"]);
+  });
+});
+
+describe("groupBySpecies", () => {
+  it("種類ごとにまとめ、頭数が多い種類を上にする", () => {
+    const list = [
+      beetle({ id: "a", species: "ヒラタクワガタ" }),
+      beetle({ id: "b", species: "オオクワガタ" }),
+      beetle({ id: "c", species: "オオクワガタ" }),
+    ];
+    const groups = groupBySpecies(list);
+    expect(groups.map((g) => g.species)).toEqual(["オオクワガタ", "ヒラタクワガタ"]);
+    expect(groups[0].items).toHaveLength(2);
+  });
+
+  it("グループ内の並び順は渡した配列の順番をそのまま保つ", () => {
+    const list = [
+      beetle({ id: "a", species: "オオクワガタ", code: "No.2" }),
+      beetle({ id: "b", species: "オオクワガタ", code: "No.1" }),
+    ];
+    const groups = groupBySpecies(list);
+    expect(groups[0].items.map((b) => b.id)).toEqual(["a", "b"]);
   });
 });

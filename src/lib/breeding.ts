@@ -3,6 +3,7 @@ import {
   BreedingLine,
   Expense,
   ExpenseCategory,
+  Gender,
   Larva,
   LarvaStage,
   LineStatus,
@@ -471,6 +472,63 @@ export function speciesRecords(beetles: Beetle[]): SpeciesRecord[] {
 
 function bestSize(r: SpeciesRecord): number {
   return Math.max(r.bred?.sizeMm ?? 0, r.wild?.sizeMm ?? 0);
+}
+
+
+export interface RankingFilters {
+  /** 未指定なら全種。飼育している種類は人それぞれなので、選択肢は
+   *  マスタの一覧からではなく、記録がある種類だけを実データから作る */
+  species?: string;
+  gender?: Gender;
+  /** "bred" = 飼育品だけ、"wild" = 野外品だけ。未指定なら両方 */
+  origin?: "bred" | "wild";
+}
+
+/**
+ * サイズの大きい順に並べた一覧。speciesRecords は種類ごとの1位だけを見せるが、
+ * こちらは条件を絞ったうえで全頭を見せる (2位・3位も追いたいという声から)。
+ * 対象にする条件は speciesRecords と揃えている (体長があり、除外していない)。
+ */
+export function beetleRanking(beetles: Beetle[], filters: RankingFilters = {}): Beetle[] {
+  return beetles
+    .filter((b) => b.sizeMm != null && !b.excludeFromRecord)
+    .filter((b) => filters.species == null || b.species === filters.species)
+    .filter((b) => filters.gender == null || b.gender === filters.gender)
+    .filter(
+      (b) => filters.origin == null || (filters.origin === "wild") === isWildCaught(b)
+    )
+    .sort((a, b) => (b.sizeMm ?? 0) - (a.sizeMm ?? 0));
+}
+
+/** ランキングの絞り込みに出す種類の選択肢。記録がある種類だけ、五十音順 */
+export function rankedSpeciesOptions(beetles: Beetle[]): string[] {
+  const set = new Set(
+    beetles.filter((b) => b.sizeMm != null && !b.excludeFromRecord).map((b) => b.species)
+  );
+  return [...set].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+export interface SpeciesGroup {
+  species: string;
+  items: Beetle[];
+}
+
+/**
+ * 成虫一覧を種類ごとにまとめる。何種類も飼っている人向けの見せ方。
+ * グループの並びは頭数が多い順 (よく飼っている種類が上に来るように)、
+ * 同数なら五十音順。グループの中の並びは呼び出し側の並び順をそのまま使う
+ * (すでにソート済みの配列を渡す前提)。
+ */
+export function groupBySpecies(beetles: Beetle[]): SpeciesGroup[] {
+  const bySpecies = new Map<string, Beetle[]>();
+  for (const b of beetles) {
+    const list = bySpecies.get(b.species) ?? [];
+    list.push(b);
+    bySpecies.set(b.species, list);
+  }
+  return [...bySpecies.entries()]
+    .map(([species, items]) => ({ species, items }))
+    .sort((a, b) => b.items.length - a.items.length || a.species.localeCompare(b.species, "ja"));
 }
 
 /** 自分で羽化させた個体か。幼虫から引き上げたものだけ */

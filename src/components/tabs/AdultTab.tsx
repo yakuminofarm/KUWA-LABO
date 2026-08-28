@@ -9,7 +9,7 @@ import { AddBeetleModal } from "@/components/AddBeetleModal";
 import { BeetleDetailModal } from "@/components/BeetleDetailModal";
 import { EmptyState, Fab } from "@/components/KuwaUI";
 import { EMPTY_IMAGE } from "@/lib/assets";
-import { SPECIES_OPTIONS, needsFeeding } from "@/lib/breeding";
+import { SPECIES_OPTIONS, groupBySpecies, needsFeeding } from "@/lib/breeding";
 import { BeetleFormState, duplicateBeetleForm } from "@/components/BeetleFields";
 
 type FilterKey = "alive" | "unfed" | "male" | "female" | "matured" | "favorite" | "sold";
@@ -71,6 +71,7 @@ export function AdultTab() {
   const [activeFilters, setActiveFilters] = useState<Set<FilterKey>>(new Set());
   const [duplicateOf, setDuplicateOf] = useState<BeetleFormState | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("newest");
+  const [grouped, setGrouped] = useState(false);
 
   const toggleFilter = (key: FilterKey) => {
     setActiveFilters((prev) => {
@@ -137,6 +138,33 @@ export function AdultTab() {
             </button>
           ))}
         </div>
+        {/* 何種類も飼っている人向け。種類ごとにまとめて見せる */}
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[11px] font-semibold flex-shrink-0"
+            style={{ color: "var(--kuwa-ink-soft)" }}
+          >
+            グループ化
+          </span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setGrouped(false)}
+              className="kuwa-chip"
+              style={{ padding: "4px 11px", fontSize: 11 }}
+              data-on={!grouped}
+            >
+              なし
+            </button>
+            <button
+              onClick={() => setGrouped(true)}
+              className="kuwa-chip"
+              style={{ padding: "4px 11px", fontSize: 11 }}
+              data-on={grouped}
+            >
+              種類ごと
+            </button>
+          </div>
+        </div>
       </div>
 
       {beetles.length > 0 && (
@@ -173,6 +201,28 @@ export function AdultTab() {
               : undefined
           }
         />
+      ) : grouped ? (
+        <div className="space-y-6">
+          {groupBySpecies(sorted).map((g) => (
+            <section key={g.species}>
+              <div className="mb-3 px-0.5 flex items-center gap-2">
+                <span className="text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+                  {g.species}
+                </span>
+                <span className="text-xs" style={{ color: "var(--kuwa-ink-soft)" }}>
+                  {g.items.length}頭
+                </span>
+              </div>
+              <div className="space-y-3">
+                {g.items.map((b, i) => (
+                  <div key={b.id} className="animate-slide-up" style={{ animationDelay: `${i * 30}ms` }}>
+                    <BeetleCard beetle={b} onClick={() => setSelectedId(b.id)} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="space-y-3">
           {sorted.map((b, i) => (
