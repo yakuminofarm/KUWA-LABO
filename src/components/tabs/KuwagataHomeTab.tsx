@@ -18,6 +18,7 @@ import { HERO_BG_SRC, NAV_MASK, PUPA_MASK, TOOL_IMAGE } from "@/lib/assets";
 import { SectionTitle } from "@/components/KuwaUI";
 import { GuideSheet } from "@/components/GuideSheet";
 import { RecordsSheet } from "@/components/RecordsSheet";
+import { TaskCalendar } from "@/components/TaskCalendar";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
 import {
   LINE_STATUS_COLORS,
@@ -30,6 +31,7 @@ import {
   latestWeight,
   speciesGradient,
   speciesRecords,
+  tasksByDate,
   totalHeads,
 } from "@/lib/breeding";
 import { formatDateShort } from "@/lib/utils";
@@ -48,6 +50,7 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   } = useKuwagataStore();
   const [showGuide, setShowGuide] = useState(false);
   const [showRecords, setShowRecords] = useState(false);
+  const [taskView, setTaskView] = useState<"list" | "calendar">("list");
   const records = speciesRecords(beetles);
   // まだ1件も記録がない = 使い始めたばかりの人
   const isEmpty =
@@ -364,12 +367,31 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
 
       {/* やること */}
       <section>
-        <div className="mb-3 px-0.5">
+        <div className="mb-3 px-0.5 flex items-center gap-2">
           <SectionTitle icon={CalendarClock} color="var(--kuwa-amber)">
             やることリスト
           </SectionTitle>
+          {/* 一覧は「今日やること」、カレンダーは「山がいつ来るか」を見るもの */}
+          <div className="flex gap-1 ml-auto">
+            {([
+              { key: "list", label: "リスト" },
+              { key: "calendar", label: "カレンダー" },
+            ] as const).map((v) => (
+              <button
+                key={v.key}
+                onClick={() => setTaskView(v.key)}
+                className="kuwa-chip"
+                style={{ padding: "4px 11px", fontSize: 11 }}
+                data-on={taskView === v.key}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
         </div>
-        {tasks.length === 0 ? (
+        {taskView === "calendar" ? (
+          <TaskCalendar byDate={tasksByDate(lines, larvae, schedule)} />
+        ) : tasks.length === 0 ? (
           <div className="rounded-2xl p-6 text-center kuwa-shadow" style={cardStyle}>
             <p className="text-sm" style={{ color: "var(--kuwa-ink-soft)" }}>
               今日はおやすみ。次の作業時期が来たらここでお知らせします

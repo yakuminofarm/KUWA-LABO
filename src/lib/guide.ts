@@ -182,6 +182,13 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         kind: "list",
         items: [
+          { term: "リスト", text: "いま手をつける作業だけが並びます。ふだんはこちら。" },
+          { term: "カレンダー", text: "先の予定も日付に並びます。ビン交換の山がいつ来るか見えます。" },
+        ],
+      },
+      {
+        kind: "list",
+        items: [
           { term: "蛹の期間", text: "蛹化から羽化までの目安。" },
           { term: "羽化から掘り出しまで", text: "羽化を確認してから取り出すまでの日数。" },
           { term: "ビン交換の間隔", text: "次の交換までの目安。" },

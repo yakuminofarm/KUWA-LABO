@@ -209,6 +209,18 @@ export const DEFAULT_SCHEDULE: ScheduleSettings = {
 };
 
 /** 蛹化日から羽化見込み日を返す */
+/** 「30日経過」か「あと5日」。カレンダーには先の作業も並ぶ */
+function elapsedLabel(days: number): string {
+  return days >= 0 ? `${days}日経過` : `あと${-days}日`;
+}
+
+/** 日付に日数を足す。YYYY-MM-DD で返す */
+export function addDays(date: string, n: number): string {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().split("T")[0];
+}
+
 export function expectedEmergeDate(pupaDate: string, sc: ScheduleSettings): string {
   const d = new Date(pupaDate);
   d.setDate(d.getDate() + sc.pupaDaysMin);
@@ -510,40 +522,52 @@ export interface UpcomingTask {
   title: string;
   detail: string;
   overdue: boolean;
+  /** 作業の目安日 (YYYY-MM-DD)。カレンダーはこれで並べる */
+  dueDate: string;
+  /** ホームの一覧に出しはじめる日。目安日の少し前から知らせたい作業がある */
+  showFrom: string;
 }
 
 /** ダッシュボード用: 今やるべき作業を導出する */
 export function deriveUpcomingTasks(
   lines: BreedingLine[],
   larvae: Larva[],
-  sc: ScheduleSettings
+  sc: ScheduleSettings,
+  opts: { includeFuture?: boolean } = {}
 ): UpcomingTask[] {
   const tasks: UpcomingTask[] = [];
+  // ホームの一覧は「まだ先」を出さない。今日やることに集中させるため
+  const today = todayStr();
+  const keep = (t: UpcomingTask) => opts.includeFuture || t.showFrom <= today;
 
   // ペアリング開始から1週間経過 → 産卵セット投入の目安
   for (const line of lines) {
     if (line.status === "pairing" && line.pairingDate) {
       const days = daysBetween(line.pairingDate);
-      if (days >= 7) {
+      {
         tasks.push({
           id: `set-${line.id}`,
           kind: "set",
           title: `${line.name} 産卵セット投入`,
-          detail: `ペアリング開始から${days}日経過`,
+          detail: `ペアリング開始から${elapsedLabel(days)}`,
           overdue: days >= 14,
+          dueDate: addDays(line.pairingDate, 7),
+          showFrom: addDays(line.pairingDate, 7),
         });
       }
     }
     // セット投入から1ヶ月経過 → 割り出しの目安
     if ((line.status === "laying" || line.status === "waiting_split") && line.setDate) {
       const days = daysBetween(line.setDate);
-      if (days >= 30) {
+      {
         tasks.push({
           id: `split-${line.id}`,
           kind: "split",
           title: `${line.name} 割り出し`,
-          detail: `セット投入から${days}日経過`,
+          detail: `セット投入から${elapsedLabel(days)}`,
           overdue: days >= 60,
+          dueDate: addDays(line.setDate, 30),
+          showFrom: addDays(line.setDate, 30),
         });
       }
     }
@@ -555,13 +579,15 @@ export function deriveUpcomingTasks(
     // 最終ビン交換から一定日数経過した幼虫 → ビン交換の目安 (蛹期・羽化後は対象外)
     if (isFeedingStage(larva.stage)) {
       const days = daysSinceLastChange(larva);
-      if (days != null && days >= sc.bottleChangeDays - 10) {
+      if (days != null) {
         tasks.push({
           id: `bottle-${larva.id}`,
           kind: "bottle",
           title: `${larva.code} ビン交換`,
-          detail: `前回交換から${days}日経過`,
+          detail: `前回交換から${elapsedLabel(days)}`,
           overdue: days >= sc.bottleChangeDays,
+          dueDate: addDays(latestBottleChange(larva)!.date, sc.bottleChangeDays),
+          showFrom: addDays(latestBottleChange(larva)!.date, sc.bottleChangeDays - 10),
         });
       }
     }
@@ -569,7 +595,7 @@ export function deriveUpcomingTasks(
     // 蛹化から一定日数 → 羽化が近い (触らず見守る合図)
     if (larva.stage === "pupa" && larva.pupaDate) {
       const days = daysBetween(larva.pupaDate);
-      if (days >= sc.pupaDaysMin - 5) {
+      {
         tasks.push({
           id: `emerge-${larva.id}`,
           kind: "emerge",
@@ -577,8 +603,10 @@ export function deriveUpcomingTasks(
           detail:
             days > sc.pupaDaysMax
               ? `蛹化から${days}日。羽化しているか確認を`
-              : `蛹化から${days}日。触らず見守りましょう`,
+              : `蛹化から${elapsedLabel(days)}。触らず見守りましょう`,
           overdue: days > sc.pupaDaysMax,
+          dueDate: addDays(larva.pupaDate, sc.pupaDaysMin),
+          showFrom: addDays(larva.pupaDate, sc.pupaDaysMin - 5),
         });
       }
     }
@@ -586,19 +614,39 @@ export function deriveUpcomingTasks(
     // 羽化から一定日数 → 掘り出しの目安
     if (larva.stage === "adult" && larva.emergedDate && !larva.dugOutDate) {
       const days = daysBetween(larva.emergedDate);
-      if (days >= sc.digOutDays - 5) {
+      {
         tasks.push({
           id: `digout-${larva.id}`,
           kind: "digout",
           title: `${larva.code} 掘り出し`,
-          detail: `羽化から${days}日経過`,
+          detail: `羽化から${elapsedLabel(days)}`,
           overdue: days >= sc.digOutDays + 14,
+          dueDate: addDays(larva.emergedDate, sc.digOutDays),
+          showFrom: addDays(larva.emergedDate, sc.digOutDays - 5),
         });
       }
     }
   }
 
-  return tasks.sort((a, b) => Number(b.overdue) - Number(a.overdue));
+  return tasks.filter(keep).sort((a, b) => Number(b.overdue) - Number(a.overdue));
+}
+
+/**
+ * カレンダー用: まだ先の作業も含めて、期日つきで返す。
+ * ホームの一覧は「いま」だけを見せるが、こちらは山がいつ来るかを見るためのもの。
+ */
+export function tasksByDate(
+  lines: BreedingLine[],
+  larvae: Larva[],
+  sc: ScheduleSettings
+): Map<string, UpcomingTask[]> {
+  const byDate = new Map<string, UpcomingTask[]>();
+  for (const t of deriveUpcomingTasks(lines, larvae, sc, { includeFuture: true })) {
+    const list = byDate.get(t.dueDate) ?? [];
+    list.push(t);
+    byDate.set(t.dueDate, list);
+  }
+  return byDate;
 }
 
 /* ───────────── 羽化した幼虫を成虫台帳へ引き上げる ───────────── */
