@@ -16,7 +16,10 @@ import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Beetle } from "@/types";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
 import {
+  FEED_INTERVAL_OPTIONS,
   FOOD_OPTIONS,
+  feedIntervalFor,
+  feedIntervalLabel,
   foodFor,
   formatYen,
   genderColor,
@@ -199,6 +202,36 @@ export function BeetleDetailModal({ beetle: initial, onClose }: BeetleDetailModa
                 いま与えているのは{" "}
                 <strong style={{ color: "var(--kuwa-ink)" }}>
                   {foodFor(beetle, reminder.foodType)}
+                </strong>
+              </p>
+
+              {/* 間隔も個体ごとに。大型のオスと小さなメスでは減りかたが違う */}
+              <p className="font-maru text-sm font-bold mt-4" style={{ color: "var(--kuwa-ink)" }}>
+                この子の間隔
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2.5">
+                <button
+                  onClick={() => updateBeetle(beetle.id, { feedIntervalDays: undefined })}
+                  className="kuwa-chip"
+                  data-on={beetle.feedIntervalDays == null}
+                >
+                  ふだんと同じ ({feedIntervalLabel(reminder.intervalDays)})
+                </button>
+                {FEED_INTERVAL_OPTIONS.filter((d) => d !== reminder.intervalDays).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => updateBeetle(beetle.id, { feedIntervalDays: d })}
+                    className="kuwa-chip"
+                    data-on={beetle.feedIntervalDays === d}
+                  >
+                    {feedIntervalLabel(d)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs mt-2.5" style={{ color: "var(--kuwa-ink-soft)" }}>
+                エサ替えは{" "}
+                <strong style={{ color: "var(--kuwa-ink)" }}>
+                  {feedIntervalLabel(feedIntervalFor(beetle, reminder.intervalDays))}
                 </strong>
               </p>
             </div>

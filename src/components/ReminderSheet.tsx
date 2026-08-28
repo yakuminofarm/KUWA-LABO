@@ -104,6 +104,7 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
         </div>
         <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
           前回あげてからこの日数がたつと「エサまだ」になります。
+          個体ごとに変えたいときは、その子の詳細から上書きできます。
         </p>
       </div>
 

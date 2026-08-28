@@ -50,6 +50,8 @@ export interface Beetle {
   matured?: boolean;       // 後食済み (ブリード可能な成熟状態)
   lastFedDate?: string;    // 最終給餌日 (YYYY-MM-DD)
   foodType?: string;       // この個体だけ別の餌にする場合。未設定なら全体の既定を使う
+  /** この個体だけ間隔を変える場合 (日)。未設定なら全体の既定を使う */
+  feedIntervalDays?: number;
   sourceLineId?: string;   // 出身ブリードライン
   sourceLarvaId?: string;  // 幼虫台帳から引き上げた場合の元レコード
   photoUrl?: string;       // 個体写真 (リサイズ済み data URI)

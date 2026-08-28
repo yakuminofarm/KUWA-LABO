@@ -28,7 +28,12 @@ function isFeedTarget(b: Beetle): boolean {
 export function needsFeeding(b: Beetle, intervalDays = 1, today = todayStr()): boolean {
   if (!isFeedTarget(b)) return false;
   if (!b.lastFedDate) return true;
-  return daysBetween(b.lastFedDate, new Date(today)) >= Math.max(1, intervalDays);
+  return daysBetween(b.lastFedDate, new Date(today)) >= feedIntervalFor(b, intervalDays);
+}
+
+/** この個体に使う間隔。個体の指定がなければ全体の既定 */
+export function feedIntervalFor(b: Beetle, fallback: number): number {
+  return Math.max(1, b.feedIntervalDays ?? fallback);
 }
 
 /** 給餌の対象と、そのうち交換が必要なもの */
