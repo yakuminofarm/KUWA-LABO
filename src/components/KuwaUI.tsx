@@ -144,7 +144,7 @@ export function Sheet({
           </div>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 py-5 space-y-5">{children}</div>
+        <div className="kuwa-sheet-body flex-1 px-5 py-5 space-y-5">{children}</div>
 
         {footer && <div className="kuwa-sheet-foot flex-shrink-0 px-5 pt-4 pb-safe-lg">{footer}</div>}
       </div>

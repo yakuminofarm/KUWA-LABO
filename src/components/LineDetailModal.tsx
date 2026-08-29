@@ -137,7 +137,7 @@ export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 py-5 space-y-5">
+        <div className="kuwa-sheet-body flex-1 px-5 py-5 space-y-5">
           {editing ? (
             <div className="space-y-3.5">
               <LineFields form={editForm!} onChange={setEditForm} showProgress />

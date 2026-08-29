@@ -143,7 +143,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
           </div>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 py-5 space-y-5">
+        <div className="kuwa-sheet-body flex-1 px-5 py-5 space-y-5">
           <PhotoPicker
             value={beetle.photoUrl}
             onChange={(url) => updateBeetle(beetle.id, { photoUrl: url })}

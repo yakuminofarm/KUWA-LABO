@@ -127,6 +127,10 @@ textarea { font-size: 16px; }
 /* 入力欄 */
 .kuwa-input {
   width: 100%;
+  /* iOS の日付・時刻欄は固有幅が大きい。grid や flex の子は既定が
+     min-width:auto で、その固有幅まで列が広がって右にはみ出す。
+     入力欄が直接 grid の子になる場合はこれで縮むようにする */
+  min-width: 0;
   background: #fffdf6;
   border: 1px solid var(--kuwa-line);
   border-radius: 12px;
@@ -135,6 +139,9 @@ textarea { font-size: 16px; }
   color: var(--kuwa-ink);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
+/* 入力欄がラッパーで包まれているときは、列になるのはそのラッパーの方。
+   包んでいる側も縮めないと、結局 grid の列が固有幅まで広がってしまう */
+*:has(> .kuwa-input) { min-width: 0; }
 .kuwa-input::placeholder { color: #b3a189; }
 /* 数の欄は狭いので、増減の矢印を出さない (スマホでは押しにくく、使わない) */
 input[type="number"]::-webkit-outer-spin-button,
@@ -160,6 +167,14 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .kuwa-sheet-foot {
   background: rgba(234, 217, 189, 0.96);
   border-top: 1px solid var(--kuwa-line);
+}
+/* シートの本文。overflow-y だけを指定すると CSS の規定で overflow-x が
+   visible から auto に格上げされ、横にも動く箱になってしまう。iOS では
+   これが指の横スワイプを拾い、中身がずれて左右に余白が出たように見える。
+   縦だけスクロールさせたいので、横は clip で止める */
+.kuwa-sheet-body {
+  overflow-y: auto;
+  overflow-x: clip;
 }
 
 /* ボタン */

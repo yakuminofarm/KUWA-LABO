@@ -52,7 +52,7 @@ export function AddLineModal({ onClose }: AddLineModalProps) {
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 pt-5 space-y-4">
+        <div className="kuwa-sheet-body flex-1 px-5 pt-5 space-y-4">
           <LineFields form={form} onChange={setForm} />
         </div>
 

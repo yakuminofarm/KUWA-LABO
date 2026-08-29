@@ -56,7 +56,7 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 pt-5 space-y-4">
+        <div className="kuwa-sheet-body flex-1 px-5 pt-5 space-y-4">
           <PhotoPicker value={photoUrl} onChange={setPhotoUrl} label="この子の写真" />
 
           <BeetleFields form={form} onChange={setForm} />
