@@ -64,6 +64,12 @@ export interface Beetle {
   jellyPerFeed?: number;
   sourceLineId?: string;   // 出身ブリードライン
   sourceLarvaId?: string;  // 幼虫台帳から引き上げた場合の元レコード
+  /**
+   * ペアで迎えた相手の個体 id。
+   * 店頭ではペア売りが多く、金額もペアで付いている。個体は1頭ずつ別に
+   * 持ちつつ、どの子と一緒に来たのかを残して金額を割り振れるようにする。
+   */
+  pairId?: string;
   photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
   isAlive: boolean;
   isFavorite?: boolean;

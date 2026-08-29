@@ -540,6 +540,19 @@ export function formatYen(n: number): string {
   return `¥${Math.round(n).toLocaleString("ja-JP")}`;
 }
 
+/**
+ * ペアに付いた1つの金額を、2頭に割り振る。
+ *
+ * 個体は1頭ずつ別に持つので、金額もどちらかに寄せず分けて持たせる。
+ * 足すと必ず元の金額に戻るようにしてあり、割り切れない1円はオス側に付く。
+ * 半端を切り上げと切り捨てで別々に丸めると、合計が元とずれて総支出が
+ * 1円多くなったり少なくなったりするため、片方は引き算で出す。
+ */
+export function splitPairAmount(total: number): [number, number] {
+  const first = Math.ceil(total / 2);
+  return [first, total - first];
+}
+
 /** 幼虫1頭あたりのコスト = 入手金額 + ビン・マット代の累計 */
 export function larvaCost(larva: Larva): number {
   const bottles = larva.bottleChanges.reduce((sum, c) => sum + (c.costYen ?? 0), 0);

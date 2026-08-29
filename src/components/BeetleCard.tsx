@@ -102,6 +102,9 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
             {oddFood && (
               <span className="kuwa-badge bg-[#e3ceaa] text-[#6b4423]">{food}</span>
             )}
+            {beetle.pairId && (
+              <span className="kuwa-badge font-maru bg-[#e3ceaa] text-[#6b4423]">ペア</span>
+            )}
           </div>
         </div>
         <div className="flex flex-col items-center gap-2 flex-shrink-0">

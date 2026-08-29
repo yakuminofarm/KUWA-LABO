@@ -32,6 +32,7 @@ import {
   genderColor,
   SPECIES_OPTIONS,
   larvaCost,
+  splitPairAmount,
   todayStr,
 } from "@/lib/breeding";
 import { formatDate, getGenderLabel } from "@/lib/utils";
@@ -83,6 +84,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
     showToast("書きかえました");
   };
   const [showSellForm, setShowSellForm] = useState(false);
+  const [sellAsPair, setSellAsPair] = useState(false);
   const [sellForm, setSellForm] = useState({
     date: new Date().toISOString().split("T")[0],
     price: "",
@@ -96,6 +98,10 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
     ? larvae.find((l) => l.id === beetle.sourceLarvaId)
     : undefined;
   const rearingCost = sourceLarva ? larvaCost(sourceLarva) : 0;
+  // ペアで迎えた相手。片方だけ消したあとは見つからないこともある
+  const mate = beetle.pairId ? beetles.find((b) => b.id === beetle.pairId) : undefined;
+  // 相手がもう販売済みなら、まとめて記録すると二重に売り上げが立つ
+  const canSellAsPair = mate != null && mate.soldPriceYen == null;
 
   const relatedLines = lines.filter(
     (l) => l.maleId === beetle.id || l.femaleId === beetle.id
@@ -357,6 +363,10 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
             <InfoRow label="羽化日" value={beetle.emergedDate ? formatDate(beetle.emergedDate, beetle.emergedDatePrecision) : undefined} />
             <InfoRow label="入手日" value={formatDate(beetle.acquiredDate, beetle.acquiredDatePrecision)} />
             <InfoRow label="入手金額" value={beetle.priceYen != null ? formatYen(beetle.priceYen) : undefined} />
+            <InfoRow
+              label="ペアの相手"
+              value={mate ? `${mate.code}${mate.name ? `「${mate.name}」` : ""}` : undefined}
+            />
             {sourceLarva && (
               <InfoRow
                 label="育成費用"
@@ -453,6 +463,26 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
                 placeholder="販売先 (店舗・知人など、任意)"
                 className={inputCls}
               />
+              {/* 迎えたときと同じで、送り出すときもペアのことが多い */}
+              {canSellAsPair && (
+                <label className="flex items-center gap-2 text-sm font-semibold text-[#40352a]">
+                  <input
+                    type="checkbox"
+                    checked={sellAsPair}
+                    onChange={(e) => setSellAsPair(e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  {mate!.code} とペアで送り出す
+                </label>
+              )}
+              {sellAsPair && sellForm.price && (
+                <p className="text-[11px]" style={{ color: "var(--kuwa-ink-soft)" }}>
+                  {(() => {
+                    const [mine, theirs] = splitPairAmount(parseInt(sellForm.price, 10));
+                    return `${beetle.code} ${formatYen(mine)} ／ ${mate!.code} ${formatYen(theirs)} に分けて記録します`;
+                  })()}
+                </p>
+              )}
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowSellForm(false)}
@@ -463,13 +493,20 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
                 <button
                   onClick={() => {
                     if (!sellForm.price) return;
-                    updateBeetle(beetle.id, {
-                      soldDate: sellForm.date,
-                      soldPriceYen: parseInt(sellForm.price),
-                      soldTo: sellForm.to || undefined,
-                    });
+                    const total = parseInt(sellForm.price, 10);
+                    const sale = { soldDate: sellForm.date, soldTo: sellForm.to || undefined };
+                    if (sellAsPair && mate) {
+                      const [mine, theirs] = splitPairAmount(total);
+                      updateBeetle(beetle.id, { ...sale, soldPriceYen: mine });
+                      updateBeetle(mate.id, { ...sale, soldPriceYen: theirs });
+                    } else {
+                      updateBeetle(beetle.id, { ...sale, soldPriceYen: total });
+                    }
                     setShowSellForm(false);
-                    showToast("販売を記録しました！");
+                    setSellAsPair(false);
+                    showToast(
+                      sellAsPair && mate ? "2頭ぶんの販売を記録しました！" : "販売を記録しました！"
+                    );
                   }}
                   disabled={!sellForm.price}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-1 active:scale-[0.98] transition-all ${

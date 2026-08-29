@@ -14,6 +14,7 @@ import {
   packBreakdown,
   perHeadShare,
   rankedSpeciesOptions,
+  splitPairAmount,
   totalHeads,
 } from "@/lib/breeding";
 
@@ -201,6 +202,26 @@ describe("formatYen", () => {
   it("3桁区切りで¥を頭に付ける", () => {
     expect(formatYen(1234567)).toBe("¥1,234,567");
     expect(formatYen(0)).toBe("¥0");
+  });
+});
+
+describe("splitPairAmount (ペアの金額を2頭に割り振る)", () => {
+  it("割り切れる金額は半分ずつ", () => {
+    expect(splitPairAmount(20000)).toEqual([10000, 10000]);
+  });
+
+  it("割り切れないときは足すと元に戻る (1円がどこかへ消えない)", () => {
+    const [a, b] = splitPairAmount(15001);
+    expect(a + b).toBe(15001);
+    expect(a).toBe(7501);
+    expect(b).toBe(7500);
+  });
+
+  it("どんな金額でも合計は必ず元の金額に一致する", () => {
+    for (const total of [0, 1, 3, 999, 12345, 100000]) {
+      const [a, b] = splitPairAmount(total);
+      expect(a + b).toBe(total);
+    }
   });
 });
 

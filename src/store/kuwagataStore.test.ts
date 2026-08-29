@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useKuwagataStore } from "@/store/kuwagataStore";
-import { calcCostSummary } from "@/lib/breeding";
-import { Larva } from "@/types";
+import { calcCostSummary, splitPairAmount } from "@/lib/breeding";
+import { Beetle, Larva } from "@/types";
 
 function larva(overrides: Partial<Larva> = {}): Larva {
   return {
@@ -152,5 +152,53 @@ describe("recordBackup", () => {
     expect(useKuwagataStore.getState().lastBackupAt).toBeUndefined();
     useKuwagataStore.getState().recordBackup();
     expect(useKuwagataStore.getState().lastBackupAt).toBeDefined();
+  });
+});
+
+describe("addBeetlePair (ペアで迎える)", () => {
+  const pair = (malePrice: number, femalePrice: number) => {
+    const male: Beetle = {
+      id: "m1", code: "26OK-A1", species: "オオクワガタ", gender: "male",
+      acquiredDate: "2026-08-01", priceYen: malePrice, pairId: "f1", isAlive: true, notes: "",
+    };
+    const female: Beetle = { ...male, id: "f1", code: "26OK-A2", gender: "female", priceYen: femalePrice, pairId: "m1" };
+    return [male, female] as const;
+  };
+
+  it("2頭を互いに紐づけて迎える", () => {
+    const [m, f] = pair(10000, 10000);
+    useKuwagataStore.getState().addBeetlePair(m, f);
+    const list = useKuwagataStore.getState().beetles;
+    expect(list).toHaveLength(2);
+    expect(list.find((b) => b.id === "m1")!.pairId).toBe("f1");
+    expect(list.find((b) => b.id === "f1")!.pairId).toBe("m1");
+  });
+
+  it("ペアの合計を分けて持たせても、総支出は入力した金額と一致する", () => {
+    const [m, f] = pair(...splitPairAmount(15001));
+    useKuwagataStore.getState().addBeetlePair(m, f);
+    const s = useKuwagataStore.getState();
+    // 片方に全額を写したり、両方に合計を入れたりすると、ここがずれる
+    expect(calcCostSummary(s.beetles, s.larvae, s.expenses).totalSpent).toBe(15001);
+  });
+
+  it("片方を消すと、残った側のペアの印も外れる", () => {
+    const [m, f] = pair(10000, 10000);
+    useKuwagataStore.getState().addBeetlePair(m, f);
+    useKuwagataStore.getState().deleteBeetle("m1");
+    const rest = useKuwagataStore.getState().beetles;
+    expect(rest).toHaveLength(1);
+    // 居ない個体を指したままにすると、詳細画面が空の相手を出してしまう
+    expect(rest[0].pairId).toBeUndefined();
+  });
+
+  it("ペアでまとめて販売しても、売上は入力した金額と一致する", () => {
+    const [m, f] = pair(...splitPairAmount(20000));
+    useKuwagataStore.getState().addBeetlePair(m, f);
+    const [mine, theirs] = splitPairAmount(16001);
+    useKuwagataStore.getState().updateBeetle("m1", { soldDate: "2026-08-20", soldPriceYen: mine });
+    useKuwagataStore.getState().updateBeetle("f1", { soldDate: "2026-08-20", soldPriceYen: theirs });
+    const s = useKuwagataStore.getState();
+    expect(calcCostSummary(s.beetles, s.larvae, s.expenses).salesTotal).toBe(16001);
   });
 });

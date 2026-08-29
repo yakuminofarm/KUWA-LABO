@@ -1,7 +1,9 @@
 "use client";
 
+import { ReactNode } from "react";
 import { Beetle, DatePrecision, Gender } from "@/types";
 import { DateField } from "@/components/DateField";
+import { genderColor } from "@/lib/breeding";
 import { MoneyInput } from "@/components/KuwaUI";
 import { SpeciesSelect } from "@/components/SpeciesSelect";
 
@@ -137,27 +139,46 @@ const GENDERS: { value: Gender; label: string }[] = [
   { value: "unknown", label: "不明" },
 ];
 
-export function BeetleFields({
+/**
+ * ペア登録で、♂♀それぞれにだけ関わる欄。
+ * 種類・産地・累代・入手日・金額はペアで同じなので共通側 (BeetleFields) に置き、
+ * ここには1頭ずつ違うものだけを並べる。
+ */
+export interface PairMemberState {
+  code: string;
+  name: string;
+  sizeMm: string;
+  emergedDate: string;
+  emergedDatePrecision?: DatePrecision;
+}
+
+export function emptyPairMember(): PairMemberState {
+  return { code: "", name: "", sizeMm: "", emergedDate: "" };
+}
+
+export function PairMemberFields({
+  gender,
   form,
   onChange,
-  /** 後食は詳細画面に専用の導線があるので、編集では出さない */
-  showMatured = true,
 }: {
-  form: BeetleFormState;
-  onChange: (f: BeetleFormState) => void;
-  showMatured?: boolean;
+  gender: "male" | "female";
+  form: PairMemberState;
+  onChange: (f: PairMemberState) => void;
 }) {
-  const set = (patch: Partial<BeetleFormState>) => onChange({ ...form, ...patch });
+  const set = (patch: Partial<PairMemberState>) => onChange({ ...form, ...patch });
+  const male = gender === "male";
 
   return (
-    <>
+    <div className="rounded-2xl p-3.5 space-y-3" style={{ background: "var(--kuwa-bark-bg)" }}>
+      <p className={`text-sm font-bold ${genderColor(gender)}`}>{male ? "♂ オス" : "♀ メス"}</p>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-[#40352a] mb-1">管理番号 *</label>
           <input
             value={form.code}
             onChange={(e) => set({ code: e.target.value })}
-            placeholder="例: 26OK-A1"
+            placeholder={male ? "例: 26OK-A1" : "例: 26OK-A2"}
             className={inputCls}
           />
         </div>
@@ -171,6 +192,80 @@ export function BeetleFields({
           />
         </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-[#40352a] mb-1">体長 (mm)</label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            value={form.sizeMm}
+            onChange={(e) => set({ sizeMm: e.target.value })}
+            placeholder={male ? "例: 85.5" : "例: 52.0"}
+            className={inputCls}
+          />
+        </div>
+        <DateField
+          label="羽化日"
+          value={form.emergedDate}
+          precision={form.emergedDatePrecision}
+          onChange={(v, p) => set({ emergedDate: v, emergedDatePrecision: p })}
+          clearable
+        />
+      </div>
+    </div>
+  );
+}
+
+export function BeetleFields({
+  form,
+  onChange,
+  /** 後食は詳細画面に専用の導線があるので、編集では出さない */
+  showMatured = true,
+  /**
+   * その子だけの欄 (管理番号・愛称・性別・体長・羽化日) を出すか。
+   * ペア登録では2頭ぶんを別に並べるので、共通の欄だけを借りる
+   */
+  showIdentity = true,
+  /** ペア登録では「ペアの合計」だと分かるように言い換える */
+  priceLabel,
+  /** 金額欄の下に添える説明 (ペアの割り振り結果など) */
+  priceHint,
+}: {
+  form: BeetleFormState;
+  onChange: (f: BeetleFormState) => void;
+  showMatured?: boolean;
+  showIdentity?: boolean;
+  priceLabel?: string;
+  priceHint?: ReactNode;
+}) {
+  const set = (patch: Partial<BeetleFormState>) => onChange({ ...form, ...patch });
+
+  return (
+    <>
+      {showIdentity && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-[#40352a] mb-1">管理番号 *</label>
+            <input
+              value={form.code}
+              onChange={(e) => set({ code: e.target.value })}
+              placeholder="例: 26OK-A1"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#40352a] mb-1">愛称</label>
+            <input
+              value={form.name}
+              onChange={(e) => set({ name: e.target.value })}
+              placeholder="任意"
+              className={inputCls}
+            />
+          </div>
+        </div>
+      )}
 
       <SpeciesSelect
         value={form.species}
@@ -201,48 +296,52 @@ export function BeetleFields({
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-[#40352a] mb-1">性別</label>
-        <div className="flex gap-2">
-          {GENDERS.map((g) => (
-            <button
-              key={g.value}
-              type="button"
-              onClick={() => set({ gender: g.value })}
-              className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors min-h-[44px] ${
-                form.gender === g.value
-                  ? "bg-[#6b4423] text-[#fdf6e7] border-[#6b4423]"
-                  : "border-[rgba(107,68,35,0.16)] text-[#77644b]"
-              }`}
-            >
-              {g.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {showIdentity && (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-[#40352a] mb-1">性別</label>
+            <div className="flex gap-2">
+              {GENDERS.map((g) => (
+                <button
+                  key={g.value}
+                  type="button"
+                  onClick={() => set({ gender: g.value })}
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors min-h-[44px] ${
+                    form.gender === g.value
+                      ? "bg-[#6b4423] text-[#fdf6e7] border-[#6b4423]"
+                      : "border-[rgba(107,68,35,0.16)] text-[#77644b]"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-[#40352a] mb-1">体長 (mm)</label>
-          <input
-            type="number"
-            step="0.1"
-            min="0"
-            value={form.sizeMm}
-            onChange={(e) => set({ sizeMm: e.target.value })}
-            placeholder="例: 85.5"
-            className={inputCls}
-          />
-        </div>
-        <DateField
-          label="羽化日"
-          value={form.emergedDate}
-          precision={form.emergedDatePrecision}
-          onChange={(v, p) => set({ emergedDate: v, emergedDatePrecision: p })}
-          clearable
-          hint="買った個体などで分からなければ空欄でOK"
-        />
-      </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-[#40352a] mb-1">体長 (mm)</label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={form.sizeMm}
+                onChange={(e) => set({ sizeMm: e.target.value })}
+                placeholder="例: 85.5"
+                className={inputCls}
+              />
+            </div>
+            <DateField
+              label="羽化日"
+              value={form.emergedDate}
+              precision={form.emergedDatePrecision}
+              onChange={(v, p) => set({ emergedDate: v, emergedDatePrecision: p })}
+              clearable
+              hint="買った個体などで分からなければ空欄でOK"
+            />
+          </div>
+        </>
+      )}
 
       <div className={showMatured ? "grid grid-cols-2 gap-3 items-end" : ""}>
         <DateField
@@ -268,12 +367,15 @@ export function BeetleFields({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-[#40352a] mb-1">入手金額 (円)</label>
+        <label className="block text-sm font-medium text-[#40352a] mb-1">
+          {priceLabel ?? "入手金額 (円)"}
+        </label>
         <MoneyInput
           value={form.priceYen}
           onChange={(v) => set({ priceYen: v })}
           placeholder="15000 (収支管理に反映されます)"
         />
+        {priceHint}
       </div>
 
       <div>
