@@ -124,7 +124,7 @@ function BottleChangeForm({
         <MoneyInput
           value={form.costYen}
           onChange={(v) => setForm({ ...form, costYen: v })}
-          placeholder="ビン代"
+          placeholder="ビン代 (税込)"
         />
         <input
           value={form.memo}
@@ -375,7 +375,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
             )}
             {larva.priceYen != null && (
               <div className="flex justify-between">
-                <span className="text-[#8b7a64]">入手金額</span>
+                <span className="text-[#8b7a64]">入手金額 (税込)</span>
                 <span className="font-semibold text-[#31241a]" style={{ fontVariantNumeric: "tabular-nums" }}>
                   {formatYen(larva.priceYen)}
                 </span>

@@ -168,7 +168,7 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
             form={form}
             onChange={setForm}
             showIdentity={!pair}
-            priceLabel={pair ? "入手金額 (ペアの合計・円)" : undefined}
+            priceLabel={pair ? "入手金額 (ペアの合計・税込)" : undefined}
             priceHint={
               pair && total != null ? (
                 <p className="text-[11px] mt-1" style={{ color: "var(--kuwa-ink-soft)" }}>

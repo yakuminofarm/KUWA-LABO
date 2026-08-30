@@ -362,14 +362,14 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
             <InfoRow label="体長" value={beetle.sizeMm != null ? `${beetle.sizeMm} mm` : undefined} />
             <InfoRow label="羽化日" value={beetle.emergedDate ? formatDate(beetle.emergedDate, beetle.emergedDatePrecision) : undefined} />
             <InfoRow label="入手日" value={formatDate(beetle.acquiredDate, beetle.acquiredDatePrecision)} />
-            <InfoRow label="入手金額" value={beetle.priceYen != null ? formatYen(beetle.priceYen) : undefined} />
+            <InfoRow label="入手金額 (税込)" value={beetle.priceYen != null ? formatYen(beetle.priceYen) : undefined} />
             <InfoRow
               label="ペアの相手"
               value={mate ? `${mate.code}${mate.name ? `「${mate.name}」` : ""}` : undefined}
             />
             {sourceLarva && (
               <InfoRow
-                label="育成費用"
+                label="育成費用 (税込)"
                 value={rearingCost > 0 ? formatYen(rearingCost) : "記録なし"}
               />
             )}
@@ -454,7 +454,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
                 <MoneyInput
                   value={sellForm.price}
                   onChange={(v) => setSellForm({ ...sellForm, price: v })}
-                  placeholder="販売額"
+                  placeholder="販売額 (税込)"
                 />
               </div>
               <input

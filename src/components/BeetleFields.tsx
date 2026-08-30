@@ -368,7 +368,7 @@ export function BeetleFields({
 
       <div>
         <label className="block text-sm font-medium text-[#40352a] mb-1">
-          {priceLabel ?? "入手金額 (円)"}
+          {priceLabel ?? "入手金額 (税込)"}
         </label>
         <MoneyInput
           value={form.priceYen}

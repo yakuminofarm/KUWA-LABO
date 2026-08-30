@@ -283,7 +283,7 @@ export function LarvaFields({
       )}
 
       <div>
-        <label className="block text-sm font-medium text-[#40352a] mb-1">入手金額 (円)</label>
+        <label className="block text-sm font-medium text-[#40352a] mb-1">入手金額 (税込)</label>
         <MoneyInput
           value={form.priceYen}
           onChange={(v) => set({ priceYen: v })}

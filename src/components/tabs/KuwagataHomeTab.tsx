@@ -725,7 +725,7 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
                 収支をみる
               </p>
               <p className="text-xs mt-1" style={{ color: "rgba(247,232,203,0.7)" }}>
-                つかったお金 {formatYen(summary.totalSpent)}
+                つかったお金 {formatYen(summary.totalSpent)} (税込)
               </p>
             </div>
             <ChevronRight

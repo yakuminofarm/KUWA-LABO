@@ -155,7 +155,7 @@ function ExpenseForm({
           買ったもの
         </p>
         <div className="grid gap-2" style={{ gridTemplateColumns: "1fr 72px" }}>
-          <Labeled label="単価">
+          <Labeled label="単価 (税込)">
             <MoneyInput
               value={form.packPrice}
               onChange={(v) => setForm({ ...form, packPrice: v })}
@@ -212,7 +212,7 @@ function ExpenseForm({
           </p>
         </div>
       ) : (
-        <Labeled label="金額">
+        <Labeled label="金額 (税込)">
           <MoneyInput
             value={form.amountYen}
             onChange={(v) => setForm({ ...form, amountYen: v })}
@@ -328,7 +328,7 @@ export function CostTab() {
           className="font-maru text-[11px] font-bold tracking-wider"
           style={{ color: "var(--kuwa-gold)" }}
         >
-          いまの収支
+          いまの収支 (税込)
         </p>
         <p
           className="text-[32px] font-bold mt-1 leading-none"
@@ -367,6 +367,11 @@ export function CostTab() {
             </p>
           </div>
         </div>
+        {/* 税を足し引きはしない。払った額・受け取った額をそのまま持つので、
+            どちらの意味で入っているのかを一度はっきり書いておく */}
+        <p className="text-[11px] mt-4" style={{ color: "rgba(247,232,203,0.55)" }}>
+          金額はすべて税込です。支払った額をそのまま入れてください
+        </p>
       </div>
 
       {/* ひと月のめやす */}
