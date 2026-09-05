@@ -8,10 +8,17 @@
     "start": "next start",
     "lint": "eslint",
     "artifact": "next build && node scripts/build-artifact.mjs",
+    "build:native": "NEXT_PUBLIC_KUWA_TARGET=native next build",
+    "sync:native": "npm run build:native && cap sync",
+    "ios": "npm run sync:native && cap open ios",
+    "android": "npm run sync:native && cap open android",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/ios": "^8.5.1",
     "fast-xml-parser": "^5.11.1",
     "lucide-react": "^1.18.0",
     "next": "16.2.9",
@@ -21,6 +28,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -1,3 +1,4 @@
+import { NEWS_ENDPOINT } from "@/lib/env";
 import { NewsItem } from "@/lib/newsFeed";
 
 /**
@@ -9,7 +10,7 @@ export async function fetchTodayNews(): Promise<NewsItem | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    const res = await fetch("/api/news", { signal: controller.signal });
+    const res = await fetch(NEWS_ENDPOINT, { signal: controller.signal });
     if (!res.ok) return null;
     const data: { items?: NewsItem[] } = await res.json();
     return data.items?.[0] ?? null;

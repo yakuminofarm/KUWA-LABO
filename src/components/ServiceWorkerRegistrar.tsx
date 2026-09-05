@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { IS_NATIVE } from "@/lib/env";
 
 /**
  * ホーム画面に置いたときに、電波がなくても開けるようにする。
@@ -12,6 +13,9 @@ import { useEffect } from "react";
 export function ServiceWorkerRegistrar() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
+    // アプリ版は画面一式がもともと端末の中にあるので、オフライン用の
+    // 作り置きは要らない。更新はアプリの更新で入れ替わる
+    if (IS_NATIVE) return;
     if (!("serviceWorker" in navigator)) return;
 
     let reloading = false;

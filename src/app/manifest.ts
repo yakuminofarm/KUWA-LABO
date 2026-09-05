@@ -2,6 +2,12 @@ import type { MetadataRoute } from "next";
 import { IS_PRODUCTION } from "@/lib/env";
 
 /**
+ * 中身は配信ごとに決まっていて、リクエストのたびに変わることはない。
+ * これを書いておかないと、アプリ用の静的な書き出しでここだけ落ちる。
+ */
+export const dynamic = "force-static";
+
+/**
  * ホーム画面に置いたときの見え方。
  *
  * テスト用の配信を同じ名前で入れると、ホーム画面にそっくりなアイコンが

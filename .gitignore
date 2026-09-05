@@ -17,6 +17,13 @@
 /.next/
 /out/
 
+# アプリ版 (iOS/Android)
+/out-native/
+# ios/ と android/ は Mac の上で `npx cap add` して作る。
+# 中身は Xcode / Android Studio が組み立てるもので、作った環境に依存する
+/ios/
+/android/
+
 # production
 /build
 

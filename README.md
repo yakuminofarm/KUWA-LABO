@@ -87,6 +87,15 @@ npm test         # ロジックのテスト (Vitest)
 コミットを指している間は Preview が作られないので、確認したいときは
 `dev` 側に差分が要る。
 
+### アプリ版 (iOS / Android)
+
+同じコードを Capacitor で包んで iOS/Android アプリとしても出せるように
+してある。`npm run build:native` で、端末に置ける静的な一式が出る。
+切り替えは `NEXT_PUBLIC_KUWA_TARGET=native` の1つだけ。
+
+土台の作り方・Mac 側の下ごしらえ・まだ手を付けていないことは
+[docs/native-app.md](docs/native-app.md) にまとめてある。
+
 ## 構成
 
 | 場所 | 中身 |
