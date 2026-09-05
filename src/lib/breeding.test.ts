@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Beetle, Larva } from "@/types";
+import { Beetle, Larva, ReminderSettings } from "@/types";
 import {
   beetleRanking,
   calcCostSummary,
@@ -11,7 +11,9 @@ import {
   larvaCost,
   larvaCostPerHead,
   needsFeeding,
+  NOTICE_DAYS,
   packBreakdown,
+  planFeedingNotices,
   perHeadShare,
   rankedSpeciesOptions,
   splitPairAmount,
@@ -287,5 +289,75 @@ describe("groupBySpecies", () => {
     ];
     const groups = groupBySpecies(list);
     expect(groups[0].items.map((b) => b.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("planFeedingNotices (アプリ版で端末に積むお知らせ)", () => {
+  const reminder: ReminderSettings = {
+    enabled: true,
+    time: "19:00",
+    intervalDays: 3,
+    foodType: "プロゼリー",
+    showCost: true,
+  };
+  // 後食済みで、まだ一度もあげていない = 初日からたまっている
+  const hungry = beetle({ matured: true });
+  // 9/5 の朝。19:00 はまだ来ていない
+  const morning = new Date("2026-09-05T08:00:00");
+
+  it("オフのときは何も積まない", () => {
+    expect(planFeedingNotices([hungry], { ...reminder, enabled: false }, morning)).toEqual([]);
+  });
+
+  it("あげる相手がいなければ積まない", () => {
+    expect(planFeedingNotices([], reminder, morning)).toEqual([]);
+  });
+
+  it("時刻の書き方が壊れていても落ちない", () => {
+    expect(planFeedingNotices([hungry], { ...reminder, time: "" }, morning)).toEqual([]);
+  });
+
+  it("今日の時刻がまだなら、今日のぶんから積む", () => {
+    const [first] = planFeedingNotices([hungry], reminder, morning);
+    expect(first.at.getFullYear()).toBe(2026);
+    expect(first.at.getMonth()).toBe(8); // 9月
+    expect(first.at.getDate()).toBe(5);
+    expect(first.at.getHours()).toBe(19);
+    expect(first.body).toBe("まだ 1頭 にエサをあげていません");
+  });
+
+  it("今日の時刻を過ぎていたら、今日は飛ばして明日から積む", () => {
+    const evening = new Date("2026-09-05T21:00:00");
+    const [first] = planFeedingNotices([hungry], reminder, evening);
+    expect(first.at.getDate()).toBe(6);
+  });
+
+  it("今日あげた子は、間隔ぶん先の日から数え直す", () => {
+    // 3日おき。9/5 にあげたので、次にたまるのは 9/8
+    const fed = beetle({ matured: true, lastFedDate: "2026-09-05" });
+    const days = planFeedingNotices([fed], reminder, morning).map((n) => n.at.getDate());
+    expect(days).not.toContain(5);
+    expect(days).not.toContain(7);
+    expect(days).toContain(8);
+  });
+
+  it("日が進むほど、たまる頭数が増えていく", () => {
+    const fedToday = beetle({ id: "b2", matured: true, lastFedDate: "2026-09-05" });
+    const notices = planFeedingNotices([hungry, fedToday], reminder, morning);
+    // 今日は未給餌の1頭だけ、9/8 以降は2頭
+    expect(notices.find((n) => n.at.getDate() === 5)!.body).toContain("1頭");
+    expect(notices.find((n) => n.at.getDate() === 8)!.body).toContain("2頭");
+  });
+
+  it("同じ日を二重に積まないよう、番号は日ごとに1つ", () => {
+    const ids = planFeedingNotices([hungry], reminder, morning).map((n) => n.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    // 積み直しても同じ日は同じ番号 (端末側で置き換わる)
+    const again = planFeedingNotices([hungry], reminder, morning).map((n) => n.id);
+    expect(again).toEqual(ids);
+  });
+
+  it("積みすぎない (端末の上限があるため)", () => {
+    expect(planFeedingNotices([hungry], reminder, morning).length).toBeLessThanOrEqual(NOTICE_DAYS);
   });
 });

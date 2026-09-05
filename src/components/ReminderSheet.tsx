@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { Bell, BellOff, Info, Smartphone } from "lucide-react";
 import {
   DEFAULT_SCHEDULE,
@@ -8,44 +8,43 @@ import {
   FOOD_OPTIONS,
   feedIntervalLabel,
 } from "@/lib/breeding";
+import { IS_NATIVE } from "@/lib/env";
+import {
+  NotifyPermission,
+  readPermission,
+  requestPermission as askPermission,
+  showSample,
+} from "@/lib/notify";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Sheet } from "@/components/KuwaUI";
 import { useToast } from "@/components/ui/Toast";
 
-type Perm = "default" | "granted" | "denied" | "unsupported";
-
-/** 許可状態は購読できないので、こちらから変化を知らせるイベント */
-const PERM_EVENT = "kuwa-notification-permission";
-
-function subscribePermission(onChange: () => void) {
-  window.addEventListener(PERM_EVENT, onChange);
-  return () => window.removeEventListener(PERM_EVENT, onChange);
-}
-
-function readPermission(): Perm {
-  if (typeof Notification === "undefined") return "unsupported";
-  return Notification.permission as Perm;
-}
-
 export function ReminderSheet({ onClose }: { onClose: () => void }) {
   const { reminder, setReminder, schedule, setSchedule } = useKuwagataStore();
   const { showToast } = useToast();
-  // サーバー側では判定できないので unsupported を初期値にする
-  const perm = useSyncExternalStore<Perm>(
-    subscribePermission,
-    readPermission,
-    () => "unsupported"
-  );
+  // アプリ版では端末に聞きにいくので、答えが返るまで分からない。
+  // 出るまでは「まだ聞いていない」ではなく「使えない」側に倒しておく。
+  // 誘っておいて実は使えなかった、という順番にはしたくない
+  const [perm, setPerm] = useState<NotifyPermission>("unsupported");
+
+  useEffect(() => {
+    let alive = true;
+    readPermission().then((p) => {
+      if (alive) setPerm(p);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const requestPermission = async () => {
-    if (!("Notification" in window)) return;
-    const res = await Notification.requestPermission();
-    window.dispatchEvent(new Event(PERM_EVENT));
+    const res = await askPermission();
+    setPerm(res);
     if (res === "granted") {
       showToast("通知をオンにしました");
-      new Notification("くわらぼ", { body: "この形でお知らせします" });
+      void showSample();
     } else if (res === "denied") {
-      showToast("通知はブラウザの設定から許可できます");
+      showToast(IS_NATIVE ? "通知は端末の設定から許可できます" : "通知はブラウザの設定から許可できます");
     }
   };
 
@@ -161,11 +160,17 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
           </p>
           <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
             {perm === "granted"
-              ? "許可ずみです。アプリを開いている間、時刻になるとバナーでお知らせします。"
+              ? IS_NATIVE
+                ? "許可ずみです。アプリを閉じていても、時刻になるとお知らせします。"
+                : "許可ずみです。アプリを開いている間、時刻になるとバナーでお知らせします。"
               : perm === "denied"
-              ? "ブロックされています。ブラウザのサイト設定から許可すると使えます。"
+              ? IS_NATIVE
+                ? "ブロックされています。端末の設定から許可すると使えます。"
+                : "ブロックされています。ブラウザのサイト設定から許可すると使えます。"
               : perm === "unsupported"
-              ? "このブラウザは通知に対応していません。アプリ内のメッセージでお知らせします。"
+              ? "この環境では通知が使えません。アプリ内のメッセージでお知らせします。"
+              : IS_NATIVE
+              ? "許可すると、アプリを閉じていてもお知らせできます。"
               : "許可すると、アプリを開いている間にバナーで通知できます。"}
           </p>
           {perm === "default" && (

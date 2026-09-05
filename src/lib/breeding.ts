@@ -7,6 +7,7 @@ import {
   Larva,
   LarvaStage,
   LineStatus,
+  ReminderSettings,
   ScheduleSettings,
 } from "@/types";
 
@@ -55,6 +56,64 @@ export function feedingSummary(beetles: Beetle[], intervalDays = 1, today = toda
   const targets = beetles.filter(isFeedTarget);
   const pending = targets.filter((b) => needsFeeding(b, intervalDays, today));
   return { targets, pending, done: targets.length - pending.length };
+}
+
+/** アプリ版で端末に積んでおく、1回ぶんのお知らせ */
+export interface FeedingNotice {
+  /** 同じ日を二重に積まないよう、日付から決まる番号にする */
+  id: number;
+  /** 鳴らす日時 */
+  at: Date;
+  title: string;
+  body: string;
+}
+
+/** 何日先ぶんまで積んでおくか。iOS は積める数に上限があるので控えめにとる */
+export const NOTICE_DAYS = 14;
+
+/**
+ * この先いつ「エサやりの時間です」を鳴らすべきかを組み立てる。
+ *
+ * アプリ版は、鳴らすときにアプリが動いているとは限らない。閉じていても
+ * 鳴らすには、先に端末へ積んでおくしかない。そこで、これから先の各日に
+ * ついて「その日に何頭たまっているか」を先に出しておく。
+ *
+ * このとき「今日からあとは一度もエサをあげない」と仮定して数える。
+ * 実際にあげれば、その記録をつけた時点で積み直すので数は減る。
+ * 逆にしてしまうと (あげる前提で数えると)、あげ忘れた日に鳴らなくなる。
+ * 鳴りすぎるより、鳴らない方が困る。
+ *
+ * @param from ここから先を見る。過ぎた時刻には積まない
+ */
+export function planFeedingNotices(
+  beetles: Beetle[],
+  reminder: ReminderSettings,
+  from: Date = new Date()
+): FeedingNotice[] {
+  if (!reminder.enabled) return [];
+
+  const [h, m] = reminder.time.split(":").map((n) => parseInt(n, 10));
+  if (Number.isNaN(h) || Number.isNaN(m)) return [];
+
+  const notices: FeedingNotice[] = [];
+  for (let i = 0; i < NOTICE_DAYS; i++) {
+    const day = addDays(todayStr(from), i);
+    const at = new Date(`${day}T00:00:00`);
+    at.setHours(h, m, 0, 0);
+    // 今日ぶんは、もう時刻を過ぎていることがある
+    if (at.getTime() <= from.getTime()) continue;
+
+    const { pending } = feedingSummary(beetles, reminder.intervalDays, day);
+    if (pending.length === 0) continue;
+
+    notices.push({
+      id: Math.floor(Date.parse(`${day}T00:00:00Z`) / 86_400_000),
+      at,
+      title: "くわらぼ｜エサやりの時間です",
+      body: `まだ ${pending.length}頭 にエサをあげていません`,
+    });
+  }
+  return notices;
 }
 
 /** この個体に与える餌。個体ごとの指定がなければ全体の既定を使う */
