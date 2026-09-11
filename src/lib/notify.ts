@@ -1,5 +1,21 @@
+import { Capacitor } from "@capacitor/core";
 import { IS_NATIVE } from "@/lib/env";
 import type { FeedingNotice } from "@/lib/breeding";
+
+/**
+ * 独自の音は用意していないので、端末の標準通知音を使う。
+ *
+ * ただし iOS と Android で「無音」に落ちる条件が逆になっている。
+ * - 未指定のまま: iOS は無音 / Android は端末既定の音が鳴る
+ * - 存在しないファイル名を渡す: iOS は「見つからない」と判断して既定の
+ *   音にフォールバックする (振動も音に連動して付いてくる) / Android は
+ *   8以降だと無音になる (Android は通知チャンネル側で音を決める)
+ * 両対応の値は無いので、iOS のときだけ実在しない名前を渡す。Android は
+ * 何も指定しないほうが端末既定の音になる
+ */
+function defaultSound(): string | undefined {
+  return Capacitor.getPlatform() === "ios" ? "default" : undefined;
+}
 
 /**
  * お知らせを鳴らす側の受け持ち。
@@ -78,7 +94,7 @@ export async function showSample(): Promise<void> {
       await LocalNotifications.schedule({
         // 今すぐ鳴らす。id は積んである予定 (日付から作る番号) と
         // ぶつからないよう、十分に離した値にしておく
-        notifications: [{ id: 1_000_000, title, body }],
+        notifications: [{ id: 1_000_000, title, body, sound: defaultSound() }],
       });
     } catch {
       /* 見本が出せなくても設定そのものには影響しない */
@@ -110,11 +126,13 @@ export async function syncFeedingNotices(notices: FeedingNotice[]): Promise<void
     }
     if (notices.length === 0) return;
 
+    const sound = defaultSound();
     await LocalNotifications.schedule({
       notifications: notices.map((n) => ({
         id: n.id,
         title: n.title,
         body: n.body,
+        sound,
         schedule: { at: n.at, allowWhileIdle: true },
       })),
     });
