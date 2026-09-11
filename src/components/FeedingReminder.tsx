@@ -92,26 +92,45 @@ export function FeedingReminder() {
   useEffect(() => {
     if (!IS_NATIVE) return;
 
+    const sync = () => {
+      const { beetles, reminder } = useKuwagataStore.getState();
+      void syncFeedingNotices(planFeedingNotices(beetles, reminder));
+    };
+
     // 記録を1つ直すたびに積み直すと、続けて触ったぶんだけ端末を呼ぶ。
     // 手が止まってからまとめて1回にする
     let timer: number | undefined;
     const restack = () => {
       window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        const { beetles, reminder } = useKuwagataStore.getState();
-        void syncFeedingNotices(planFeedingNotices(beetles, reminder));
-      }, 800);
+      timer = window.setTimeout(sync, 800);
+    };
+
+    // 待っている間にバックグラウンドへ回されると、積み直す前に
+    // タイマーごと止められてしまい、変えた設定が端末に一度も届かない。
+    // 隠れる・閉じる直前は待たずにその場で確定させる
+    const flushIfPending = () => {
+      if (timer == null) return;
+      window.clearTimeout(timer);
+      timer = undefined;
+      sync();
     };
 
     restack();
     // 日をまたいでから開き直すと、積んである予定はもう古い。
     // 戻ってきたところで作り直す
-    const onVisible = () => document.visibilityState === "visible" && restack();
-    document.addEventListener("visibilitychange", onVisible);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") restack();
+      else flushIfPending();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    // iOS では、アプリを閉じるときに visibilitychange より先に
+    // pagehide だけが来ることがあるため、両方で受け止めておく
+    window.addEventListener("pagehide", flushIfPending);
 
     return () => {
       window.clearTimeout(timer);
-      document.removeEventListener("visibilitychange", onVisible);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", flushIfPending);
     };
     // 記録と設定のどちらが動いても積み直す
   }, [enabled, time, intervalDays, beetles]);
