@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Save,
 } from "lucide-react";
+import { IS_NATIVE } from "@/lib/env";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Sheet } from "@/components/KuwaUI";
 import { useToast } from "@/components/ui/Toast";
@@ -401,8 +402,9 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
       </div>
 
       <p className="text-[11px] leading-relaxed px-1" style={{ color: "var(--kuwa-ink-soft)" }}>
-        記録はこの端末の中だけに保存されています。ブラウザの履歴やサイトデータを消すと
-        いっしょに消えるので、ときどき書き出しておくと安心です。
+        {IS_NATIVE
+          ? "記録はこの端末の中だけに保存されています。アプリを削除するといっしょに消えるので、ときどき書き出しておくと安心です。"
+          : "記録はこの端末の中だけに保存されています。ブラウザの履歴やサイトデータを消すといっしょに消えるので、ときどき書き出しておくと安心です。"}
       </p>
 
       {/* ── いちばん危ないので最後に置く ── */}

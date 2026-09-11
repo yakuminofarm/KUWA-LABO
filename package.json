@@ -13,7 +13,8 @@
     "ios": "npm run sync:native && cap open ios",
     "android": "npm run sync:native && cap open android",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "assets:native": "capacitor-assets generate --ios --android --iconBackgroundColor '#ead9bd' --iconBackgroundColorDark '#ead9bd' --splashBackgroundColor '#ead9bd' --splashBackgroundColorDark '#ead9bd'"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
@@ -29,6 +30,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.5.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

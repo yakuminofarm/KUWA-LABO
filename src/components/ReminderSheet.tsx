@@ -293,26 +293,28 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
         </p>
       </div>
 
-      {/* 制約の説明 */}
-      <div
-        className="rounded-2xl p-4"
-        style={{ background: "var(--kuwa-bark-bg)", border: "1px solid var(--kuwa-line)" }}
-      >
-        <p className="font-maru text-sm font-bold flex items-center gap-2" style={{ color: "var(--kuwa-bark)" }}>
-          <Smartphone className="w-4 h-4" strokeWidth={2.2} />
-          知っておいてほしいこと
-        </p>
-        <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
-          このアプリはブラウザだけで動いているため、
-          <strong style={{ color: "var(--kuwa-ink)" }}>アプリを閉じている間の通知は出せません</strong>。
-          時刻になったら鳴る目覚ましが必要な場合は、iPhoneの「ショートカット」アプリで
-          毎日この時刻にくわらぼを開く自動化を作るのが確実です。
-        </p>
-        <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
-          ショートカット → オートメーション → 時刻 → 毎日{reminder.time} → 「Appを開く」または
-          「通知を表示」を選ぶだけで設定できます。
-        </p>
-      </div>
+      {/* 制約の説明。アプリ版はこの制約自体が無いので出さない */}
+      {!IS_NATIVE && (
+        <div
+          className="rounded-2xl p-4"
+          style={{ background: "var(--kuwa-bark-bg)", border: "1px solid var(--kuwa-line)" }}
+        >
+          <p className="font-maru text-sm font-bold flex items-center gap-2" style={{ color: "var(--kuwa-bark)" }}>
+            <Smartphone className="w-4 h-4" strokeWidth={2.2} />
+            知っておいてほしいこと
+          </p>
+          <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+            このアプリはブラウザだけで動いているため、
+            <strong style={{ color: "var(--kuwa-ink)" }}>アプリを閉じている間の通知は出せません</strong>。
+            時刻になったら鳴る目覚ましが必要な場合は、iPhoneの「ショートカット」アプリで
+            毎日この時刻にくわらぼを開く自動化を作るのが確実です。
+          </p>
+          <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+            ショートカット → オートメーション → 時刻 → 毎日{reminder.time} → 「Appを開く」または
+            「通知を表示」を選ぶだけで設定できます。
+          </p>
+        </div>
+      )}
     </Sheet>
   );
 }

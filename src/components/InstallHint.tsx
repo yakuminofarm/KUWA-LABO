@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { X } from "lucide-react";
+import { IS_NATIVE } from "@/lib/env";
 
 /**
  * ホーム画面への追加を案内する。
@@ -30,6 +31,11 @@ const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
 function detect(): Mode {
+  // アプリ版はすでにホーム画面のアイコンから開いている。
+  // Safari の共有ボタンを指す案内を出すと、この画面にそんなボタンは
+  // 無いので迷わせてしまう
+  if (IS_NATIVE) return "hidden";
+
   try {
     if (localStorage.getItem(DISMISS_KEY)) return "hidden";
   } catch {

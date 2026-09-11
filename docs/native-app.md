@@ -59,7 +59,17 @@ npm ci
 npm run build:native      # out-native/ に静的な一式が出る
 npx cap add ios
 npx cap add android
+npm run assets:native     # アイコン・起動画面を assets/logo.png から作る
 ```
+
+最後の `assets:native` を忘れると、`cap add` が Xcode の初期テンプレート
+アイコン (青い X 印) のまま残ってしまう。ホーム画面に置いたときに
+くわらぼのアイコンではなく Xcode 既定のアイコンが出る場合はこれが原因。
+
+素材は `assets/logo.png` (背景を透過したクワガタ+二重螺旋) に入れてある。
+`public/icon-512.png` (アプリの地色 `#eddcbb` で塗られた版) から背景色を
+抜いて作ったもの。差し替えたいときはこのファイルを置き換えてから
+`assets:native` をもう一度実行する。
 
 ## ふだんの流れ
 
@@ -80,6 +90,9 @@ npm run android   # ビルド → 同期 → Android Studio が開く
 
 実機に入れるところから先 (署名・証明書・ストアへの申請) は
 Xcode と Android Studio の画面での作業になる。
+
+`ios/` `android/` は Git に含めていないので、消して作り直したときは
+「土台を作る」を最初からやり直す (`assets:native` も忘れずに)。
 
 ## 出す前に決めておくこと
 
