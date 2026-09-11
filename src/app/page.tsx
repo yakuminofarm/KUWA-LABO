@@ -57,7 +57,7 @@ export default function KuwagataPage() {
       <ForestBackdrop />
       <div className="min-h-screen w-full max-w-md mx-auto">
         <header
-          className="sticky top-0 z-20 px-4 py-3.5 flex items-center gap-2.5"
+          className="sticky top-0 z-20 px-4 pb-3.5 pt-safe-header flex items-center gap-2.5"
           style={{
             background: "rgba(234, 217, 189, 0.9)",
             backdropFilter: "blur(16px)",

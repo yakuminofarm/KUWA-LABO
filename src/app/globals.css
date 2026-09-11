@@ -37,6 +37,10 @@ body {
 /* ── ホームバー・ノッチを避ける ── */
 .pb-safe    { padding-bottom: max(8px,  env(safe-area-inset-bottom)); }
 .pb-safe-lg { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+/* ヘッダーは画面の一番上に張り付くので、時計やバッテリー残量の帯とかぶる。
+   下の余白 (max) と違い、こちらは元の余白の上に足す。ノッチが無い端末で
+   0になっても、アイコンの上に元の余白がちゃんと残るようにするため */
+.pt-safe-header { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
 
 /* ── フォーム入力 最小タップ高さ保証 ── */
 input, select, textarea, button {
