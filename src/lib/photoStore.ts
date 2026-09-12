@@ -11,15 +11,27 @@
  *   端末のバックアップに含まれる。上限は実質ストレージの空き
  * - ブラウザ版: IndexedDB に blob で置く。localStorage の5MB制限から外れる
  *
- * どちらも「id をもらって写真を返す」形にそろえてあるので、
+ * 1枚の写真は大小2つで持つ (`lib/photo.ts` を参照)。
+ * どちらも「id と大きさをもらって写真を返す」形にそろえてあるので、
  * 呼ぶ側は出し先を気にしなくてよい。
  */
 import { Capacitor } from "@capacitor/core";
 import { IS_NATIVE } from "@/lib/env";
+import type { PhotoSizes } from "@/lib/photo";
 import { generateId } from "@/lib/utils";
 
 const DIR = "photos";
 const MIME = "image/jpeg";
+
+export type PhotoSize = "full" | "thumb";
+
+/**
+ * 置き場での呼び名。小さいほうは id のうしろに `-s` を付ける。
+ * id は英数字だけ (lib/utils.ts の generateId) なので `-s` と紛れない
+ */
+const nameOf = (id: string, size: PhotoSize) => (size === "thumb" ? `${id}-s` : id);
+const idOf = (name: string) => (name.endsWith("-s") ? name.slice(0, -2) : name);
+const other = (size: PhotoSize): PhotoSize => (size === "full" ? "thumb" : "full");
 
 function toBase64(dataUrl: string): string {
   const i = dataUrl.indexOf(",");
@@ -55,33 +67,39 @@ async function fs(): Promise<FsModule> {
   return fsModule;
 }
 
-const filePath = (id: string) => `${DIR}/${id}.jpg`;
+const filePath = (name: string) => `${DIR}/${name}.jpg`;
 
-async function nativePut(id: string, dataUrl: string): Promise<void> {
+async function nativePut(name: string, dataUrl: string): Promise<void> {
   const { Filesystem, Directory } = await fs();
   await Filesystem.writeFile({
-    path: filePath(id),
+    path: filePath(name),
     data: toBase64(dataUrl),
     directory: Directory.Data,
     recursive: true,
   });
 }
 
-async function nativeSrc(id: string): Promise<string | undefined> {
+async function nativeSrc(name: string): Promise<string | undefined> {
   const { Filesystem, Directory } = await fs();
-  const { uri } = await Filesystem.getUri({
-    path: filePath(id),
-    directory: Directory.Data,
-  });
-  // file:// のままでは WebView が読めないので、読める形に直す
-  return Capacitor.convertFileSrc(uri);
+  try {
+    // getUri は在りかを組み立てるだけで、無いファイルのURLも返してくる。
+    // stat なら在ることを確かめたうえで同じURLがもらえる
+    const { uri } = await Filesystem.stat({
+      path: filePath(name),
+      directory: Directory.Data,
+    });
+    // file:// のままでは WebView が読めないので、読める形に直す
+    return Capacitor.convertFileSrc(uri);
+  } catch {
+    return undefined;
+  }
 }
 
-async function nativeRead(id: string): Promise<string | undefined> {
+async function nativeRead(name: string): Promise<string | undefined> {
   const { Filesystem, Directory } = await fs();
   try {
     const { data } = await Filesystem.readFile({
-      path: filePath(id),
+      path: filePath(name),
       directory: Directory.Data,
     });
     return typeof data === "string" ? toDataUrl(data) : await blobToDataUrl(data);
@@ -90,10 +108,10 @@ async function nativeRead(id: string): Promise<string | undefined> {
   }
 }
 
-async function nativeRemove(id: string): Promise<void> {
+async function nativeRemove(name: string): Promise<void> {
   const { Filesystem, Directory } = await fs();
   try {
-    await Filesystem.deleteFile({ path: filePath(id), directory: Directory.Data });
+    await Filesystem.deleteFile({ path: filePath(name), directory: Directory.Data });
   } catch {
     // もう無いなら消す必要もない
   }
@@ -103,9 +121,7 @@ async function nativeList(): Promise<string[]> {
   const { Filesystem, Directory } = await fs();
   try {
     const { files } = await Filesystem.readdir({ path: DIR, directory: Directory.Data });
-    return files
-      .filter((f) => f.type === "file")
-      .map((f) => f.name.replace(/\.jpg$/, ""));
+    return files.filter((f) => f.type === "file").map((f) => f.name.replace(/\.jpg$/, ""));
   } catch {
     return []; // 1枚も入れていなければフォルダ自体が無い
   }
@@ -139,40 +155,40 @@ function tx<T>(mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRequest<
   );
 }
 
-// blob の URL は作るたびに増えるので、id ごとに1本だけ持って使い回す
+// blob の URL は作るたびに増えるので、呼び名ごとに1本だけ持って使い回す
 const objectUrls = new Map<string, string>();
 
-function forgetObjectUrl(id: string) {
-  const url = objectUrls.get(id);
+function forgetObjectUrl(name: string) {
+  const url = objectUrls.get(name);
   if (!url) return;
   URL.revokeObjectURL(url);
-  objectUrls.delete(id);
+  objectUrls.delete(name);
 }
 
-async function webPut(id: string, dataUrl: string): Promise<void> {
-  forgetObjectUrl(id);
+async function webPut(name: string, dataUrl: string): Promise<void> {
+  forgetObjectUrl(name);
   const blob = await dataUrlToBlob(dataUrl);
-  await tx("readwrite", (s) => s.put(blob, id) as unknown as IDBRequest<IDBValidKey>);
+  await tx("readwrite", (s) => s.put(blob, name) as unknown as IDBRequest<IDBValidKey>);
 }
 
-async function webSrc(id: string): Promise<string | undefined> {
-  const cached = objectUrls.get(id);
+async function webSrc(name: string): Promise<string | undefined> {
+  const cached = objectUrls.get(name);
   if (cached) return cached;
-  const blob = await tx<Blob | undefined>("readonly", (s) => s.get(id));
+  const blob = await tx<Blob | undefined>("readonly", (s) => s.get(name));
   if (!blob) return undefined;
   const url = URL.createObjectURL(blob);
-  objectUrls.set(id, url);
+  objectUrls.set(name, url);
   return url;
 }
 
-async function webRead(id: string): Promise<string | undefined> {
-  const blob = await tx<Blob | undefined>("readonly", (s) => s.get(id));
+async function webRead(name: string): Promise<string | undefined> {
+  const blob = await tx<Blob | undefined>("readonly", (s) => s.get(name));
   return blob ? await blobToDataUrl(blob) : undefined;
 }
 
-async function webRemove(id: string): Promise<void> {
-  forgetObjectUrl(id);
-  await tx("readwrite", (s) => s.delete(id) as unknown as IDBRequest<undefined>);
+async function webRemove(name: string): Promise<void> {
+  forgetObjectUrl(name);
+  await tx("readwrite", (s) => s.delete(name) as unknown as IDBRequest<undefined>);
 }
 
 async function webList(): Promise<string[]> {
@@ -182,32 +198,48 @@ async function webList(): Promise<string[]> {
 
 /* ───────────────────────── 窓口 ───────────────────────── */
 
+const put = (name: string, dataUrl: string) =>
+  IS_NATIVE ? nativePut(name, dataUrl) : webPut(name, dataUrl);
+const srcOf = (name: string) => (IS_NATIVE ? nativeSrc(name) : webSrc(name));
+const readOf = (name: string) => (IS_NATIVE ? nativeRead(name) : webRead(name));
+const removeOf = (name: string) => (IS_NATIVE ? nativeRemove(name) : webRemove(name));
+
 /** 写真を保存して、記録に持たせる id を返す */
-export async function savePhoto(dataUrl: string): Promise<string> {
+export async function savePhoto(sizes: PhotoSizes): Promise<string> {
   const id = generateId();
-  await putPhoto(id, dataUrl);
+  await putPhoto(id, sizes);
   return id;
 }
 
-export async function putPhoto(id: string, dataUrl: string): Promise<void> {
-  return IS_NATIVE ? nativePut(id, dataUrl) : webPut(id, dataUrl);
+export async function putPhoto(id: string, sizes: PhotoSizes): Promise<void> {
+  await put(nameOf(id, "full"), sizes.full);
+  if (sizes.thumb) await put(nameOf(id, "thumb"), sizes.thumb);
 }
 
-/** `<img src>` に渡せる形。無ければ undefined */
-export async function photoSrc(id: string): Promise<string | undefined> {
-  return IS_NATIVE ? nativeSrc(id) : webSrc(id);
+/**
+ * `<img src>` に渡せる形。
+ * 欲しい大きさが無ければもう一方で代える — 移行してきた古い写真は
+ * 小さいほう (長辺320px) しか無く、それは一覧でも詳細でも使えるため
+ */
+export async function photoSrc(
+  id: string,
+  size: PhotoSize = "thumb"
+): Promise<string | undefined> {
+  return (await srcOf(nameOf(id, size))) ?? (await srcOf(nameOf(id, other(size))));
 }
 
-/** data URI として取り出す (バックアップに埋め込むとき用) */
+/** data URI として取り出す (バックアップに埋め込むとき用)。大きいほうを優先する */
 export async function readPhotoDataUrl(id: string): Promise<string | undefined> {
-  return IS_NATIVE ? nativeRead(id) : webRead(id);
+  return (await readOf(nameOf(id, "full"))) ?? (await readOf(nameOf(id, "thumb")));
 }
 
 export async function removePhoto(id: string): Promise<void> {
-  return IS_NATIVE ? nativeRemove(id) : webRemove(id);
+  await removeOf(nameOf(id, "full"));
+  await removeOf(nameOf(id, "thumb"));
 }
 
-/** 置き場にある写真の id 全部 (迷子の掃除に使う) */
+/** 置き場にある写真の id 全部 (迷子の掃除に使う)。大小は1つにまとめて数える */
 export async function listPhotoIds(): Promise<string[]> {
-  return IS_NATIVE ? nativeList() : webList();
+  const names = IS_NATIVE ? await nativeList() : await webList();
+  return [...new Set(names.map(idOf))];
 }

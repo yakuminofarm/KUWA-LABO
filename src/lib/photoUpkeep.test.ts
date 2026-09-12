@@ -8,10 +8,10 @@ const store = new Map<string, string>();
 let failOn: string | null = null;
 
 vi.mock("@/lib/photoStore", () => ({
-  savePhoto: vi.fn(async (dataUrl: string) => {
-    if (failOn && dataUrl.includes(failOn)) throw new Error("書けなかった");
+  savePhoto: vi.fn(async (sizes: { full: string; thumb?: string }) => {
+    if (failOn && sizes.full.includes(failOn)) throw new Error("書けなかった");
     const id = `p${store.size + 1}`;
-    store.set(id, dataUrl);
+    store.set(id, sizes.full);
     return id;
   }),
   readPhotoDataUrl: vi.fn(async (id: string) => store.get(id)),

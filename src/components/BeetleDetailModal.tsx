@@ -37,7 +37,7 @@ import {
 } from "@/lib/breeding";
 import { formatDate, getGenderLabel } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
-import { PhotoPicker, PhotoThumb } from "@/components/KuwaUI";
+import { PhotoPicker, PhotoThumb, PhotoViewer } from "@/components/KuwaUI";
 import {
   BeetleFields,
   BeetleFormState,
@@ -71,6 +71,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
     useKuwagataStore();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<BeetleFormState | null>(null);
 
@@ -126,7 +127,11 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
       >
         <div className="kuwa-sheet-bar sticky top-0 px-5 py-4 flex items-center justify-between flex-shrink-0 rounded-t-[24px]">
           <div className="flex items-center gap-2.5 min-w-0">
-            <PhotoThumb photo={beetle} fallback={<SpeciesAvatar species={beetle.species} />} />
+            <PhotoThumb
+              photo={beetle}
+              fallback={<SpeciesAvatar species={beetle.species} />}
+              onClick={() => setViewingPhoto(true)}
+            />
             <h2 className="text-lg font-bold text-[#31241a] truncate">
               {beetle.code}
               {beetle.name && <span className="text-sm text-[#8b7a64] ml-1.5">「{beetle.name}」</span>}
@@ -594,6 +599,10 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
           )}
         </div>
       </div>
+
+      {viewingPhoto && (
+        <PhotoViewer photo={beetle} onClose={() => setViewingPhoto(false)} />
+      )}
     </div>
   );
 }

@@ -26,7 +26,9 @@ export async function migrateEmbeddedPhotos(): Promise<number> {
   const moved = new Map<string, string>();
   for (const r of targets) {
     try {
-      moved.set(r.id, await savePhoto(r.photoUrl!));
+      // 旧形式は長辺320pxしかない。それを大きいほうとして入れておけば、
+      // 一覧でも詳細でも同じ1枚が使われる (小さいほうは無いので代用される)
+      moved.set(r.id, await savePhoto({ full: r.photoUrl! }));
     } catch {
       // この1枚は次回に回す
     }

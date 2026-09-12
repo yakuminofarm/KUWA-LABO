@@ -38,7 +38,7 @@ import {
   larvaToForm,
 } from "@/components/LarvaFields";
 import { PromoteLarvaForm } from "@/components/PromoteLarvaForm";
-import { PhotoPicker } from "@/components/KuwaUI";
+import { PhotoPicker, PhotoThumb, PhotoViewer } from "@/components/KuwaUI";
 import { STAGE_IMAGE, TOOL_IMAGE } from "@/lib/assets";
 
 interface LarvaDetailModalProps {
@@ -167,6 +167,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
   } = useKuwagataStore();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<LarvaFormState | null>(null);
 
@@ -269,6 +270,12 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
       >
         <div className="kuwa-sheet-bar sticky top-0 px-5 py-4 flex items-center justify-between flex-shrink-0 rounded-t-[24px]">
           <div className="flex items-center gap-2 min-w-0">
+            <PhotoThumb
+              photo={larva}
+              fallback={null}
+              size="sm"
+              onClick={() => setViewingPhoto(true)}
+            />
             <h2 className="text-lg font-bold text-[#31241a] truncate">{larva.code}</h2>
             <span
               className={`text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0 ${STAGE_COLORS[larva.stage]}`}
@@ -766,6 +773,10 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
           )}
         </div>
       </div>
+
+      {viewingPhoto && (
+        <PhotoViewer photo={larva} onClose={() => setViewingPhoto(false)} />
+      )}
     </div>
   );
 }
