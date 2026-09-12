@@ -15,6 +15,7 @@ import { ReminderSheet } from "@/components/ReminderSheet";
 import { BackupSheet } from "@/components/BackupSheet";
 import { GuideSheet } from "@/components/GuideSheet";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { upkeepPhotos } from "@/lib/photoUpkeep";
 import { CircleQuestionMark, DatabaseBackup, Settings } from "lucide-react";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { IS_PRODUCTION } from "@/lib/env";
@@ -32,11 +33,25 @@ const TAB_TITLES: Record<KuwagataTabId, string> = {
 function StorageFullNotice() {
   const { showToast } = useToast();
   useEffect(() => {
+    // 写真は別の置き場に移したので、ここに来るのは記録そのものが
+    // 多くなったとき。写真を外しても空きは増えない
     const onFull = () =>
-      showToast("保存できませんでした。写真を何枚か外すと空きが作れます");
+      showToast("保存できませんでした。バックアップをとってから、古い記録を整理してください");
     window.addEventListener("kuwa-storage-full", onFull);
     return () => window.removeEventListener("kuwa-storage-full", onFull);
   }, [showToast]);
+  return null;
+}
+
+/**
+ * 写真の置き場の手入れ。起動のときに1回だけ走らせる。
+ * 迷子の掃除は、追加画面で選んだだけの写真まで消してしまわないよう
+ * 復帰のたびには呼ばない (詳しくは lib/photoUpkeep.ts)
+ */
+function PhotoUpkeep() {
+  useEffect(() => {
+    void upkeepPhotos();
+  }, []);
   return null;
 }
 
@@ -52,6 +67,7 @@ export default function KuwagataPage() {
   return (
     <ToastProvider>
       <StorageFullNotice />
+      <PhotoUpkeep />
       <FeedingReminder />
       <ServiceWorkerRegistrar />
       <ForestBackdrop />

@@ -70,7 +70,13 @@ export interface Beetle {
    * 持ちつつ、どの子と一緒に来たのかを残して金額を割り振れるようにする。
    */
   pairId?: string;
-  photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
+  /** 個体写真。中身は photoStore にあり、ここは参照だけ */
+  photoId?: string;
+  /**
+   * @deprecated 旧形式 (写真そのものを data URI で抱えていた)。
+   * 起動時に photoStore へ移して photoId に差し替えるので、新しく入れない
+   */
+  photoUrl?: string;
   isAlive: boolean;
   isFavorite?: boolean;
   /**
@@ -158,7 +164,10 @@ export interface Larva {
    * 掛かった費用もここから集計しているため。成虫側に費用を写すと二重計上になる。
    */
   promotedBeetleId?: string;
-  photoUrl?: string;       // 個体写真 (リサイズ済み data URI)
+  /** 個体写真。中身は photoStore にあり、ここは参照だけ */
+  photoId?: string;
+  /** @deprecated 旧形式。起動時に photoStore へ移して photoId に差し替える */
+  photoUrl?: string;
   isAlive: boolean;
   /** 動作を試すために入れた見本の記録。まとめて消せるようにするための印 */
   isSample?: boolean;

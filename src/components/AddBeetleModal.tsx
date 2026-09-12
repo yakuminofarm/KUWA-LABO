@@ -37,7 +37,7 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
   const [done, setDone] = useState(false);
   const [mode, setMode] = useState<Mode>("single");
   const [form, setForm] = useState<BeetleFormState>(initial ?? emptyBeetleForm);
-  const [photoUrl, setPhotoUrl] = useState<string | undefined>();
+  const [photoId, setPhotoId] = useState<string | undefined>();
   const [male, setMale] = useState<PairMemberState>(emptyPairMember);
   const [female, setFemale] = useState<PairMemberState>(emptyPairMember);
   // ♀の番号は♂の続きを下書きする。自分で直したあとは、もう触らない
@@ -70,7 +70,7 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
       const beetle: Beetle = {
         id: generateId(),
         ...formToBeetle(form),
-        photoUrl,
+        photoId,
         isAlive: true,
       };
       addBeetle(beetle);
@@ -161,7 +161,7 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
               />
             </>
           ) : (
-            <PhotoPicker value={photoUrl} onChange={setPhotoUrl} label="この子の写真" />
+            <PhotoPicker value={{ photoId }} onChange={setPhotoId} label="この子の写真" />
           )}
 
           <BeetleFields

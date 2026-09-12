@@ -126,7 +126,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
       >
         <div className="kuwa-sheet-bar sticky top-0 px-5 py-4 flex items-center justify-between flex-shrink-0 rounded-t-[24px]">
           <div className="flex items-center gap-2.5 min-w-0">
-            <PhotoThumb src={beetle.photoUrl} fallback={<SpeciesAvatar species={beetle.species} />} />
+            <PhotoThumb photo={beetle} fallback={<SpeciesAvatar species={beetle.species} />} />
             <h2 className="text-lg font-bold text-[#31241a] truncate">
               {beetle.code}
               {beetle.name && <span className="text-sm text-[#8b7a64] ml-1.5">「{beetle.name}」</span>}
@@ -151,8 +151,8 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
 
         <div className="kuwa-sheet-body flex-1 px-5 py-5 space-y-5">
           <PhotoPicker
-            value={beetle.photoUrl}
-            onChange={(url) => updateBeetle(beetle.id, { photoUrl: url })}
+            value={beetle}
+            onChange={(id) => updateBeetle(beetle.id, { photoId: id, photoUrl: undefined })}
             label="この子の写真"
           />
 

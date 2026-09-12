@@ -30,9 +30,11 @@ const APP_TAG = "kuwarabo";
 /* ───────────────────────── 書き出し ───────────────────────── */
 
 /** 写真を落とした複製を作る (ファイルを軽くしたいとき用) */
-function dropPhoto<T extends { photoUrl?: string }>(x: T): T {
+function dropPhoto<T extends { photoId?: string; photoUrl?: string }>(x: T): T {
   const copy = { ...x };
   delete copy.photoUrl;
+  // 参照だけ残しても、持ち出した先には写真が無い
+  delete copy.photoId;
   return copy;
 }
 

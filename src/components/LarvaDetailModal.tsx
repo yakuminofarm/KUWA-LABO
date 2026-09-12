@@ -283,8 +283,8 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
 
         <div className="kuwa-sheet-body flex-1 px-5 py-5 space-y-5">
           <PhotoPicker
-            value={larva.photoUrl}
-            onChange={(url) => updateLarva(larva.id, { photoUrl: url })}
+            value={larva}
+            onChange={(id) => updateLarva(larva.id, { photoId: id, photoUrl: undefined })}
             label="この子の写真"
           />
 

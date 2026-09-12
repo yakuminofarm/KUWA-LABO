@@ -1,7 +1,10 @@
 /**
- * 個体写真の取り込み。
- * localStorage に入れる前提なので、長辺320pxのJPEGへ縮小してから data URI にする
- * (1枚あたり 20〜40KB 程度。無加工だと数MBになり保存できない)。
+ * 個体写真の取り込み。長辺320pxのJPEGへ縮小してから data URI にする。
+ *
+ * この320pxは、もとは localStorage (約5MB) に収めるための上限だった。
+ * いまは写真を記録の外 (photoStore) に出したので容量の縛りは無く、
+ * もっと大きくできる。上げるときは、一覧のサムネイルと詳細でどこまで要るかを
+ * 見てから決める (受け渡しはこのまま data URI でよい)。
  */
 export const PHOTO_MAX_EDGE = 320;
 export const PHOTO_QUALITY = 0.68;

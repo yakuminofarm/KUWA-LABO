@@ -24,6 +24,7 @@ import {
   formatBytes,
   parseBackup,
 } from "@/lib/backup";
+import { embedPhotos, upkeepPhotos } from "@/lib/photoUpkeep";
 import { ViewerSave, getViewerSave, saveTextFile } from "@/lib/download";
 import { buildInventoryCsv, csvFileName } from "@/lib/csv";
 import { FileSpreadsheet } from "lucide-react";
@@ -31,6 +32,9 @@ import { resetInstallHint } from "@/components/InstallHint";
 
 /** 取り込み待ちのファイル (中身を見せてから、どう入れるか選んでもらう) */
 type Pending = ParseResult & { fileName: string };
+
+/** 書き出す中身。大きさを見せるために、実際の文字列まで作っておく */
+type BuiltJson = { text: string; size: number; withPhotos: boolean };
 
 function Row({
   label,
@@ -81,17 +85,39 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  // 写真を含めるかで大きさが変わるので、都度作り直して実サイズを見せる
-  const json = useMemo(() => {
-    const file = buildBackup(snapshot(), withPhotos);
-    const text = JSON.stringify(file, null, 2);
-    return { text, size: byteLength(text), counts: file.counts };
+  // 件数は写真の有無で変わらないので、その場で数えて先に出す
+  const counts = useMemo(() => {
+    const d = snapshot();
+    return {
+      beetles: d.beetles.length,
+      larvae: d.larvae.length,
+      lines: d.lines.length,
+      expenses: d.expenses.length,
+    };
+  }, [snapshot]);
+  const total = counts.beetles + counts.larvae + counts.lines + counts.expenses;
+
+  // 写真を含めるかで大きさが変わるので、都度作り直して実サイズを見せる。
+  // 写真は別の置き場にあるため取りにいく間がある
+  const [built, setBuilt] = useState<BuiltJson | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const data = withPhotos ? await embedPhotos(snapshot()) : snapshot();
+      const text = JSON.stringify(buildBackup(data, withPhotos), null, 2);
+      if (alive) setBuilt({ text, size: byteLength(text), withPhotos });
+    })();
+    return () => {
+      alive = false;
+    };
   }, [snapshot, withPhotos]);
 
-  const total =
-    json.counts.beetles + json.counts.lines + json.counts.larvae + json.counts.expenses;
+  // 切り替えた直後は前の結果が残っている。今の指定と揃うまでは出来ていない扱い
+  const json = built?.withPhotos === withPhotos ? built : null;
 
   const save = async () => {
+    if (!json) return;
     const result = await saveTextFile(viewerSave, backupFileName(), json.text);
     if (result === "saved") {
       showToast("バックアップを書き出しました");
@@ -111,6 +137,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
   };
 
   const copy = async () => {
+    if (!json) return;
     try {
       await navigator.clipboard.writeText(json.text);
       showToast("コピーしました。メモ帳などに貼って保存してください");
@@ -139,6 +166,8 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
   const doMerge = () => {
     if (!pending) return;
     const r = mergeAll(pending.data);
+    // 取り込んだ記録は写真を抱えた形なので、置き場へ移しておく
+    void upkeepPhotos();
     showToast(
       r.duplicated > 0
         ? `${r.added}件を追加しました (${r.duplicated}件はすでにあるので飛ばしました)`
@@ -151,6 +180,8 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
   const doReplace = () => {
     if (!pending) return;
     const r = replaceAll(pending.data);
+    // 取り込んだぶんを置き場へ移し、入れ替えで浮いた写真を片付ける
+    void upkeepPhotos();
     showToast(`${r.added}件に入れ替えました`);
     setPending(null);
     onClose();
@@ -180,10 +211,10 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
         </p>
 
         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
-          <Row label="成虫" value={json.counts.beetles} />
-          <Row label="幼虫・蛹" value={json.counts.larvae} />
-          <Row label="ライン" value={json.counts.lines} />
-          <Row label="経費" value={json.counts.expenses} />
+          <Row label="成虫" value={counts.beetles} />
+          <Row label="幼虫・蛹" value={counts.larvae} />
+          <Row label="ライン" value={counts.lines} />
+          <Row label="経費" value={counts.expenses} />
         </div>
 
         <button
@@ -224,7 +255,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
             className="text-xs font-bold flex-shrink-0"
             style={{ color: "var(--kuwa-bark)", fontVariantNumeric: "tabular-nums" }}
           >
-            {formatBytes(json.size)}
+            {json ? formatBytes(json.size) : "…"}
           </span>
         </button>
 
@@ -235,7 +266,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
         <div className="flex gap-2 mt-2.5">
           <button
             onClick={save}
-            disabled={total === 0}
+            disabled={total === 0 || !json}
             className="kuwa-btn-primary flex-1 py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all disabled:opacity-40"
           >
             <Download className="w-4 h-4" strokeWidth={2.4} />
@@ -243,7 +274,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
           </button>
           <button
             onClick={copy}
-            disabled={total === 0}
+            disabled={total === 0 || !json}
             className="kuwa-btn-ghost px-4 py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all disabled:opacity-40"
             aria-label="バックアップをコピー"
           >
@@ -275,7 +306,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
         </p>
         <button
           onClick={saveCsv}
-          disabled={total === 0}
+          disabled={total === 0 || !json}
           className="kuwa-btn-ghost w-full mt-3 py-3 text-sm active:scale-[0.98] transition-all disabled:opacity-40"
         >
           CSVで書き出す
@@ -451,6 +482,8 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
                 onClick={() => {
                   resetAll();
                   resetInstallHint();
+                  // 記録を消しても写真は残るので、あわせて片付ける
+                  void upkeepPhotos();
                   setConfirmReset(false);
                   showToast("最初の状態に戻しました");
                   onClose();
