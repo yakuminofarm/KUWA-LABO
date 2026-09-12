@@ -249,8 +249,8 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
                   const n = parseInt(e.target.value, 10);
                   if (Number.isFinite(n) && n > 0) setSchedule({ [key]: n });
                 }}
-                className="kuwa-input w-24 text-right"
-                style={{ fontVariantNumeric: "tabular-nums" }}
+                className="kuwa-input flex-shrink-0 text-right"
+                style={{ width: "4.5rem", fontVariantNumeric: "tabular-nums" }}
               />
               <span className="text-xs flex-shrink-0" style={{ color: "var(--kuwa-ink-soft)" }}>
                 {unit}
