@@ -94,6 +94,26 @@ Xcode と Android Studio の画面での作業になる。
 `ios/` `android/` は Git に含めていないので、消して作り直したときは
 「土台を作る」を最初からやり直す (`assets:native` も忘れずに)。
 
+### 直したのに実機で変わらないとき
+
+Xcode は `public` の中身だけが変わった場合、増分ビルドで見落とすことがある。
+アイコンなどネイティブ側の差し替えは反映されるのに、画面の文言やレイアウトだけ
+古いまま、という出方をする。
+
+どこで止まっているかは、配った先のファイルを直接見れば分かる。
+直したときに足した文字列を探す (例: `4.5rem`)。
+
+```sh
+grep -rl "探す文字列" ios/App/App/public/_next/static/chunks/
+```
+
+- **出てこない** → 配るところまで届いていない。`npm run ios` をやり直す
+- **出てくる** → ファイルは新しい。Xcode が古いものを使っているので、
+  Xcode で Product → Clean Build Folder (⌘+Shift+K) してから ▶
+
+`npm run build:native` は書き出しのたびに `out-native/` を作り直すので、
+Next 側のキャッシュが原因で古いままになることはない (確認ずみ)。
+
 ## 出す前に決めておくこと
 
 - **`appId`** (`capacitor.config.ts`)。いまは `jp.yakuminofarm.kuwalabo`。
