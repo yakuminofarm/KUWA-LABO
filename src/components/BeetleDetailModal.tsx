@@ -38,6 +38,7 @@ import {
 import { formatDate, getGenderLabel } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { PhotoPicker, PhotoThumb, PhotoViewer } from "@/components/KuwaUI";
+import { PedigreeSection } from "@/components/PedigreeSection";
 import {
   BeetleFields,
   BeetleFormState,
@@ -534,6 +535,9 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
             </button>
             )
           )}
+
+          {/* さかのぼる側 (親) を出したうえで、下る側 (種親として使ったライン) を続ける */}
+          <PedigreeSection beetle={beetle} beetles={beetles} lines={lines} />
 
           {relatedLines.length > 0 && (
             <div>
