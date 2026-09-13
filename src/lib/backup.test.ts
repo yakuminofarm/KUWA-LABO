@@ -134,6 +134,66 @@ describe("parseBackup: 通さないもの", () => {
   });
 });
 
+describe("parseBackup: 設定", () => {
+  it("全体の目安と品種ごとの値を持ち帰れる", () => {
+    const { data } = parseBackup(
+      file(
+        wrap({
+          beetles: [beetle()],
+          schedule: { pupaDaysMin: 20, pupaDaysMax: 40, digOutDays: 25, bottleChangeDays: 100 },
+          speciesTuning: { オオクワガタ: { feedIntervalDays: 5, digOutDays: 45 } },
+        })
+      )
+    );
+    expect(data.schedule).toEqual({
+      pupaDaysMin: 20,
+      pupaDaysMax: 40,
+      digOutDays: 25,
+      bottleChangeDays: 100,
+    });
+    expect(data.speciesTuning).toEqual({ オオクワガタ: { feedIntervalDays: 5, digOutDays: 45 } });
+  });
+
+  it("設定が入っていない古いファイルでも読める", () => {
+    const { data } = parseBackup(file(wrap({ beetles: [beetle()] })));
+    expect(data.schedule).toBeUndefined();
+    expect(data.speciesTuning).toBeUndefined();
+  });
+
+  it("全体の目安は4つそろっていなければ使わない", () => {
+    const { data } = parseBackup(
+      file(wrap({ beetles: [beetle()], schedule: { pupaDaysMin: 20 } }))
+    );
+    expect(data.schedule).toBeUndefined();
+  });
+
+  it("日数として読めない値は落とす", () => {
+    const { data } = parseBackup(
+      file(
+        wrap({
+          beetles: [beetle()],
+          speciesTuning: {
+            オオクワガタ: { feedIntervalDays: 5, digOutDays: "ごじゅう", pupaDaysMin: -3 },
+            コクワガタ: { feedIntervalDays: "だめ" },
+            "": { feedIntervalDays: 3 },
+          },
+        })
+      )
+    );
+    // 読めた項目だけ残り、空になった品種は消える
+    expect(data.speciesTuning).toEqual({ オオクワガタ: { feedIntervalDays: 5 } });
+  });
+
+  it("品種ごとの値が壊れていても、記録の取り込みは止めない", () => {
+    const r = parseBackup(
+      file(wrap({ beetles: [beetle()], speciesTuning: "こわれている", schedule: 42 }))
+    );
+    expect(r.data.beetles).toHaveLength(1);
+    expect(r.data.speciesTuning).toBeUndefined();
+    expect(r.data.schedule).toBeUndefined();
+  });
+});
+
 describe("buildBackup", () => {
   it("写真を含めないときは、写真も参照も落とす", () => {
     const f = buildBackup(
@@ -152,5 +212,26 @@ describe("buildBackup", () => {
     const back = parseBackup(JSON.stringify(f));
     expect(back.data.beetles[0].code).toBe("26OK-A1");
     expect(back.skipped).toBe(0);
+  });
+
+  it("設定も往復する", () => {
+    const f = buildBackup(
+      wrap({
+        beetles: [beetle()],
+        schedule: { pupaDaysMin: 20, pupaDaysMax: 40, digOutDays: 25, bottleChangeDays: 100 },
+        speciesTuning: { コクワガタ: { feedIntervalDays: 7 } },
+      }) as never
+    );
+    const back = parseBackup(JSON.stringify(f));
+    expect(back.data.schedule?.digOutDays).toBe(25);
+    expect(back.data.speciesTuning).toEqual({ コクワガタ: { feedIntervalDays: 7 } });
+  });
+
+  it("写真を含めなくても設定は落とさない", () => {
+    const f = buildBackup(
+      wrap({ beetles: [beetle()], speciesTuning: { コクワガタ: { feedIntervalDays: 7 } } }) as never,
+      false
+    );
+    expect(f.data.speciesTuning).toEqual({ コクワガタ: { feedIntervalDays: 7 } });
   });
 });

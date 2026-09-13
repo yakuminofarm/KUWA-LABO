@@ -411,7 +411,11 @@ export const useKuwagataStore = create<KuwagataStore>()(
           lines: s.lines,
           larvae: s.larvae,
           expenses: s.expenses,
+          // 設定も控えに入れる。機種を変えたときに、記録だけ戻って
+          // 目安を入れ直す羽目にならないように
           reminder: s.reminder,
+          schedule: s.schedule,
+          speciesTuning: s.speciesTuning,
         };
       },
 
@@ -427,6 +431,8 @@ export const useKuwagataStore = create<KuwagataStore>()(
           larvae: d.larvae,
           expenses: d.expenses,
           reminder: d.reminder ?? s.reminder,
+          schedule: d.schedule ?? s.schedule,
+          speciesTuning: d.speciesTuning ?? s.speciesTuning,
         }));
         return {
           added: d.beetles.length + d.lines.length + d.larvae.length + d.expenses.length,
