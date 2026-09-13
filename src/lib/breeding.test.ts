@@ -312,6 +312,16 @@ describe("planFeedingNotices (アプリ版で端末に積むお知らせ)", () =
   // 9/5 の朝。19:00 はまだ来ていない
   const morning = new Date("2026-09-05T08:00:00");
 
+  it("品種ごとに直した間隔が、端末に積むお知らせにも効く", () => {
+    // 画面に出る数と、端末が鳴らすときの数がずれないように。
+    // オオクワガタを30日おきにすれば、あげた翌日には対象から外れる
+    const fedYesterday = beetle({ matured: true, lastFedDate: "2026-09-04" });
+    const tuning = { オオクワガタ: { feedIntervalDays: 30 } };
+
+    expect(planFeedingNotices([fedYesterday], reminder, morning).length).toBeGreaterThan(0);
+    expect(planFeedingNotices([fedYesterday], reminder, morning, tuning)).toEqual([]);
+  });
+
   it("オフのときは何も積まない", () => {
     expect(planFeedingNotices([hungry], { ...reminder, enabled: false }, morning)).toEqual([]);
   });

@@ -103,7 +103,8 @@ export const NOTICE_DAYS = 14;
 export function planFeedingNotices(
   beetles: Beetle[],
   reminder: ReminderSettings,
-  from: Date = new Date()
+  from: Date = new Date(),
+  tuning: SpeciesOverrides = {}
 ): FeedingNotice[] {
   if (!reminder.enabled) return [];
 
@@ -118,7 +119,7 @@ export function planFeedingNotices(
     // 今日ぶんは、もう時刻を過ぎていることがある
     if (at.getTime() <= from.getTime()) continue;
 
-    const { pending } = feedingSummary(beetles, reminder.intervalDays, day);
+    const { pending } = feedingSummary(beetles, reminder.intervalDays, day, tuning);
     if (pending.length === 0) continue;
 
     notices.push({
