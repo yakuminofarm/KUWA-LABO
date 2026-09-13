@@ -71,6 +71,7 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
 export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: BeetleDetailModalProps) {
   const { beetles, lines, larvae, reminder, updateBeetle, deleteBeetle, toggleFavorite, toggleFedToday } =
     useKuwagataStore();
+  const speciesTuning = useKuwagataStore((s) => s.speciesTuning);
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState(false);
@@ -249,7 +250,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
               <p className="text-xs mt-2.5" style={{ color: "var(--kuwa-ink-soft)" }}>
                 エサ替えは{" "}
                 <strong style={{ color: "var(--kuwa-ink)" }}>
-                  {feedIntervalLabel(feedIntervalFor(beetle, reminder.intervalDays))}
+                  {feedIntervalLabel(feedIntervalFor(beetle, reminder.intervalDays, speciesTuning))}
                 </strong>
               </p>
 

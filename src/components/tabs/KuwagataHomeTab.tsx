@@ -52,7 +52,7 @@ interface KuwagataHomeTabProps {
 
 export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   const {
-    beetles, lines, larvae, expenses, reminder, schedule, lastBackupAt,
+    beetles, lines, larvae, expenses, reminder, schedule, speciesTuning, lastBackupAt,
     feedAllToday, toggleFedToday, loadSample, clearSample, hasSample,
   } = useKuwagataStore();
   const [showGuide, setShowGuide] = useState(false);
@@ -75,13 +75,13 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   const needsBackupNudge =
     realCount >= 5 && (!lastBackupAt || daysBetween(lastBackupAt) >= 14);
   const { showToast } = useToast();
-  const feeding = feedingSummary(beetles, reminder.intervalDays);
+  const feeding = feedingSummary(beetles, reminder.intervalDays, undefined, speciesTuning);
 
   const aliveBeetles = beetles.filter((b) => b.isAlive && !b.soldDate);
   const aliveLarvae = larvae.filter((l) => l.isAlive && !isPupaStage(l.stage) && l.stage !== "adult");
   const alivePupae = larvae.filter((l) => l.isAlive && isPupaStage(l.stage));
   const activeLines = lines.filter((l) => l.status !== "finished");
-  const tasks = deriveUpcomingTasks(lines, larvae, schedule);
+  const tasks = deriveUpcomingTasks(lines, larvae, schedule, {}, speciesTuning);
   const summary = calcCostSummary(beetles, larvae, expenses);
 
   const topLarvae = [...larvae]
@@ -482,7 +482,7 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
           </div>
         </div>
         {taskView === "calendar" ? (
-          <TaskCalendar byDate={tasksByDate(lines, larvae, schedule)} />
+          <TaskCalendar byDate={tasksByDate(lines, larvae, schedule, speciesTuning)} />
         ) : tasks.length === 0 ? (
           <div className="rounded-2xl p-6 text-center kuwa-shadow" style={cardStyle}>
             <p className="text-sm" style={{ color: "var(--kuwa-ink-soft)" }}>

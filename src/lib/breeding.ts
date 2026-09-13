@@ -10,6 +10,7 @@ import {
   ReminderSettings,
   ScheduleSettings,
 } from "@/types";
+import { SpeciesOverrides, feedIntervalForSpecies, scheduleFor } from "@/lib/speciesTuning";
 
 /** 端末のローカル日付を YYYY-MM-DD で返す (日付が変われば別の値になる) */
 export function todayStr(d: Date = new Date()): string {
@@ -27,15 +28,24 @@ function isFeedTarget(b: Beetle): boolean {
  * 記録が一度もなければ必要。intervalDays が 1 のときは
  * 「日付が変われば必要」となり、間隔を設けていなかった頃と同じ挙動になる。
  */
-export function needsFeeding(b: Beetle, intervalDays = 1, today = todayStr()): boolean {
+export function needsFeeding(
+  b: Beetle,
+  intervalDays = 1,
+  today = todayStr(),
+  tuning: SpeciesOverrides = {}
+): boolean {
   if (!isFeedTarget(b)) return false;
   if (!b.lastFedDate) return true;
-  return daysBetween(b.lastFedDate, new Date(today)) >= feedIntervalFor(b, intervalDays);
+  return daysBetween(b.lastFedDate, new Date(today)) >= feedIntervalFor(b, intervalDays, tuning);
 }
 
-/** この個体に使う間隔。個体の指定がなければ全体の既定 */
-export function feedIntervalFor(b: Beetle, fallback: number): number {
-  return Math.max(1, b.feedIntervalDays ?? fallback);
+/** この個体に使う間隔。個体の指定 → 品種ごとの目安 → 全体の既定 の順 */
+export function feedIntervalFor(
+  b: Beetle,
+  fallback: number,
+  tuning: SpeciesOverrides = {}
+): number {
+  return Math.max(1, b.feedIntervalDays ?? feedIntervalForSpecies(b.species, fallback, tuning));
 }
 
 /** 前回の給餌から何日たったか。記録がなければ null */
@@ -52,9 +62,14 @@ export function feedAgoLabel(b: Beetle, today = todayStr()): string | null {
 }
 
 /** 給餌の対象と、そのうち交換が必要なもの */
-export function feedingSummary(beetles: Beetle[], intervalDays = 1, today = todayStr()) {
+export function feedingSummary(
+  beetles: Beetle[],
+  intervalDays = 1,
+  today = todayStr(),
+  tuning: SpeciesOverrides = {}
+) {
   const targets = beetles.filter(isFeedTarget);
-  const pending = targets.filter((b) => needsFeeding(b, intervalDays, today));
+  const pending = targets.filter((b) => needsFeeding(b, intervalDays, today, tuning));
   return { targets, pending, done: targets.length - pending.length };
 }
 
@@ -692,7 +707,8 @@ export function deriveUpcomingTasks(
   lines: BreedingLine[],
   larvae: Larva[],
   sc: ScheduleSettings,
-  opts: { includeFuture?: boolean } = {}
+  opts: { includeFuture?: boolean } = {},
+  tuning: SpeciesOverrides = {}
 ): UpcomingTask[] {
   const tasks: UpcomingTask[] = [];
   // ホームの一覧は「まだ先」を出さない。今日やることに集中させるため
@@ -734,6 +750,8 @@ export function deriveUpcomingTasks(
 
   for (const larva of larvae) {
     if (!larva.isAlive) continue;
+    // 日数の目安は品種で違う。幼虫ごとに引き直す
+    const lsc = scheduleFor(larva.species, sc, tuning);
 
     // 最終ビン交換から一定日数経過した幼虫 → ビン交換の目安 (蛹期・羽化後は対象外)
     if (isFeedingStage(larva.stage)) {
@@ -744,9 +762,9 @@ export function deriveUpcomingTasks(
           kind: "bottle",
           title: `${larva.code} ビン交換`,
           detail: `前回交換から${elapsedLabel(days)}`,
-          overdue: days >= sc.bottleChangeDays,
-          dueDate: addDays(latestBottleChange(larva)!.date, sc.bottleChangeDays),
-          showFrom: addDays(latestBottleChange(larva)!.date, sc.bottleChangeDays - 10),
+          overdue: days >= lsc.bottleChangeDays,
+          dueDate: addDays(latestBottleChange(larva)!.date, lsc.bottleChangeDays),
+          showFrom: addDays(latestBottleChange(larva)!.date, lsc.bottleChangeDays - 10),
         });
       }
     }
@@ -760,12 +778,12 @@ export function deriveUpcomingTasks(
           kind: "emerge",
           title: `${larva.code} そろそろ羽化`,
           detail:
-            days > sc.pupaDaysMax
+            days > lsc.pupaDaysMax
               ? `蛹化から${days}日。羽化しているか確認を`
               : `蛹化から${elapsedLabel(days)}。触らず見守りましょう`,
-          overdue: days > sc.pupaDaysMax,
-          dueDate: addDays(larva.pupaDate, sc.pupaDaysMin),
-          showFrom: addDays(larva.pupaDate, sc.pupaDaysMin - 5),
+          overdue: days > lsc.pupaDaysMax,
+          dueDate: addDays(larva.pupaDate, lsc.pupaDaysMin),
+          showFrom: addDays(larva.pupaDate, lsc.pupaDaysMin - 5),
         });
       }
     }
@@ -779,9 +797,9 @@ export function deriveUpcomingTasks(
           kind: "digout",
           title: `${larva.code} 掘り出し`,
           detail: `羽化から${elapsedLabel(days)}`,
-          overdue: days >= sc.digOutDays + 14,
-          dueDate: addDays(larva.emergedDate, sc.digOutDays),
-          showFrom: addDays(larva.emergedDate, sc.digOutDays - 5),
+          overdue: days >= lsc.digOutDays + 14,
+          dueDate: addDays(larva.emergedDate, lsc.digOutDays),
+          showFrom: addDays(larva.emergedDate, lsc.digOutDays - 5),
         });
       }
     }
@@ -797,10 +815,11 @@ export function deriveUpcomingTasks(
 export function tasksByDate(
   lines: BreedingLine[],
   larvae: Larva[],
-  sc: ScheduleSettings
+  sc: ScheduleSettings,
+  tuning: SpeciesOverrides = {}
 ): Map<string, UpcomingTask[]> {
   const byDate = new Map<string, UpcomingTask[]>();
-  for (const t of deriveUpcomingTasks(lines, larvae, sc, { includeFuture: true })) {
+  for (const t of deriveUpcomingTasks(lines, larvae, sc, { includeFuture: true }, tuning)) {
     const list = byDate.get(t.dueDate) ?? [];
     list.push(t);
     byDate.set(t.dueDate, list);

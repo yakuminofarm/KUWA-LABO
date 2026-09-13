@@ -17,6 +17,7 @@ import {
 } from "@/lib/notify";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Sheet } from "@/components/KuwaUI";
+import { SpeciesTuningSection } from "@/components/SpeciesTuningSection";
 import { useToast } from "@/components/ui/Toast";
 
 export function ReminderSheet({ onClose }: { onClose: () => void }) {
@@ -266,6 +267,8 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
           はじめの値に戻す
         </button>
       </div>
+
+      <SpeciesTuningSection />
 
       {/* このアプリの助言について。個体を預かる以上、黙って断定しない */}
       <div

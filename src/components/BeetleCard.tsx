@@ -25,11 +25,12 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
   const toggleFavorite = useKuwagataStore((s) => s.toggleFavorite);
   const toggleFedToday = useKuwagataStore((s) => s.toggleFedToday);
   const reminder = useKuwagataStore((s) => s.reminder);
+  const speciesTuning = useKuwagataStore((s) => s.speciesTuning);
   const isSold = beetle.soldPriceYen != null;
   const inactive = isSold || !beetle.isAlive;
   const fedToday = beetle.lastFedDate === todayStr();
   const showFeed = beetle.matured && !inactive;
-  const pendingFeed = needsFeeding(beetle, reminder.intervalDays);
+  const pendingFeed = needsFeeding(beetle, reminder.intervalDays, undefined, speciesTuning);
   // ふだんと違う餌・間隔の個体だけ、一覧でも分かるようにする
   const food = foodFor(beetle, reminder.foodType);
   const oddFood = showFeed && food !== reminder.foodType;
