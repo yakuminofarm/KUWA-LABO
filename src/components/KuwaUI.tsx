@@ -1,8 +1,47 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Camera, LucideIcon, Plus, Trash2 } from "lucide-react";
-import { fileToThumbnailDataUrl } from "@/lib/photo";
+import { useEffect, useRef, useState } from "react";
+import { Camera, LucideIcon, Plus, Trash2, X } from "lucide-react";
+import { fileToPhoto } from "@/lib/photo";
+import { PhotoSize, photoSrc, savePhoto } from "@/lib/photoStore";
+
+/** 記録が持つ写真の参照 */
+export interface PhotoRef {
+  photoId?: string;
+  /** 旧形式。移行が済むまでの間だけ入っている */
+  photoUrl?: string;
+}
+
+/**
+ * 写真の参照を `<img src>` に渡せる形に解く。
+ * 旧形式はそれ自体が中身なのでそのまま返し、photoId は置き場に取りにいく。
+ */
+function usePhoto(ref?: PhotoRef, size: PhotoSize = "thumb"): string | undefined {
+  const { photoId, photoUrl } = ref ?? {};
+  // 取りにいった結果。どの写真のものかを一緒に持っておき、別の写真へ
+  // 切り替わった直後に前の写真を出してしまわないようにする
+  const [fetched, setFetched] = useState<{ id: string; src?: string } | null>(null);
+
+  useEffect(() => {
+    // 旧形式は中身そのものなので取りにいく必要がない
+    if (photoUrl || !photoId) return;
+    let alive = true;
+    photoSrc(photoId, size)
+      .then((src) => {
+        if (alive) setFetched({ id: photoId, src });
+      })
+      .catch(() => {
+        if (alive) setFetched({ id: photoId });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [photoId, photoUrl, size]);
+
+  if (photoUrl) return photoUrl;
+  if (!photoId) return undefined;
+  return fetched?.id === photoId ? fetched.src : undefined;
+}
 
 /** セクション見出し (塗りアイコンタイル + 丸ゴシック) */
 export function SectionTitle({
@@ -152,19 +191,29 @@ export function Sheet({
   );
 }
 
-/** 個体写真のピッカー (長辺320pxへ縮小して data URI で受け渡す) */
+/**
+ * 個体写真のピッカー。
+ * 選んだ写真はその場で置き場に入れ、呼ぶ側へは id だけ渡す。
+ * 入れたあとに登録をやめた写真は迷子になるが、起動時の掃除で片付く
+ */
 export function PhotoPicker({
   value,
   onChange,
   label = "写真",
 }: {
-  value?: string;
-  onChange: (dataUrl: string | undefined) => void;
+  value?: PhotoRef;
+  onChange: (photoId: string | undefined) => void;
   label?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const src = usePhoto(value);
+  const [brokenSrc, setBrokenSrc] = useState<string>();
+  const shown = src && src !== brokenSrc ? src : undefined;
+  // 写真の有無は参照の有無で決める。src は取りにいっている間だけ空になるので、
+  // これで判断すると選んだ直後に「えらぶ」へ戻って見える
+  const has = Boolean(value?.photoId || value?.photoUrl);
 
   const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -173,7 +222,7 @@ export function PhotoPicker({
     setBusy(true);
     setError(null);
     try {
-      onChange(await fileToThumbnailDataUrl(file));
+      onChange(await savePhoto(await fileToPhoto(file)));
     } catch {
       setError("この画像は読み込めませんでした。別の写真でお試しください");
     } finally {
@@ -193,14 +242,19 @@ export function PhotoPicker({
           disabled={busy}
           className="w-20 h-20 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 overflow-hidden transition-all active:scale-[0.96]"
           style={{
-            background: value ? "transparent" : "var(--kuwa-bark-bg)",
-            border: value ? "1px solid var(--kuwa-line)" : "1px dashed rgba(107,68,35,0.4)",
+            background: has ? "transparent" : "var(--kuwa-bark-bg)",
+            border: has ? "1px solid var(--kuwa-line)" : "1px dashed rgba(107,68,35,0.4)",
           }}
         >
-          {value ? (
+          {shown ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt="" className="w-full h-full object-cover" />
-          ) : (
+            <img
+              src={shown}
+              alt=""
+              className="w-full h-full object-cover"
+              onError={() => setBrokenSrc(shown)}
+            />
+          ) : has ? null : (
             <>
               <Camera className="w-6 h-6" strokeWidth={2} style={{ color: "var(--kuwa-bark)" }} />
               <span className="text-[10px] font-bold mt-1" style={{ color: "var(--kuwa-bark)" }}>
@@ -212,11 +266,11 @@ export function PhotoPicker({
 
         <div className="min-w-0 flex-1">
           <p className="text-xs leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
-            {value
+            {has
               ? "タップすると撮り直せます"
-              : "1枚だけ登録できます。長辺320pxに縮小して保存します"}
+              : "1枚だけ登録できます。あとから大きく見られます"}
           </p>
-          {value && (
+          {has && (
             <button
               type="button"
               onClick={() => onChange(undefined)}
@@ -246,26 +300,86 @@ export function PhotoPicker({
   );
 }
 
-/** 一覧のサムネイル。写真がなければ fallback (種類アバター等) を出す */
-export function PhotoThumb({
-  src,
-  fallback,
-  size = "md",
-}: {
-  src?: string;
-  fallback: React.ReactNode;
-  size?: "sm" | "md";
-}) {
-  if (!src) return <>{fallback}</>;
-  const cls = size === "sm" ? "w-10 h-10 rounded-xl" : "w-11 h-11 rounded-xl";
+/**
+ * 写真を大きく見る。
+ * どこを押しても閉じる — 見終わったらすぐ戻りたいので、閉じる的を探させない
+ */
+export function PhotoViewer({ photo, onClose }: { photo: PhotoRef; onClose: () => void }) {
+  const src = usePhoto(photo, "full");
+
   return (
     <div
-      className={`${cls} overflow-hidden flex-shrink-0`}
+      // シート (z-50) より上に出す
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style={{ background: "rgba(20,14,8,0.94)" }}
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        aria-label="閉じる"
+        className="absolute right-4 p-2.5 rounded-full active:scale-90 transition-all"
+        style={{
+          top: "calc(16px + env(safe-area-inset-top, 0px))",
+          background: "rgba(253,246,231,0.15)",
+          color: "#fdf6e7",
+        }}
+      >
+        <X className="w-5 h-5" strokeWidth={2.4} />
+      </button>
+
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" className="max-w-full max-h-full object-contain rounded-lg" />
+      ) : (
+        <p className="text-sm" style={{ color: "rgba(253,246,231,0.7)" }}>
+          読み込んでいます…
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 一覧のサムネイル。写真がなければ fallback (種類アバター等) を出す。
+ * onClick を渡すと押せるようになる (写真があるときだけ的になる)
+ */
+export function PhotoThumb({
+  photo,
+  fallback,
+  size = "md",
+  onClick,
+}: {
+  photo?: PhotoRef;
+  fallback: React.ReactNode;
+  size?: "sm" | "md";
+  onClick?: () => void;
+}) {
+  const src = usePhoto(photo);
+  // 参照は残っているのに写真が読めないことがある (記録だけ戻したバックアップなど)。
+  // 壊れた画像のアイコンを出すより、写真が無いときと同じ顔にする
+  const [brokenSrc, setBrokenSrc] = useState<string>();
+
+  if (!src || src === brokenSrc) return <>{fallback}</>;
+  const cls = size === "sm" ? "w-10 h-10 rounded-xl" : "w-11 h-11 rounded-xl";
+  const Box = onClick ? "button" : "div";
+  return (
+    <Box
+      {...(onClick
+        ? { type: "button" as const, onClick, "aria-label": "写真を大きく見る" }
+        : {})}
+      className={`${cls} overflow-hidden flex-shrink-0 ${
+        onClick ? "active:scale-90 transition-all" : ""
+      }`}
       style={{ border: "1px solid var(--kuwa-line)" }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" className="w-full h-full object-cover" />
-    </div>
+      <img
+        src={src}
+        alt=""
+        className="w-full h-full object-cover"
+        onError={() => setBrokenSrc(src)}
+      />
+    </Box>
   );
 }
 

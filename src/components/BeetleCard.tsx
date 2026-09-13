@@ -47,7 +47,7 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
       style={inactive ? { opacity: 0.66 } : undefined}
     >
       <div className="flex items-start gap-3.5">
-        <PhotoThumb src={beetle.photoUrl} fallback={<SpeciesAvatar species={beetle.species} />} />
+        <PhotoThumb photo={beetle} fallback={<SpeciesAvatar species={beetle.species} />} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>

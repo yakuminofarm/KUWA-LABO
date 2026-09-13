@@ -30,8 +30,8 @@ type StageFilter = "all" | LarvaStage;
 
 /** 種類カラーの帯 + サムネイル (写真がなければ帯のみ) */
 function LarvaThumb({ larva }: { larva: Larva }) {
-  if (!larva.photoUrl) return null;
-  return <PhotoThumb src={larva.photoUrl} fallback={null} size="sm" />;
+  if (!larva.photoId && !larva.photoUrl) return null;
+  return <PhotoThumb photo={larva} fallback={null} size="sm" />;
 }
 
 function LarvaCard({ larva, onClick }: { larva: Larva; onClick: () => void }) {

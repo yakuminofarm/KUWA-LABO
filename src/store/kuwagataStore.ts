@@ -233,7 +233,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           matured: details.matured ?? false,
           sourceLineId: larva.lineId,
           sourceLarvaId: larva.id,
-          photoUrl: larva.photoUrl,
+          photoId: larva.photoId,
           isAlive: true,
           notes: details.notes?.trim() ?? "",
         };

@@ -30,9 +30,11 @@ const APP_TAG = "kuwarabo";
 /* ───────────────────────── 書き出し ───────────────────────── */
 
 /** 写真を落とした複製を作る (ファイルを軽くしたいとき用) */
-function dropPhoto<T extends { photoUrl?: string }>(x: T): T {
+function dropPhoto<T extends { photoId?: string; photoUrl?: string }>(x: T): T {
   const copy = { ...x };
   delete copy.photoUrl;
+  // 参照だけ残しても、持ち出した先には写真が無い
+  delete copy.photoId;
   return copy;
 }
 
@@ -90,17 +92,40 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-/** id があり文字列で識別できるものだけ通す。壊れた1件で全体を諦めないため */
+/** 文字なら文字、そうでなければ空。undefined を渡さないための受け皿 */
+function asText(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
+/** 配列なら配列、そうでなければ空 */
+function asList(v: unknown): unknown[] {
+  return Array.isArray(v) ? v : [];
+}
+
+/** 生き死には、はっきり false と書いてあるときだけ死んだ扱いにする */
+function asAlive(v: unknown): boolean {
+  return v !== false;
+}
+
+/**
+ * id があり形の分かるものだけ通す。壊れた1件で全体を諦めないため。
+ *
+ * 通すときに、画面が当てにしている必須項目をそろえる。欠けたまま通すと
+ * 一覧の並べ替えや検索でその項目を手繰って落ちるが、1項目足りないだけで
+ * 記録ごと捨てるのは惜しい (入れたあとに本人が直せる)。
+ * 性別や齢のような「選ぶもの」は埋めない — 勝手に決めると、
+ * 書いていないことを書いてあるように見せてしまう。空欄なら空欄のまま出す
+ */
 function pickValid<T>(
   raw: unknown,
-  extra: (o: Record<string, unknown>) => boolean
+  build: (o: Record<string, unknown>) => T | null
 ): { ok: T[]; skipped: number } {
   if (!Array.isArray(raw)) return { ok: [], skipped: 0 };
   const ok: T[] = [];
   let skipped = 0;
   const seen = new Set<string>();
   for (const item of raw) {
-    if (!isRecord(item) || typeof item.id !== "string" || !item.id || !extra(item)) {
+    if (!isRecord(item) || typeof item.id !== "string" || !item.id) {
       skipped++;
       continue;
     }
@@ -108,8 +133,13 @@ function pickValid<T>(
       skipped++; // ファイル内で id が重複していたら後勝ちにせず捨てる
       continue;
     }
+    const rec = build(item);
+    if (!rec) {
+      skipped++;
+      continue;
+    }
     seen.add(item.id);
-    ok.push(item as T);
+    ok.push(rec);
   }
   return { ok, skipped };
 }
@@ -141,12 +171,44 @@ export function parseBackup(text: string): ParseResult {
   if (!isRecord(json.data)) throw new BackupParseError("データが入っていません");
 
   const d = json.data;
-  const beetles = pickValid<Beetle>(d.beetles, (o) => typeof o.species === "string");
-  const lines = pickValid<BreedingLine>(d.lines, (o) => typeof o.name === "string");
-  const larvae = pickValid<Larva>(d.larvae, (o) => typeof o.species === "string");
-  const expenses = pickValid<Expense>(
-    d.expenses,
-    (o) => typeof o.amountYen === "number"
+
+  const beetles = pickValid<Beetle>(d.beetles, (o) =>
+    typeof o.species !== "string"
+      ? null
+      : ({
+          ...o,
+          code: asText(o.code),
+          acquiredDate: asText(o.acquiredDate),
+          notes: asText(o.notes),
+          isAlive: asAlive(o.isAlive),
+        } as unknown as Beetle)
+  );
+
+  const lines = pickValid<BreedingLine>(d.lines, (o) =>
+    typeof o.name !== "string"
+      ? null
+      : ({ ...o, notes: asText(o.notes) } as unknown as BreedingLine)
+  );
+
+  const larvae = pickValid<Larva>(d.larvae, (o) =>
+    typeof o.species !== "string"
+      ? null
+      : ({
+          ...o,
+          code: asText(o.code),
+          notes: asText(o.notes),
+          isAlive: asAlive(o.isAlive),
+          // ビン交換の履歴は日付で並べ替えるので、日付の無い行は通さない
+          bottleChanges: asList(o.bottleChanges).filter(
+            (c) => isRecord(c) && typeof c.date === "string"
+          ),
+        } as unknown as Larva)
+  );
+
+  const expenses = pickValid<Expense>(d.expenses, (o) =>
+    typeof o.amountYen !== "number"
+      ? null
+      : ({ ...o, date: asText(o.date) } as unknown as Expense)
   );
 
   const total =

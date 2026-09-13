@@ -25,7 +25,7 @@ export function AddLarvaModal({ onClose }: AddLarvaModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [form, setForm] = useState<LarvaFormState>(emptyLarvaForm);
-  const [photoUrl, setPhotoUrl] = useState<string | undefined>();
+  const [photoId, setPhotoId] = useState<string | undefined>();
 
   const canSubmit = isLarvaFormValid(form);
 
@@ -36,7 +36,7 @@ export function AddLarvaModal({ onClose }: AddLarvaModalProps) {
       id: generateId(),
       ...formToLarva(form),
       bottleChanges: [],
-      photoUrl,
+      photoId,
       isAlive: true,
     };
     addLarva(larva);
@@ -57,7 +57,7 @@ export function AddLarvaModal({ onClose }: AddLarvaModalProps) {
         </div>
 
         <div className="kuwa-sheet-body flex-1 px-5 pt-5 space-y-4">
-          <PhotoPicker value={photoUrl} onChange={setPhotoUrl} label="この子の写真" />
+          <PhotoPicker value={{ photoId }} onChange={setPhotoId} label="この子の写真" />
 
           <LarvaFields form={form} onChange={setForm} />
         </div>

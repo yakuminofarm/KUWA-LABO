@@ -37,7 +37,8 @@ import {
 } from "@/lib/breeding";
 import { formatDate, getGenderLabel } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
-import { PhotoPicker, PhotoThumb } from "@/components/KuwaUI";
+import { PhotoPicker, PhotoThumb, PhotoViewer } from "@/components/KuwaUI";
+import { PedigreeSection } from "@/components/PedigreeSection";
 import {
   BeetleFields,
   BeetleFormState,
@@ -71,6 +72,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
     useKuwagataStore();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<BeetleFormState | null>(null);
 
@@ -126,7 +128,11 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
       >
         <div className="kuwa-sheet-bar sticky top-0 px-5 py-4 flex items-center justify-between flex-shrink-0 rounded-t-[24px]">
           <div className="flex items-center gap-2.5 min-w-0">
-            <PhotoThumb src={beetle.photoUrl} fallback={<SpeciesAvatar species={beetle.species} />} />
+            <PhotoThumb
+              photo={beetle}
+              fallback={<SpeciesAvatar species={beetle.species} />}
+              onClick={() => setViewingPhoto(true)}
+            />
             <h2 className="text-lg font-bold text-[#31241a] truncate">
               {beetle.code}
               {beetle.name && <span className="text-sm text-[#8b7a64] ml-1.5">「{beetle.name}」</span>}
@@ -151,8 +157,8 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
 
         <div className="kuwa-sheet-body flex-1 px-5 py-5 space-y-5">
           <PhotoPicker
-            value={beetle.photoUrl}
-            onChange={(url) => updateBeetle(beetle.id, { photoUrl: url })}
+            value={beetle}
+            onChange={(id) => updateBeetle(beetle.id, { photoId: id, photoUrl: undefined })}
             label="この子の写真"
           />
 
@@ -530,6 +536,9 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
             )
           )}
 
+          {/* さかのぼる側 (親) を出したうえで、下る側 (種親として使ったライン) を続ける */}
+          <PedigreeSection beetle={beetle} beetles={beetles} lines={lines} />
+
           {relatedLines.length > 0 && (
             <div>
               <h3 className="text-sm font-bold text-[#31241a] mb-2">種親として使用中のライン</h3>
@@ -594,6 +603,10 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
           )}
         </div>
       </div>
+
+      {viewingPhoto && (
+        <PhotoViewer photo={beetle} onClose={() => setViewingPhoto(false)} />
+      )}
     </div>
   );
 }
