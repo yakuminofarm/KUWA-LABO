@@ -9,7 +9,7 @@
     "lint": "eslint",
     "artifact": "NEXT_PUBLIC_KUWA_TARGET=web next build && node scripts/build-artifact.mjs",
     "build:native": "NEXT_PUBLIC_KUWA_TARGET=native next build",
-    "sync:native": "npm run build:native && cap sync",
+    "sync:native": "npm run build:native && cap sync && node scripts/patch-native-locale.mjs",
     "ios": "npm run sync:native && cap open ios",
     "android": "npm run sync:native && cap open android",
     "test": "vitest run",
