@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Check,
   Copy,
+  Share2,
   CheckCircle2,
   HandCoins,
   Heart,
@@ -39,6 +40,9 @@ import { formatDate, getGenderLabel } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { PhotoPicker, PhotoThumb, PhotoViewer } from "@/components/KuwaUI";
 import { PedigreeSection } from "@/components/PedigreeSection";
+import { buildShareCard, shareText } from "@/lib/shareCard";
+import { cardFileName, shareCardImage } from "@/lib/share";
+import { photoSrc } from "@/lib/photoStore";
 import { ParentResultSection } from "@/components/ParentResultSection";
 import {
   BeetleFields,
@@ -73,6 +77,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
     useKuwagataStore();
   const speciesTuning = useKuwagataStore((s) => s.speciesTuning);
   const { showToast } = useToast();
+  const [sharing, setSharing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -106,6 +111,23 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
   const mate = beetle.pairId ? beetles.find((b) => b.id === beetle.pairId) : undefined;
   // 相手がもう販売済みなら、まとめて記録すると二重に売り上げが立つ
   const canSellAsPair = mate != null && mate.soldPriceYen == null;
+
+  const share = async () => {
+    setSharing(true);
+    try {
+      // 大きいほうの写真を載せる。無ければ文字だけの1枚になる
+      const src = beetle.photoUrl ?? (beetle.photoId ? await photoSrc(beetle.photoId, "full") : undefined);
+      const card = await buildShareCard(beetle, src);
+      const result = await shareCardImage(card, cardFileName(beetle.code), shareText(beetle));
+      if (result === "saved") showToast("画像を保存しました");
+      else if (result === "failed") showToast("共有できませんでした", "error");
+      // shared と cancelled は本人に見えているので何も言わない
+    } catch {
+      showToast("共有できませんでした", "error");
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const handleDelete = () => {
     deleteBeetle(beetle.id);
@@ -411,6 +433,15 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
                   この子をもとに登録する
                 </button>
               )}
+
+              <button
+                onClick={share}
+                disabled={sharing}
+                className="kuwa-btn-ghost w-full mt-2 py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all disabled:opacity-40"
+              >
+                <Share2 className="w-4 h-4" strokeWidth={2.2} />
+                {sharing ? "画像を作っています…" : "この子を共有する"}
+              </button>
             </>
           )}
 
