@@ -35,8 +35,9 @@ function relationLabel(r: Relation): string {
     case "shared-ancestor":
       return "共通の祖先あり";
     case "unrelated":
-      // 「血のつながりが無い」とは言えない。手元の記録に出てこないだけ
-      return "記録では繋がらない";
+      // 血縁が無いことは証明できない (買ってきた個体には親の記録が無い)。
+      // 「（記録上）」を添えて、手元の記録の範囲の話だと分かるようにする
+      return "血縁関係なし（記録上）";
   }
 }
 
