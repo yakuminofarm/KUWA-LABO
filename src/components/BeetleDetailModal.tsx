@@ -44,6 +44,7 @@ import { buildShareCard, shareText } from "@/lib/shareCard";
 import { cardFileName, shareCardImage } from "@/lib/share";
 import { photoSrc } from "@/lib/photoStore";
 import { ParentResultSection } from "@/components/ParentResultSection";
+import { PairingSection } from "@/components/PairingSection";
 import {
   BeetleFields,
   BeetleFormState,
@@ -574,6 +575,9 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
             larvae={larvae}
             beetles={beetles}
           />
+
+          {/* これまでの成績を見せたうえで、次に組む相手へ繋ぐ */}
+          <PairingSection beetle={beetle} beetles={beetles} lines={lines} larvae={larvae} />
 
           {beetle.notes && (
             <div>

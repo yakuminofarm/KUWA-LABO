@@ -16,14 +16,19 @@ import {
 
 interface AddLineModalProps {
   onClose: () => void;
+  /**
+   * 最初から入れておく値。ペアリング候補から「この2頭で組む」と入ったときに
+   * 種親と種類を渡すのに使う (あとから画面で直せる)
+   */
+  initial?: Partial<LineFormState>;
 }
 
-export function AddLineModal({ onClose }: AddLineModalProps) {
+export function AddLineModal({ onClose, initial }: AddLineModalProps) {
   const addLine = useKuwagataStore((s) => s.addLine);
   const { showToast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [form, setForm] = useState<LineFormState>(emptyLineForm);
+  const [form, setForm] = useState<LineFormState>(() => ({ ...emptyLineForm(), ...initial }));
 
 
   const canSubmit = isLineFormValid(form);
