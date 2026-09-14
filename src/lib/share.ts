@@ -115,8 +115,12 @@ export async function shareCardImage(
   }
 }
 
-/** 共有に使えるファイル名。管理番号は記号が入りうるので削る */
-export function cardFileName(code: string): string {
+/**
+ * 共有に使えるファイル名。管理番号は記号が入りうるので削る。
+ * `kind` は何の画像かを足すためのもの (例: "pedigree")。
+ * 日本語はここで消えてしまうので、英字で渡す
+ */
+export function cardFileName(code: string, kind?: string): string {
   const safe = code.replace(/[^\w.-]/g, "") || "kuwa";
-  return `${safe}.jpg`;
+  return kind ? `${safe}-${kind}.jpg` : `${safe}.jpg`;
 }

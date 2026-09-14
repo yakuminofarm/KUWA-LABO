@@ -18,6 +18,7 @@
  */
 import { Beetle } from "@/types";
 import { formatDate } from "@/lib/utils";
+import { drawCover, fitText, loadImage, roundRect } from "@/lib/canvasDraw";
 
 export const CARD_WIDTH = 1080;
 /** これより縦長にはしない (縦4:5) */
@@ -66,56 +67,6 @@ export function cardRows(beetle: Beetle): { label: string; value: string }[] {
   return out;
 }
 
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-
-/** 枠を埋めるように切り取って描く (縦横比を崩さない) */
-function drawCover(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  w: number,
-  h: number
-) {
-  const scale = Math.max(w / img.width, h / img.height);
-  const dw = img.width * scale;
-  const dh = img.height * scale;
-  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
-}
-
-/** 枠に収まるところまでにして、続きがあることを示す。今のフォント設定で測る */
-function fitText(ctx: CanvasRenderingContext2D, text: string, max: number): string {
-  if (max <= 0) return "";
-  if (ctx.measureText(text).width <= max) return text;
-  let s = text;
-  while (s.length > 1 && ctx.measureText(`${s}…`).width > max) s = s.slice(0, -1);
-  return `${s}…`;
-}
-
-function load(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const el = new Image();
-    el.onload = () => resolve(el);
-    el.onerror = () => reject(new Error("写真を読めませんでした"));
-    el.src = src;
-  });
-}
-
 /**
  * 個体カードを作って data URI で返す。
  * 写真は渡されたときだけ載せる (無ければ文字だけの1枚になる)
@@ -124,7 +75,7 @@ export async function buildShareCard(beetle: Beetle, photoSrc?: string): Promise
   // 写真。読めなければ写真なしとして続ける (共有そのものは止めない)
   let photo: HTMLImageElement | undefined;
   if (photoSrc) {
-    photo = await load(photoSrc).catch(() => undefined);
+    photo = await loadImage(photoSrc).catch(() => undefined);
   }
 
   const innerW = CARD_WIDTH - PAD * 2;

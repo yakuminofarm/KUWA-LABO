@@ -1,7 +1,13 @@
 "use client";
 
+import { useState } from "react";
+import { FileDown } from "lucide-react";
 import { Pedigree, hasParents, pedigreeOf } from "@/lib/pedigree";
 import { Beetle, BreedingLine } from "@/types";
+import { buildPedigreeCert, certText } from "@/lib/pedigreeCert";
+import { cardFileName, shareCardImage } from "@/lib/share";
+import { photoSrc } from "@/lib/photoStore";
+import { useToast } from "@/components/ui/Toast";
 
 /**
  * 血統の欄。
@@ -76,11 +82,33 @@ export function PedigreeSection({
   beetles: Beetle[];
   lines: BreedingLine[];
 }) {
+  const { showToast } = useToast();
+  const [making, setMaking] = useState(false);
   const pedigree = pedigreeOf(beetle, beetles, lines);
 
   // 買ってきた個体は出身ラインが無く、親をたどれない。
   // 空の欄を出すより、何も出さないほうがよい
   if (!hasParents(pedigree)) return null;
+
+  const exportCert = async () => {
+    setMaking(true);
+    try {
+      const src = beetle.photoUrl ?? (beetle.photoId ? await photoSrc(beetle.photoId, "full") : undefined);
+      const sheet = await buildPedigreeCert(pedigree, { photoSrc: src });
+      const result = await shareCardImage(
+        sheet,
+        cardFileName(beetle.code, "pedigree"),
+        certText(beetle)
+      );
+      if (result === "saved") showToast("血統書を保存しました");
+      else if (result === "failed") showToast("血統書を書き出せませんでした", "error");
+      // shared と cancelled は本人に見えているので何も言わない
+    } catch {
+      showToast("血統書を書き出せませんでした", "error");
+    } finally {
+      setMaking(false);
+    }
+  };
 
   return (
     <div
@@ -101,9 +129,19 @@ export function PedigreeSection({
         {pedigree.mother && <Row node={pedigree.mother} depth={1} male={false} />}
       </div>
 
+      <button
+        onClick={exportCert}
+        disabled={making}
+        className="kuwa-btn-ghost w-full mt-3 py-2.5 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all disabled:opacity-40"
+      >
+        <FileDown className="w-4 h-4" strokeWidth={2.2} />
+        {making ? "血統書を作っています…" : "血統書を書き出す"}
+      </button>
+
       <p className="text-[11px] mt-2.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
         幼虫から成虫へ引き上げたときの出身ラインから、さかのぼって出しています。
-        手元から消した個体は出てきません。
+        手元から消した個体は出てきません。書き出した血統書は自分の記録を写したもので、
+        第三者の証明ではありません。
       </p>
     </div>
   );
