@@ -53,15 +53,11 @@ function max(a: number | undefined, b: number | undefined): number | undefined {
   return Math.max(a, b);
 }
 
-/** 1つのラインの成績 */
-export function lineResult(
+function resultOf(
   line: BreedingLine,
-  larvae: Larva[],
-  beetles: Beetle[]
+  mine: Larva[],
+  beetleById: Map<string, Beetle>
 ): LineResult {
-  const beetleById = new Map(beetles.map((b) => [b.id, b]));
-  const mine = larvae.filter((l) => l.lineId === line.id);
-
   let bestSizeMm: number | undefined;
   let emergedHeads = 0;
   for (const l of mine) {
@@ -80,6 +76,42 @@ export function lineResult(
 }
 
 /**
+ * ライン全部の成績をまとめて出す。
+ *
+ * 一覧では行ごとに成績を出すので、1本ずつ `lineResult` を呼ぶと
+ * 成虫の索引と幼虫の絞り込みをライン数ぶん作り直すことになる。
+ * ここで索引を1回だけ作って配る (順番は渡したラインのまま)。
+ */
+export function lineResults(
+  lines: BreedingLine[],
+  larvae: Larva[],
+  beetles: Beetle[]
+): LineResult[] {
+  const beetleById = new Map(beetles.map((b) => [b.id, b]));
+  const byLine = new Map<string, Larva[]>();
+  for (const l of larvae) {
+    if (!l.lineId) continue;
+    const bucket = byLine.get(l.lineId);
+    if (bucket) bucket.push(l);
+    else byLine.set(l.lineId, [l]);
+  }
+  return lines.map((line) => resultOf(line, byLine.get(line.id) ?? [], beetleById));
+}
+
+/** 1つのラインの成績 */
+export function lineResult(
+  line: BreedingLine,
+  larvae: Larva[],
+  beetles: Beetle[]
+): LineResult {
+  return resultOf(
+    line,
+    larvae.filter((l) => l.lineId === line.id),
+    new Map(beetles.map((b) => [b.id, b]))
+  );
+}
+
+/**
  * この個体を種親に使ったライン全部の成績。
  * 種親に使っていなければ lines は空になる
  */
@@ -90,7 +122,7 @@ export function parentResult(
   beetles: Beetle[]
 ): ParentResult {
   const mine = lines.filter((l) => l.maleId === beetle.id || l.femaleId === beetle.id);
-  const results = mine.map((l) => lineResult(l, larvae, beetles));
+  const results = lineResults(mine, larvae, beetles);
 
   return {
     lines: results,
@@ -99,4 +131,24 @@ export function parentResult(
     emergedHeads: results.reduce((s, r) => s + r.emergedHeads, 0),
     bestSizeMm: results.reduce<number | undefined>((s, r) => max(s, r.bestSizeMm), undefined),
   };
+}
+
+/**
+ * 成績のよいライン順に並べるための比較。
+ *
+ * 何をもって「よい」とするかは人によるが、次に何を組むか決めるときに
+ * まず見るのは**その血から出た最大個体**なので、それを先に見る。
+ * 同じなら羽化までいった頭数、それも同じなら採れた頭数で比べる。
+ *
+ * サイズが分かっていないラインは後ろに置く。0mm として扱うと
+ * 「小さかったライン」と見分けが付かなくなる。
+ */
+export function byResult(a: LineResult, b: LineResult): number {
+  if (a.bestSizeMm != null || b.bestSizeMm != null) {
+    if (a.bestSizeMm == null) return 1;
+    if (b.bestSizeMm == null) return -1;
+    if (a.bestSizeMm !== b.bestSizeMm) return b.bestSizeMm - a.bestSizeMm;
+  }
+  if (a.emergedHeads !== b.emergedHeads) return b.emergedHeads - a.emergedHeads;
+  return b.larvaHeads - a.larvaHeads;
 }

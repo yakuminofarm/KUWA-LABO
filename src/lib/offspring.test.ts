@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lineResult, parentResult } from "@/lib/offspring";
+import { LineResult, byResult, lineResult, lineResults, parentResult } from "@/lib/offspring";
 import { Beetle, BreedingLine, Larva } from "@/types";
 
 const beetle = (id: string, extra: Partial<Beetle> = {}): Beetle => ({
@@ -145,5 +145,61 @@ describe("parentResult", () => {
     expect(r.lines).toHaveLength(0);
     expect(r.larvaHeads).toBe(0);
     expect(r.bestSizeMm).toBeUndefined();
+  });
+});
+
+describe("lineResults", () => {
+  it("1本ずつ出したのと同じ成績になる", () => {
+    const lines = [line("L1", "dad", "mom"), line("L2", "dad", "mom2")];
+    const larvae = [
+      larva("x1", "L1", { count: 3, emergedSizeMm: 80.2 }),
+      larva("x2", "L2", { count: 2 }),
+    ];
+    const beetles = [beetle("dad"), beetle("mom"), beetle("mom2")];
+    expect(lineResults(lines, larvae, beetles)).toEqual([
+      lineResult(lines[0], larvae, beetles),
+      lineResult(lines[1], larvae, beetles),
+    ]);
+  });
+
+  it("幼虫が1頭もいないラインも同じ数だけ返す", () => {
+    const lines = [line("L1"), line("L2")];
+    const out = lineResults(lines, [], []);
+    expect(out.map((r) => r.line.id)).toEqual(["L1", "L2"]);
+    expect(out.every((r) => r.larvaHeads === 0)).toBe(true);
+  });
+});
+
+describe("byResult", () => {
+  const r = (over: Partial<LineResult>): LineResult => ({
+    line: line("x"),
+    larvaHeads: 0,
+    aliveHeads: 0,
+    emergedHeads: 0,
+    ...over,
+  });
+
+  it("最大サイズの大きいほうが先", () => {
+    const sorted = [r({ bestSizeMm: 78 }), r({ bestSizeMm: 84.5 })].sort(byResult);
+    expect(sorted[0].bestSizeMm).toBe(84.5);
+  });
+
+  it("サイズが分からないラインは後ろ", () => {
+    const sorted = [r({}), r({ bestSizeMm: 70 })].sort(byResult);
+    expect(sorted[0].bestSizeMm).toBe(70);
+    expect(sorted[1].bestSizeMm).toBeUndefined();
+  });
+
+  it("サイズが同じなら羽化した頭数で比べる", () => {
+    const sorted = [
+      r({ bestSizeMm: 80, emergedHeads: 2 }),
+      r({ bestSizeMm: 80, emergedHeads: 9 }),
+    ].sort(byResult);
+    expect(sorted[0].emergedHeads).toBe(9);
+  });
+
+  it("どちらもサイズが分からなければ頭数で比べる", () => {
+    const sorted = [r({ larvaHeads: 1 }), r({ larvaHeads: 12 })].sort(byResult);
+    expect(sorted[0].larvaHeads).toBe(12);
   });
 });

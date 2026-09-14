@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { GitBranch } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { BreedingLine, LineStatus } from "@/types";
+import { LineResult, byResult, lineResults } from "@/lib/offspring";
 import {
   LINE_STATUS_COLORS,
   LINE_STATUS_LABELS,
@@ -19,8 +20,22 @@ import { EmptyState, Fab } from "@/components/KuwaUI";
 import { EMPTY_IMAGE } from "@/lib/assets";
 
 type StatusFilter = "all" | LineStatus;
+type Order = "recent" | "result";
 
-function LineCard({ line, onClick }: { line: BreedingLine; onClick: () => void }) {
+const ORDER_LABELS: Record<Order, string> = {
+  recent: "新しい順",
+  result: "成績順",
+};
+
+function LineCard({
+  line,
+  result,
+  onClick,
+}: {
+  line: BreedingLine;
+  result: LineResult;
+  onClick: () => void;
+}) {
   const { beetles, getLarvaeByLine } = useKuwagataStore();
   const male = line.maleId ? beetles.find((b) => b.id === line.maleId) : undefined;
   const female = line.femaleId ? beetles.find((b) => b.id === line.femaleId) : undefined;
@@ -76,25 +91,44 @@ function LineCard({ line, onClick }: { line: BreedingLine; onClick: () => void }
             育成中 {larvaeCount}頭
           </span>
         )}
+        {/* 成績。まだ羽化していないラインでは出しても意味がないので伏せる */}
+        {result.emergedHeads > 0 && <span>羽化 {result.emergedHeads}頭</span>}
+        {result.bestSizeMm != null && (
+          <span className="font-bold" style={{ color: "var(--kuwa-amber)" }}>
+            最大 {result.bestSizeMm}mm
+          </span>
+        )}
       </div>
     </button>
   );
 }
 
 export function BreedingTab() {
-  const { lines } = useKuwagataStore();
+  const { lines, larvae, beetles } = useKuwagataStore();
   const [showAdd, setShowAdd] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [order, setOrder] = useState<Order>("recent");
 
-  const filtered =
-    statusFilter === "all" ? lines : lines.filter((l) => l.status === statusFilter);
+  // 成績は行ごとに要るので、索引を作り直さないようまとめて出す。
+  // 絞り込みも同じ useMemo に入れる (別にすると毎回新しい配列になって覚え直す)
+  const results = useMemo(() => {
+    const filtered =
+      statusFilter === "all" ? lines : lines.filter((l) => l.status === statusFilter);
+    return lineResults(filtered, larvae, beetles);
+  }, [lines, larvae, beetles, statusFilter]);
 
-  const sorted = [...filtered].sort((a, b) => {
-    const activeDiff = Number(a.status === "finished") - Number(b.status === "finished");
-    if (activeDiff !== 0) return activeDiff;
-    return (b.pairingDate ?? "").localeCompare(a.pairingDate ?? "");
-  });
+  const sorted = useMemo(() => {
+    const list = [...results];
+    if (order === "result") return list.sort(byResult);
+    // 新しい順では、終わったラインを下に落として進行中を上に出す
+    return list.sort((a, b) => {
+      const activeDiff =
+        Number(a.line.status === "finished") - Number(b.line.status === "finished");
+      if (activeDiff !== 0) return activeDiff;
+      return (b.line.pairingDate ?? "").localeCompare(a.line.pairingDate ?? "");
+    });
+  }, [results, order]);
 
   const selected = lines.find((l) => l.id === selectedId);
 
@@ -112,6 +146,27 @@ export function BreedingTab() {
           </button>
         ))}
       </div>
+
+      <div className="flex items-center gap-2">
+        {(Object.keys(ORDER_LABELS) as Order[]).map((o) => (
+          <button
+            key={o}
+            onClick={() => setOrder(o)}
+            data-on={order === o}
+            className="kuwa-chip font-maru"
+          >
+            {ORDER_LABELS[o]}
+          </button>
+        ))}
+      </div>
+
+      {/* 何の順なのかを書いておく。「成績」の中身は人によって違う */}
+      {order === "result" && sorted.length > 0 && (
+        <p className="text-[11px] leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          その血から出た最大個体の大きい順です。
+          まだ大きさが分かっていないラインは、羽化した頭数の順で後ろに並びます。
+        </p>
+      )}
 
       {sorted.length === 0 ? (
         <EmptyState
@@ -131,9 +186,13 @@ export function BreedingTab() {
         />
       ) : (
         <div className="space-y-3">
-          {sorted.map((l, i) => (
-            <div key={l.id} className="animate-slide-up" style={{ animationDelay: `${i * 30}ms` }}>
-              <LineCard line={l} onClick={() => setSelectedId(l.id)} />
+          {sorted.map((r, i) => (
+            <div
+              key={r.line.id}
+              className="animate-slide-up"
+              style={{ animationDelay: `${i * 30}ms` }}
+            >
+              <LineCard line={r.line} result={r} onClick={() => setSelectedId(r.line.id)} />
             </div>
           ))}
         </div>
