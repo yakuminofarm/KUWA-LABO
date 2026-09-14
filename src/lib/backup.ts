@@ -4,7 +4,9 @@ import {
   Expense,
   Larva,
   ReminderSettings,
+  ScheduleSettings,
 } from "@/types";
+import type { SpeciesOverrides } from "@/lib/speciesTuning";
 
 /** バックアップの中身 (ストアの永続化対象と同じ) */
 export interface BackupData {
@@ -13,6 +15,10 @@ export interface BackupData {
   larvae: Larva[];
   expenses: Expense[];
   reminder?: ReminderSettings;
+  /** 育成の目安にする日数 (全体) */
+  schedule?: ScheduleSettings;
+  /** 品種ごとに直した値 */
+  speciesTuning?: SpeciesOverrides;
 }
 
 /** 書き出すJSONファイルの形 */
@@ -20,7 +26,8 @@ export interface BackupFile {
   app: "kuwarabo";
   version: number;
   exportedAt: string;
-  counts: Record<keyof Omit<BackupData, "reminder">, number>;
+  /** 記録の件数。設定は数えない */
+  counts: Record<"beetles" | "lines" | "larvae" | "expenses", number>;
   data: BackupData;
 }
 
@@ -144,6 +151,42 @@ function pickValid<T>(
   return { ok, skipped };
 }
 
+const SCHEDULE_KEYS = ["pupaDaysMin", "pupaDaysMax", "digOutDays", "bottleChangeDays"] as const;
+const TUNING_KEYS = ["feedIntervalDays", ...SCHEDULE_KEYS] as const;
+
+/** 日数として使える数だけ通す */
+function asDays(v: unknown): number | undefined {
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : undefined;
+}
+
+/** 4つそろっていなければ使わない (欠けた目安で日付を出すと当てにならない) */
+function pickSchedule(v: unknown): ScheduleSettings | undefined {
+  if (!isRecord(v)) return undefined;
+  const out: Record<string, number> = {};
+  for (const k of SCHEDULE_KEYS) {
+    const n = asDays(v[k]);
+    if (n == null) return undefined;
+    out[k] = n;
+  }
+  return out as unknown as ScheduleSettings;
+}
+
+/** 品種ごとの値。読める項目だけ拾い、空になった品種は落とす */
+function pickSpeciesTuning(v: unknown): SpeciesOverrides | undefined {
+  if (!isRecord(v)) return undefined;
+  const out: SpeciesOverrides = {};
+  for (const [species, patch] of Object.entries(v)) {
+    if (!species || !isRecord(patch)) continue;
+    const kept: Record<string, number> = {};
+    for (const k of TUNING_KEYS) {
+      const n = asDays(patch[k]);
+      if (n != null) kept[k] = n;
+    }
+    if (Object.keys(kept).length > 0) out[species] = kept;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export class BackupParseError extends Error {}
 
 /**
@@ -217,6 +260,9 @@ export function parseBackup(text: string): ParseResult {
     throw new BackupParseError("取り込める記録が1件もありませんでした");
   }
 
+  const schedule = pickSchedule(d.schedule);
+  const speciesTuning = pickSpeciesTuning(d.speciesTuning);
+
   const reminder =
     isRecord(d.reminder) &&
     typeof d.reminder.enabled === "boolean" &&
@@ -231,6 +277,8 @@ export function parseBackup(text: string): ParseResult {
       larvae: larvae.ok,
       expenses: expenses.ok,
       reminder,
+      schedule,
+      speciesTuning,
     },
     skipped: beetles.skipped + lines.skipped + larvae.skipped + expenses.skipped,
     exportedAt: typeof json.exportedAt === "string" ? json.exportedAt : undefined,

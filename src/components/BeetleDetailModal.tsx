@@ -39,6 +39,7 @@ import { formatDate, getGenderLabel } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { PhotoPicker, PhotoThumb, PhotoViewer } from "@/components/KuwaUI";
 import { PedigreeSection } from "@/components/PedigreeSection";
+import { ParentResultSection } from "@/components/ParentResultSection";
 import {
   BeetleFields,
   BeetleFormState,
@@ -70,6 +71,7 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
 export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: BeetleDetailModalProps) {
   const { beetles, lines, larvae, reminder, updateBeetle, deleteBeetle, toggleFavorite, toggleFedToday } =
     useKuwagataStore();
+  const speciesTuning = useKuwagataStore((s) => s.speciesTuning);
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState(false);
@@ -104,10 +106,6 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
   const mate = beetle.pairId ? beetles.find((b) => b.id === beetle.pairId) : undefined;
   // 相手がもう販売済みなら、まとめて記録すると二重に売り上げが立つ
   const canSellAsPair = mate != null && mate.soldPriceYen == null;
-
-  const relatedLines = lines.filter(
-    (l) => l.maleId === beetle.id || l.femaleId === beetle.id
-  );
 
   const handleDelete = () => {
     deleteBeetle(beetle.id);
@@ -252,7 +250,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
               <p className="text-xs mt-2.5" style={{ color: "var(--kuwa-ink-soft)" }}>
                 エサ替えは{" "}
                 <strong style={{ color: "var(--kuwa-ink)" }}>
-                  {feedIntervalLabel(feedIntervalFor(beetle, reminder.intervalDays))}
+                  {feedIntervalLabel(feedIntervalFor(beetle, reminder.intervalDays, speciesTuning))}
                 </strong>
               </p>
 
@@ -539,19 +537,12 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
           {/* さかのぼる側 (親) を出したうえで、下る側 (種親として使ったライン) を続ける */}
           <PedigreeSection beetle={beetle} beetles={beetles} lines={lines} />
 
-          {relatedLines.length > 0 && (
-            <div>
-              <h3 className="text-sm font-bold text-[#31241a] mb-2">種親として使用中のライン</h3>
-              <div className="space-y-1.5">
-                {relatedLines.map((l) => (
-                  <div key={l.id} className="bg-white border border-[rgba(107,68,35,0.16)] rounded-xl px-3.5 py-2.5 flex justify-between items-center">
-                    <span className="text-sm font-semibold text-[#31241a]">{l.name}</span>
-                    <span className="text-xs text-[#8b7a64]">{l.species}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <ParentResultSection
+            beetle={beetle}
+            lines={lines}
+            larvae={larvae}
+            beetles={beetles}
+          />
 
           {beetle.notes && (
             <div>

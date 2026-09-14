@@ -2,6 +2,7 @@
 
 import { BreedingLine } from "@/types";
 import { SpeciesSelect } from "@/components/SpeciesSelect";
+import { RelationNotice } from "@/components/RelationNotice";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 
 /**
@@ -95,6 +96,7 @@ export function LineFields({
   showProgress?: boolean;
 }) {
   const beetles = useKuwagataStore((s) => s.beetles);
+  const lines = useKuwagataStore((s) => s.lines);
   const set = (patch: Partial<LineFormState>) => onChange({ ...form, ...patch });
 
   const pickable = beetles.filter((b) => b.isAlive && b.soldPriceYen == null);
@@ -158,6 +160,13 @@ export function LineFields({
           </select>
         </div>
       </div>
+
+      <RelationNotice
+        maleId={form.maleId || undefined}
+        femaleId={form.femaleId || undefined}
+        beetles={beetles}
+        lines={lines}
+      />
 
       <div>
         <label className="block text-sm font-medium text-[#40352a] mb-1">ペアリング開始日</label>

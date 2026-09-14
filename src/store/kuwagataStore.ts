@@ -10,6 +10,7 @@ import {
   ScheduleSettings,
 } from "@/types";
 import { DEFAULT_SCHEDULE, headCount, needsFeeding, todayStr } from "@/lib/breeding";
+import type { SpeciesOverrides, TuningPatch } from "@/lib/speciesTuning";
 import { generateId } from "@/lib/utils";
 import { mockBeetles, mockExpenses, mockLarvae, mockLines } from "@/lib/mockData";
 import type { BackupData, ImportResult } from "@/lib/backup";
@@ -50,6 +51,15 @@ interface KuwagataStore {
   /** 育成の目安にする日数 (飼育者ごとに変えられる) */
   schedule: ScheduleSettings;
   setSchedule: (s: Partial<ScheduleSettings>) => void;
+  /**
+   * 品種ごとに直した値。AIの目安は書き込まず、本人が直したものだけ入れる。
+   * 目安まで写すと、あとで目安を直しても古い値が残り、どれが本人の決めた値かも
+   * 分からなくなる (src/lib/speciesTuning.ts)
+   */
+  speciesTuning: SpeciesOverrides;
+  setSpeciesTuning: (species: string, patch: TuningPatch) => void;
+  /** その品種をAIの目安に戻す */
+  clearSpeciesTuning: (species: string) => void;
 
   /** 最後にバックアップを書き出した日時 (ISO)。まだ一度もしていなければ未設定 */
   lastBackupAt?: string;
@@ -128,6 +138,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
       expenses: [],
       reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー", showCost: true },
       schedule: { ...DEFAULT_SCHEDULE },
+      speciesTuning: {},
       lastBackupAt: undefined,
 
       toggleFedToday: (id) =>
@@ -145,9 +156,10 @@ export const useKuwagataStore = create<KuwagataStore>()(
       feedAllToday: () => {
         const today = todayStr();
         const { intervalDays } = get().reminder;
+        const tuning = get().speciesTuning;
         const due = new Set(
           get()
-            .beetles.filter((b) => needsFeeding(b, intervalDays, today))
+            .beetles.filter((b) => needsFeeding(b, intervalDays, today, tuning))
             .map((b) => b.id)
         );
         set((s) => ({
@@ -161,6 +173,21 @@ export const useKuwagataStore = create<KuwagataStore>()(
       setReminder: (r) => set((s) => ({ reminder: { ...s.reminder, ...r } })),
 
       setSchedule: (v) => set((s) => ({ schedule: { ...s.schedule, ...v } })),
+
+      setSpeciesTuning: (species, patch) =>
+        set((s) => ({
+          speciesTuning: {
+            ...s.speciesTuning,
+            [species]: { ...s.speciesTuning[species], ...patch },
+          },
+        })),
+
+      clearSpeciesTuning: (species) =>
+        set((s) => {
+          const next = { ...s.speciesTuning };
+          delete next[species];
+          return { speciesTuning: next };
+        }),
 
       recordBackup: () => set({ lastBackupAt: new Date().toISOString() }),
 
@@ -373,6 +400,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           expenses: [],
           reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー", showCost: true },
           schedule: { ...DEFAULT_SCHEDULE },
+          speciesTuning: {},
           lastBackupAt: undefined,
         }),
 
@@ -383,7 +411,11 @@ export const useKuwagataStore = create<KuwagataStore>()(
           lines: s.lines,
           larvae: s.larvae,
           expenses: s.expenses,
+          // 設定も控えに入れる。機種を変えたときに、記録だけ戻って
+          // 目安を入れ直す羽目にならないように
           reminder: s.reminder,
+          schedule: s.schedule,
+          speciesTuning: s.speciesTuning,
         };
       },
 
@@ -399,6 +431,8 @@ export const useKuwagataStore = create<KuwagataStore>()(
           larvae: d.larvae,
           expenses: d.expenses,
           reminder: d.reminder ?? s.reminder,
+          schedule: d.schedule ?? s.schedule,
+          speciesTuning: d.speciesTuning ?? s.speciesTuning,
         }));
         return {
           added: d.beetles.length + d.lines.length + d.larvae.length + d.expenses.length,
@@ -457,6 +491,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           // 設定は項目が増えることがあるので、保存済みの値を既定に重ねる
           reminder: { ...current.reminder, ...(p?.reminder ?? {}) },
           schedule: { ...current.schedule, ...(p?.schedule ?? {}) },
+          speciesTuning: p?.speciesTuning ?? current.speciesTuning,
           lastBackupAt: p?.lastBackupAt ?? current.lastBackupAt,
         };
       },

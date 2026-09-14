@@ -88,6 +88,18 @@ npm run android   # ビルド → 同期 → Android Studio が開く
 | `npm run sync:native` | 上に加えて、iOS/Android のプロジェクトへ配る |
 | `npm run ios` / `npm run android` | 上に加えて、Xcode / Android Studio を開く |
 
+### 日付を選ぶ欄を日本語にする
+
+日付の欄 (`<input type="date">`) をタップすると出てくる画面は iOS が用意する
+もので、Web 側からは言葉を変えられない。iOS は**アプリが対応している言語**を見て
+決めるが、Capacitor が作る `Info.plist` は `CFBundleDevelopmentRegion = en` で
+`CFBundleLocalizations` を持たない。これだと英語専用のアプリと見なされ、
+端末を日本語にしていても月の名前が `September` のまま出る。
+
+`ios/` は Git に入れていないので手で直すと作り直したときに消える。
+そこで `npm run sync:native` のたびに `scripts/patch-native-locale.mjs` が
+当て直す (何度走らせても同じ結果になる)。
+
 実機に入れるところから先 (署名・証明書・ストアへの申請) は
 Xcode と Android Studio の画面での作業になる。
 

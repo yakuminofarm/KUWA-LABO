@@ -47,6 +47,7 @@ export function FeedingReminder() {
   const time = useKuwagataStore((s) => s.reminder.time);
   const intervalDays = useKuwagataStore((s) => s.reminder.intervalDays);
   const beetles = useKuwagataStore((s) => s.beetles);
+  const speciesTuning = useKuwagataStore((s) => s.speciesTuning);
   const { showToast } = useToast();
 
   // ── ブラウザ版: 開いている間だけ見張る ──────────────
@@ -60,8 +61,8 @@ export function FeedingReminder() {
       if (!isPastTime(time)) return;
 
       // 最新の一覧はストアから直接読む (レンダー中に ref を触らないため)
-      const { beetles, reminder: r } = useKuwagataStore.getState();
-      const { pending } = feedingSummary(beetles, r.intervalDays, today);
+      const { beetles, reminder: r, speciesTuning: tuning } = useKuwagataStore.getState();
+      const { pending } = feedingSummary(beetles, r.intervalDays, today, tuning);
       if (pending.length === 0) return;
 
       writeNotifiedOn(today);
@@ -93,8 +94,8 @@ export function FeedingReminder() {
     if (!IS_NATIVE) return;
 
     const sync = () => {
-      const { beetles, reminder } = useKuwagataStore.getState();
-      void syncFeedingNotices(planFeedingNotices(beetles, reminder));
+      const { beetles, reminder, speciesTuning } = useKuwagataStore.getState();
+      void syncFeedingNotices(planFeedingNotices(beetles, reminder, undefined, speciesTuning));
     };
 
     // 記録を1つ直すたびに積み直すと、続けて触ったぶんだけ端末を呼ぶ。
@@ -132,8 +133,9 @@ export function FeedingReminder() {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", flushIfPending);
     };
-    // 記録と設定のどちらが動いても積み直す
-  }, [enabled, time, intervalDays, beetles]);
+    // 記録と設定のどちらが動いても積み直す。品種ごとの間隔を直したときも
+    // 積み直さないと、端末に積んである予定だけ古い数のまま残る
+  }, [enabled, time, intervalDays, beetles, speciesTuning]);
 
   return null;
 }

@@ -10,6 +10,7 @@ import { BeetleDetailModal } from "@/components/BeetleDetailModal";
 import { EmptyState, Fab } from "@/components/KuwaUI";
 import { EMPTY_IMAGE } from "@/lib/assets";
 import { SPECIES_OPTIONS, groupBySpecies, needsFeeding } from "@/lib/breeding";
+import type { SpeciesOverrides } from "@/lib/speciesTuning";
 import { BeetleFormState, duplicateBeetleForm } from "@/components/BeetleFields";
 
 type FilterKey = "alive" | "unfed" | "male" | "female" | "matured" | "favorite" | "sold";
@@ -36,12 +37,13 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 function applyFilter(
   beetles: Beetle[],
   active: Set<FilterKey>,
-  intervalDays: number
+  intervalDays: number,
+  speciesTuning: SpeciesOverrides
 ): Beetle[] {
   if (active.size === 0) return beetles;
   return beetles.filter((b) => {
     if (active.has("alive") && (!b.isAlive || b.soldPriceYen != null)) return false;
-    if (active.has("unfed") && !needsFeeding(b, intervalDays)) return false;
+    if (active.has("unfed") && !needsFeeding(b, intervalDays, undefined, speciesTuning)) return false;
     if (active.has("sold") && b.soldPriceYen == null) return false;
     if (active.has("male") && b.gender !== "male") return false;
     if (active.has("female") && b.gender !== "female") return false;
@@ -64,7 +66,7 @@ function applySort(beetles: Beetle[], key: SortKey): Beetle[] {
 }
 
 export function AdultTab() {
-  const { beetles, reminder } = useKuwagataStore();
+  const { beetles, reminder, speciesTuning } = useKuwagataStore();
   const [showAdd, setShowAdd] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -91,7 +93,7 @@ export function AdultTab() {
       (b.locality ?? "").includes(search)
   );
   const sorted = applySort(
-    applyFilter(searched, activeFilters, reminder.intervalDays),
+    applyFilter(searched, activeFilters, reminder.intervalDays, speciesTuning),
     sortKey
   );
   const selected = beetles.find((b) => b.id === selectedId);

@@ -133,14 +133,21 @@ describe("jellyForecast (ひと月のめやす)", () => {
 
   it("頭数・1回の数・間隔から月間個数を計算する", () => {
     const beetles = [
-      beetle({ matured: true }), // 既定: 1個・毎日
-      beetle({ id: "b2", matured: true, jellyPerFeed: 2 }), // 2個・毎日
-      beetle({ id: "b3", matured: true, jellyPerFeed: 0.5, feedIntervalDays: 2 }), // 半分・2日おき
+      beetle({ matured: true }), // 1個
+      beetle({ id: "b2", matured: true, jellyPerFeed: 2 }), // 2個
+      beetle({ id: "b3", matured: true, jellyPerFeed: 0.5, feedIntervalDays: 2 }), // 半分・個体で2日おき
     ];
     const f = jellyForecast(beetles, 1, 18);
-    // (1/1 + 2/1 + 0.5/2) * 30 = 97.5
-    expect(f.perMonth).toBeCloseTo(97.5);
-    expect(f.costPerMonth).toBeCloseTo(97.5 * 18);
+    // オオクワガタは品種の目安が3日おき。個体に指定があればそちらが勝つ
+    // (1/3 + 2/3 + 0.5/2) * 30 = 37.5
+    expect(f.perMonth).toBeCloseTo(37.5);
+    expect(f.costPerMonth).toBeCloseTo(37.5 * 18);
+  });
+
+  it("品種の目安より、個体ごとの指定が勝つ", () => {
+    // オオクワガタの目安は3日おき。個体で毎日と決めていればそちらに従う
+    const f = jellyForecast([beetle({ matured: true, feedIntervalDays: 1 })], 3, null);
+    expect(f.perMonth).toBeCloseTo(30);
   });
 
   it("単価が分からなければ金額は出さない", () => {
@@ -304,6 +311,16 @@ describe("planFeedingNotices (アプリ版で端末に積むお知らせ)", () =
   const hungry = beetle({ matured: true });
   // 9/5 の朝。19:00 はまだ来ていない
   const morning = new Date("2026-09-05T08:00:00");
+
+  it("品種ごとに直した間隔が、端末に積むお知らせにも効く", () => {
+    // 画面に出る数と、端末が鳴らすときの数がずれないように。
+    // オオクワガタを30日おきにすれば、あげた翌日には対象から外れる
+    const fedYesterday = beetle({ matured: true, lastFedDate: "2026-09-04" });
+    const tuning = { オオクワガタ: { feedIntervalDays: 30 } };
+
+    expect(planFeedingNotices([fedYesterday], reminder, morning).length).toBeGreaterThan(0);
+    expect(planFeedingNotices([fedYesterday], reminder, morning, tuning)).toEqual([]);
+  });
 
   it("オフのときは何も積まない", () => {
     expect(planFeedingNotices([hungry], { ...reminder, enabled: false }, morning)).toEqual([]);
