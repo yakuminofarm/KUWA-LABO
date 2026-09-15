@@ -27,7 +27,8 @@ import {
 import { embedPhotos, upkeepPhotos } from "@/lib/photoUpkeep";
 import { ViewerSave, getViewerSave, saveTextFile } from "@/lib/download";
 import { buildInventoryCsv, csvFileName } from "@/lib/csv";
-import { FileSpreadsheet } from "lucide-react";
+import { FileSpreadsheet, Printer } from "lucide-react";
+import { LabelSheet } from "@/components/LabelSheet";
 import { resetInstallHint } from "@/components/InstallHint";
 
 /** 取り込み待ちのファイル (中身を見せてから、どう入れるか選んでもらう) */
@@ -70,6 +71,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
   const [withPhotos, setWithPhotos] = useState(true);
   const [pending, setPending] = useState<Pending | null>(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   // 共有ページでは閲覧側の保存ダイアログ経由でないとファイルを渡せない
@@ -316,6 +318,31 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
         </p>
       </div>
 
+      {/* ── 貼る紙 ── */}
+      <div
+        className="rounded-2xl p-4"
+        style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+      >
+        <p
+          className="font-maru text-sm font-bold flex items-center gap-2"
+          style={{ color: "var(--kuwa-ink)" }}
+        >
+          <Printer className="w-4 h-4" strokeWidth={2.2} style={{ color: "var(--kuwa-bark)" }} />
+          管理ラベルを作る
+        </p>
+        <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          菌糸ビンや成虫ケースに貼る管理番号のラベルを、A4に並べて書き出します。
+          ビン交換のたびに書き写さずに済み、取り違えも減ります。
+        </p>
+        <button
+          onClick={() => setShowLabels(true)}
+          disabled={total === 0}
+          className="kuwa-btn-ghost w-full mt-3 py-3 text-sm active:scale-[0.98] transition-all disabled:opacity-40"
+        >
+          貼るものを選ぶ
+        </button>
+      </div>
+
       {/* ── 読みこむ ── */}
       <div
         className="rounded-2xl p-4"
@@ -502,6 +529,9 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
           </div>
         )}
       </div>
+
+      {/* ラベルを選ぶ画面は、この上に重ねて出す */}
+      {showLabels && <LabelSheet onClose={() => setShowLabels(false)} />}
     </Sheet>
   );
 }

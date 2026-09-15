@@ -46,38 +46,43 @@ function isCancel(e: unknown): boolean {
   return /abort|cancel|dismiss/i.test(msg);
 }
 
-async function shareNative(dataUrl: string, fileName: string, text: string): Promise<ShareResult> {
+async function shareNative(images: ShareImage[], text: string): Promise<ShareResult> {
   const { Share } = await shareLib();
   const { Filesystem, Directory } = await fsLib();
 
   // 共有シートにはファイルの在りかを渡す。あとで消えてよいので Cache に置く
-  await Filesystem.writeFile({
-    path: fileName,
-    data: toBase64(dataUrl),
-    directory: Directory.Cache,
-  });
-  const { uri } = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
+  const uris: string[] = [];
+  for (const img of images) {
+    await Filesystem.writeFile({
+      path: img.fileName,
+      data: toBase64(img.dataUrl),
+      directory: Directory.Cache,
+    });
+    const { uri } = await Filesystem.getUri({ path: img.fileName, directory: Directory.Cache });
+    uris.push(uri);
+  }
 
   try {
-    await Share.share({ text, files: [uri] });
+    await Share.share({ text, files: uris });
     return "shared";
   } catch (e) {
     return isCancel(e) ? "cancelled" : "failed";
   }
 }
 
-async function shareWeb(dataUrl: string, fileName: string, text: string): Promise<ShareResult> {
-  const file = await dataUrlToFile(dataUrl, fileName);
+async function shareWeb(images: ShareImage[], text: string): Promise<ShareResult> {
+  const files = await Promise.all(images.map((i) => dataUrlToFile(i.dataUrl, i.fileName)));
 
-  // 画像を渡せるかは環境によって違う。渡せないなら保存に落とす
+  // 画像を渡せるかは環境によって違う。渡せないなら保存に落とす。
+  // 何枚も渡せるかどうかも環境によるので、枚数ごと聞く
   const canShareFile =
     typeof navigator !== "undefined" &&
     typeof navigator.share === "function" &&
-    navigator.canShare?.({ files: [file] }) === true;
+    navigator.canShare?.({ files }) === true;
 
   if (canShareFile) {
     try {
-      await navigator.share({ files: [file], text });
+      await navigator.share({ files, text });
       return "shared";
     } catch (e) {
       // やめただけなら保存に落とさない (本人の意思なので何もしない)
@@ -85,7 +90,11 @@ async function shareWeb(dataUrl: string, fileName: string, text: string): Promis
     }
   }
 
-  return saveImage(dataUrl, fileName) ? "saved" : "failed";
+  let saved = 0;
+  for (const img of images) {
+    if (saveImage(img.dataUrl, img.fileName)) saved++;
+  }
+  return saved > 0 ? "saved" : "failed";
 }
 
 /** 共有シートが無い環境向け。画像をダウンロードさせる */
@@ -101,15 +110,31 @@ function saveImage(dataUrl: string, fileName: string): boolean {
   }
 }
 
+export interface ShareImage {
+  dataUrl: string;
+  fileName: string;
+}
+
+/** 画像を1枚渡す */
 export async function shareCardImage(
   dataUrl: string,
   fileName: string,
   text: string
 ): Promise<ShareResult> {
+  return shareCardImages([{ dataUrl, fileName }], text);
+}
+
+/**
+ * 画像をまとめて渡す (面付けしたラベルが何枚かになるとき用)。
+ * 共有シートは複数のファイルを受け取れる。渡せない環境では1枚ずつ保存に落とす
+ */
+export async function shareCardImages(
+  images: ShareImage[],
+  text: string
+): Promise<ShareResult> {
+  if (images.length === 0) return "failed";
   try {
-    return IS_NATIVE
-      ? await shareNative(dataUrl, fileName, text)
-      : await shareWeb(dataUrl, fileName, text);
+    return IS_NATIVE ? await shareNative(images, text) : await shareWeb(images, text);
   } catch (e) {
     return isCancel(e) ? "cancelled" : "failed";
   }
