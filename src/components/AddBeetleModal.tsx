@@ -7,7 +7,7 @@ import { Beetle } from "@/types";
 import { formatYen, splitPairAmount } from "@/lib/breeding";
 import { generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
-import { PhotoPicker } from "@/components/KuwaUI";
+import { PhotoPickerMulti } from "@/components/KuwaUI";
 import {
   BeetleFields,
   BeetleFormState,
@@ -37,7 +37,7 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
   const [done, setDone] = useState(false);
   const [mode, setMode] = useState<Mode>("single");
   const [form, setForm] = useState<BeetleFormState>(initial ?? emptyBeetleForm);
-  const [photoId, setPhotoId] = useState<string | undefined>();
+  const [photoIds, setPhotoIds] = useState<string[]>([]);
   const [male, setMale] = useState<PairMemberState>(emptyPairMember);
   const [female, setFemale] = useState<PairMemberState>(emptyPairMember);
   // ♀の番号は♂の続きを下書きする。自分で直したあとは、もう触らない
@@ -70,7 +70,7 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
       const beetle: Beetle = {
         id: generateId(),
         ...formToBeetle(form),
-        photoId,
+        photoIds: photoIds.length > 0 ? photoIds : undefined,
         isAlive: true,
       };
       addBeetle(beetle);
@@ -161,7 +161,7 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
               />
             </>
           ) : (
-            <PhotoPicker value={{ photoId }} onChange={setPhotoId} label="この子の写真" />
+            <PhotoPickerMulti value={{ photoIds }} onChange={setPhotoIds} label="この子の写真" />
           )}
 
           <BeetleFields

@@ -37,11 +37,13 @@ const APP_TAG = "kuwarabo";
 /* ───────────────────────── 書き出し ───────────────────────── */
 
 /** 写真を落とした複製を作る (ファイルを軽くしたいとき用) */
-function dropPhoto<T extends { photoId?: string; photoUrl?: string }>(x: T): T {
+function dropPhoto<T extends Beetle | Larva>(x: T): T {
   const copy = { ...x };
   delete copy.photoUrl;
+  delete (copy as Beetle).photoUrls;
   // 参照だけ残しても、持ち出した先には写真が無い
   delete copy.photoId;
+  delete (copy as Beetle).photoIds;
   return copy;
 }
 
@@ -107,6 +109,18 @@ function asText(v: unknown): string {
 /** 配列なら配列、そうでなければ空 */
 function asList(v: unknown): unknown[] {
   return Array.isArray(v) ? v : [];
+}
+
+/**
+ * 文字だけの配列にする。空になったら undefined。
+ *
+ * 写真の欄は配列を当てにして読むので、数や null が混ざったファイルを
+ * そのまま通すと画面が真っ白になる (以前ビン交換の履歴で起きた)。
+ */
+function asStrings(v: unknown): string[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const out = v.filter((x): x is string => typeof x === "string" && x !== "");
+  return out.length > 0 ? out : undefined;
 }
 
 /** 生き死には、はっきり false と書いてあるときだけ死んだ扱いにする */
@@ -224,6 +238,9 @@ export function parseBackup(text: string): ParseResult {
           acquiredDate: asText(o.acquiredDate),
           notes: asText(o.notes),
           isAlive: asAlive(o.isAlive),
+          // 写真の欄は配列として読むので、形が違えば落とす
+          photoIds: asStrings(o.photoIds),
+          photoUrls: asStrings(o.photoUrls),
         } as unknown as Beetle)
   );
 

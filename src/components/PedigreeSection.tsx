@@ -7,6 +7,7 @@ import { Beetle, BreedingLine } from "@/types";
 import { buildPedigreeCert, certText } from "@/lib/pedigreeCert";
 import { cardFileName, shareCardImage } from "@/lib/share";
 import { photoSrc } from "@/lib/photoStore";
+import { mainPhotoRef } from "@/lib/photoRef";
 import { useToast } from "@/components/ui/Toast";
 
 /**
@@ -93,7 +94,8 @@ export function PedigreeSection({
   const exportCert = async () => {
     setMaking(true);
     try {
-      const src = beetle.photoUrl ?? (beetle.photoId ? await photoSrc(beetle.photoId, "full") : undefined);
+      const main = mainPhotoRef(beetle);
+      const src = main.photoUrl ?? (main.photoId ? await photoSrc(main.photoId, "full") : undefined);
       const sheet = await buildPedigreeCert(pedigree, { photoSrc: src });
       const result = await shareCardImage(
         sheet,

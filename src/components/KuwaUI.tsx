@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, LucideIcon, Plus, Trash2, X } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, LucideIcon, Plus, Trash2, X } from "lucide-react";
 import { fileToPhoto } from "@/lib/photo";
 import { PhotoSize, photoSrc, savePhoto } from "@/lib/photoStore";
+import { PHOTO_MAX, PhotoHolder, photoEntries, photoIdsOf } from "@/lib/photoRef";
 
 /** 記録が持つ写真の参照 */
 export interface PhotoRef {
@@ -192,7 +193,11 @@ export function Sheet({
 }
 
 /**
- * 個体写真のピッカー。
+ * 写真が1枚のピッカー (幼虫用)。
+ *
+ * 幼虫は見た目で個体差が分かりにくく、何枚も残す意味が薄いので1枚のまま。
+ * 成虫は `PhotoPickerMulti`。
+ *
  * 選んだ写真はその場で置き場に入れ、呼ぶ側へは id だけ渡す。
  * 入れたあとに登録をやめた写真は迷子になるが、起動時の掃除で片付く
  */
@@ -301,18 +306,212 @@ export function PhotoPicker({
 }
 
 /**
- * 写真を大きく見る。
- * どこを押しても閉じる — 見終わったらすぐ戻りたいので、閉じる的を探させない
+ * 何枚も持てる写真のピッカー (成虫用)。
+ *
+ * 羽化直後・今・大あごの寄りなど、残しておきたい姿は1枚では足りない。
+ * 先頭が主な1枚で、一覧や個体カードはそれを使うので、並びが分かるようにしてある。
+ *
+ * 移行前の写真 (記録が中身を抱えたまま) は置き場にまだ無く、id で指せないので
+ * 外せない。起動時の移行で片付いたら外せるようになる。
  */
-export function PhotoViewer({ photo, onClose }: { photo: PhotoRef; onClose: () => void }) {
-  const src = usePhoto(photo, "full");
+export function PhotoPickerMulti({
+  value,
+  onChange,
+  label = "写真",
+  max = PHOTO_MAX,
+}: {
+  value: PhotoHolder;
+  onChange: (photoIds: string[]) => void;
+  label?: string;
+  max?: number;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const ids = photoIdsOf(value);
+  const entries = photoEntries(value);
+  const full = entries.length >= max;
+
+  const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = [...(e.target.files ?? [])];
+    e.target.value = "";
+    if (files.length === 0) return;
+    setBusy(true);
+    setError(null);
+    const added: string[] = [];
+    let failed = 0;
+    // 入る枚数だけ受ける。足すたびに1枚ずつ選ばせるより、まとめて選べるほうが早い
+    for (const file of files.slice(0, max - entries.length)) {
+      try {
+        added.push(await savePhoto(await fileToPhoto(file)));
+      } catch {
+        failed++;
+      }
+    }
+    if (added.length > 0) onChange([...ids, ...added]);
+    if (failed > 0) setError("読み込めなかった写真があります。別の写真でお試しください");
+    setBusy(false);
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-2" style={{ color: "var(--kuwa-ink)" }}>
+        {label}
+      </label>
+
+      <div className="flex gap-2.5 flex-wrap">
+        {entries.map((entry, i) => (
+          <PhotoTile
+            key={entry.photoId ?? `legacy-${i}`}
+            photo={entry}
+            main={i === 0}
+            onRemove={
+              entry.photoId
+                ? () => onChange(ids.filter((id) => id !== entry.photoId))
+                : undefined
+            }
+          />
+        ))}
+
+        {!full && (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={busy}
+            className="w-20 h-20 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 transition-all active:scale-[0.96]"
+            style={{
+              background: "var(--kuwa-bark-bg)",
+              border: "1px dashed rgba(107,68,35,0.4)",
+            }}
+          >
+            <Camera className="w-6 h-6" strokeWidth={2} style={{ color: "var(--kuwa-bark)" }} />
+            <span className="text-[10px] font-bold mt-1" style={{ color: "var(--kuwa-bark)" }}>
+              {busy ? "処理中…" : entries.length === 0 ? "えらぶ" : "足す"}
+            </span>
+          </button>
+        )}
+      </div>
+
+      <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+        {entries.length === 0
+          ? `${max}枚まで登録できます。羽化直後と今など、残したい姿を分けて入れられます`
+          : full
+          ? `${max}枚まで登録できます。入れ替えるには、どれかを外してください`
+          : `左の1枚が一覧や個体カードに出ます (あと${max - entries.length}枚)`}
+      </p>
+      {error && (
+        <p className="text-xs mt-1.5" style={{ color: "var(--kuwa-clay)" }}>
+          {error}
+        </p>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={pick}
+      />
+    </div>
+  );
+}
+
+/** ピッカーの中の1枚。主な1枚には印を付ける */
+function PhotoTile({
+  photo,
+  main,
+  onRemove,
+}: {
+  photo: PhotoRef;
+  main: boolean;
+  onRemove?: () => void;
+}) {
+  const src = usePhoto(photo);
+  const [brokenSrc, setBrokenSrc] = useState<string>();
+  const shown = src && src !== brokenSrc ? src : undefined;
+
+  return (
+    <div className="relative w-20 h-20 flex-shrink-0">
+      <div
+        className="w-20 h-20 rounded-2xl overflow-hidden"
+        style={{ background: "var(--kuwa-bark-bg)", border: "1px solid var(--kuwa-line)" }}
+      >
+        {shown && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={shown}
+            alt=""
+            className="w-full h-full object-cover"
+            onError={() => setBrokenSrc(shown)}
+          />
+        )}
+      </div>
+
+      {main && (
+        <span
+          className="absolute left-1 bottom-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md"
+          style={{ background: "rgba(36,26,17,0.72)", color: "#fdf6e7" }}
+        >
+          主な1枚
+        </span>
+      )}
+
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="この写真を外す"
+          className="absolute -right-1.5 -top-1.5 w-6 h-6 rounded-full flex items-center justify-center active:scale-90 transition-all"
+          style={{ background: "var(--kuwa-clay)", color: "#fdf6e7" }}
+        >
+          <X className="w-3.5 h-3.5" strokeWidth={2.6} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 写真を大きく見る。
+ *
+ * どこを押しても閉じる — 見終わったらすぐ戻りたいので、閉じる的を探させない。
+ * 何枚か持っているときは左右で送れるようにし、送る的だけは閉じないようにする。
+ *
+ * ここは詳細シートの**背景の上**に出るので、押した合図をそのまま上に通すと
+ * 背景の「押したら閉じる」にも届いて、写真を閉じたついでに詳細シートまで
+ * 閉じてしまう。写真を見ていた場所に戻れないので、根元で止める。
+ */
+export function PhotoViewer({
+  photos,
+  start = 0,
+  onClose,
+}: {
+  photos: PhotoRef[];
+  start?: number;
+  onClose: () => void;
+}) {
+  const [at, setAt] = useState(start);
+  // 写真を外したあとに開き直したときなど、番号が枚数を越えることがある
+  const index = Math.min(at, Math.max(0, photos.length - 1));
+  const src = usePhoto(photos[index], "full");
+  const many = photos.length > 1;
+
+  const step = (e: React.MouseEvent, by: number) => {
+    // 送る的の上で閉じてしまわないように
+    e.stopPropagation();
+    setAt((n) => (n + by + photos.length) % photos.length);
+  };
 
   return (
     <div
       // シート (z-50) より上に出す
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       style={{ background: "rgba(20,14,8,0.94)" }}
-      onClick={onClose}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
     >
       <button
         onClick={onClose}
@@ -334,6 +533,37 @@ export function PhotoViewer({ photo, onClose }: { photo: PhotoRef; onClose: () =
         <p className="text-sm" style={{ color: "rgba(253,246,231,0.7)" }}>
           読み込んでいます…
         </p>
+      )}
+
+      {many && (
+        <>
+          <button
+            onClick={(e) => step(e, -1)}
+            aria-label="前の写真"
+            className="absolute left-3 p-3 rounded-full active:scale-90 transition-all"
+            style={{ background: "rgba(253,246,231,0.15)", color: "#fdf6e7" }}
+          >
+            <ChevronLeft className="w-6 h-6" strokeWidth={2.4} />
+          </button>
+          <button
+            onClick={(e) => step(e, 1)}
+            aria-label="次の写真"
+            className="absolute right-3 p-3 rounded-full active:scale-90 transition-all"
+            style={{ background: "rgba(253,246,231,0.15)", color: "#fdf6e7" }}
+          >
+            <ChevronRight className="w-6 h-6" strokeWidth={2.4} />
+          </button>
+          <p
+            className="absolute text-xs font-bold"
+            style={{
+              bottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+              color: "rgba(253,246,231,0.8)",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {index + 1} / {photos.length}
+          </p>
+        </>
       )}
     </div>
   );

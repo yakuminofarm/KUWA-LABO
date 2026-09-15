@@ -260,7 +260,8 @@ export const useKuwagataStore = create<KuwagataStore>()(
           matured: details.matured ?? false,
           sourceLineId: larva.lineId,
           sourceLarvaId: larva.id,
-          photoId: larva.photoId,
+          // 幼虫のときの写真をそのまま1枚目にする (同じ写真を指すだけ)
+          photoIds: larva.photoId ? [larva.photoId] : undefined,
           isAlive: true,
           notes: details.notes?.trim() ?? "",
         };

@@ -235,3 +235,60 @@ describe("buildBackup", () => {
     expect(f.data.speciesTuning).toEqual({ コクワガタ: { feedIntervalDays: 7 } });
   });
 });
+
+describe("写真の欄の取り込み", () => {
+  const file = (beetles: unknown[]) =>
+    JSON.stringify({
+      app: "kuwarabo",
+      version: 1,
+      data: { beetles, lines: [], larvae: [], expenses: [] },
+    });
+
+  const b = (extra: Record<string, unknown>) => ({
+    id: "a",
+    code: "26OK-A1",
+    species: "オオクワガタ",
+    acquiredDate: "2026-01-01",
+    isAlive: true,
+    notes: "",
+    ...extra,
+  });
+
+  it("文字の配列はそのまま通す", () => {
+    const { data } = parseBackup(file([b({ photoUrls: ["data:x", "data:y"] })]));
+    expect(data.beetles[0].photoUrls).toEqual(["data:x", "data:y"]);
+  });
+
+  // 配列を当てにして読むので、形の違うものを通すと画面が真っ白になる
+  it("配列でなければ落とす", () => {
+    const { data } = parseBackup(file([b({ photoIds: "p1", photoUrls: 3 })]));
+    expect(data.beetles[0].photoIds).toBeUndefined();
+    expect(data.beetles[0].photoUrls).toBeUndefined();
+  });
+
+  it("混ざった中身は文字だけ残す", () => {
+    const { data } = parseBackup(file([b({ photoIds: ["p1", null, 5, "", "p2"] })]));
+    expect(data.beetles[0].photoIds).toEqual(["p1", "p2"]);
+  });
+
+  it("空の配列は欄そのものを空にする", () => {
+    const { data } = parseBackup(file([b({ photoIds: [] })]));
+    expect(data.beetles[0].photoIds).toBeUndefined();
+  });
+
+  it("写真を落として書き出すと、どの欄も残らない", () => {
+    const out = buildBackup(
+      {
+        beetles: [b({ photoIds: ["p1"], photoUrl: "data:x", photoUrls: ["data:y"] })] as never,
+        lines: [],
+        larvae: [],
+        expenses: [],
+      },
+      false
+    );
+    const [only] = out.data.beetles;
+    expect(only.photoIds).toBeUndefined();
+    expect(only.photoUrl).toBeUndefined();
+    expect(only.photoUrls).toBeUndefined();
+  });
+});

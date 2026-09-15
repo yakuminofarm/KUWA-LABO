@@ -70,13 +70,26 @@ export interface Beetle {
    * 持ちつつ、どの子と一緒に来たのかを残して金額を割り振れるようにする。
    */
   pairId?: string;
-  /** 個体写真。中身は photoStore にあり、ここは参照だけ */
+  /**
+   * 個体写真。中身は photoStore にあり、ここは参照だけ。
+   * **先頭が主な1枚** で、一覧・個体カード・血統書はこれを使う。
+   * 羽化直後と今、大あごの寄りなど、残しておきたい姿は1枚では足りない
+   */
+  photoIds?: string[];
+  /**
+   * @deprecated 1枚だけ持っていた頃の形。起動時に photoIds へ移すので、新しく入れない
+   */
   photoId?: string;
   /**
-   * @deprecated 旧形式 (写真そのものを data URI で抱えていた)。
-   * 起動時に photoStore へ移して photoId に差し替えるので、新しく入れない
+   * @deprecated さらに古い形 (写真そのものを data URI で抱えていた)。
+   * 起動時に photoStore へ移して photoIds に差し替えるので、新しく入れない
    */
   photoUrl?: string;
+  /**
+   * @deprecated 書き出し・取り込みのときだけ通る形。**2枚目以降**の写真の中身。
+   * 主な1枚は photoUrl に入れるので、この欄を知らない古いくわらぼでも1枚は読める
+   */
+  photoUrls?: string[];
   isAlive: boolean;
   isFavorite?: boolean;
   /**

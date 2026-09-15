@@ -9,7 +9,9 @@
  * 「写真を data URI から id へ直す場所」はここ1か所だけにしてある。
  */
 import { BackupData } from "@/lib/backup";
+import { Beetle, Larva } from "@/types";
 import { listPhotoIds, readPhotoDataUrl, removePhoto, savePhoto } from "@/lib/photoStore";
+import { photoIdsOf } from "@/lib/photoRef";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 
 /**
@@ -20,33 +22,74 @@ import { useKuwagataStore } from "@/store/kuwagataStore";
  */
 export async function migrateEmbeddedPhotos(): Promise<number> {
   const { beetles, larvae } = useKuwagataStore.getState();
-  const targets = [...beetles, ...larvae].filter((r) => r.photoUrl);
+  // 成虫は2枚目以降 (photoUrls) も持ちうる。バックアップから戻したときに通る
+  const targets = [...beetles, ...larvae].filter((r) => r.photoUrl || embedded(r).length > 1);
   if (targets.length === 0) return 0;
 
-  const moved = new Map<string, string>();
+  const moved = new Map<string, string[]>();
   for (const r of targets) {
-    try {
-      // 旧形式は長辺320pxしかない。それを大きいほうとして入れておけば、
-      // 一覧でも詳細でも同じ1枚が使われる (小さいほうは無いので代用される)
-      moved.set(r.id, await savePhoto({ full: r.photoUrl! }));
-    } catch {
-      // この1枚は次回に回す
+    const ids: string[] = [];
+    for (const dataUrl of embedded(r)) {
+      try {
+        // 旧形式は長辺320pxしかない。それを大きいほうとして入れておけば、
+        // 一覧でも詳細でも同じ1枚が使われる (小さいほうは無いので代用される)
+        ids.push(await savePhoto({ full: dataUrl }));
+      } catch {
+        // この1枚は次回に回す
+      }
     }
+    if (ids.length > 0) moved.set(r.id, ids);
   }
   if (moved.size === 0) return 0;
 
   // 記録の書き換えは最後に1回だけ。1件ずつ直すと、そのたびに
-  // ストア全体が保存され直す
-  const swap = <T extends { id: string; photoId?: string; photoUrl?: string }>(r: T): T => {
-    const photoId = moved.get(r.id);
-    return photoId ? { ...r, photoId, photoUrl: undefined } : r;
+  // ストア全体が保存され直す。
+  // 足すのは **前** から。移行を待っているあいだに写真を足した人の記録でも、
+  // もともと1枚目だった写真が1枚目のまま残る
+  const swapBeetle = (b: Beetle): Beetle => {
+    const ids = moved.get(b.id);
+    if (!ids) return b;
+    return { ...b, photoIds: [...ids, ...photoIdsOf(b)], photoId: undefined, photoUrl: undefined, photoUrls: undefined };
   };
+  // 幼虫は1枚のまま。複数枚にしても見分けが付かず、残す意味が薄い
+  const swapLarva = (l: Larva): Larva => {
+    const ids = moved.get(l.id);
+    return ids ? { ...l, photoId: ids[0], photoUrl: undefined } : l;
+  };
+
   useKuwagataStore.setState((s) => ({
-    beetles: s.beetles.map(swap),
-    larvae: s.larvae.map(swap),
+    beetles: s.beetles.map(swapBeetle),
+    larvae: s.larvae.map(swapLarva),
   }));
 
-  return moved.size;
+  let count = 0;
+  for (const ids of moved.values()) count += ids.length;
+  return count;
+}
+
+/** 記録が抱えている写真の中身。主な1枚のあとに2枚目以降が続く */
+function embedded(r: { photoUrl?: string; photoUrls?: string[] }): string[] {
+  return [r.photoUrl, ...(r.photoUrls ?? [])].filter((u): u is string => !!u);
+}
+
+/**
+ * 1枚だけ持っていた形 (`photoId`) を `photoIds` に移す。戻り値は直した件数。
+ *
+ * 写真そのものは置き場にもう入っているので、記録の書き換えだけ。
+ * 読むほうは `photoIdsOf` が両方を見るので急ぐ必要はないが、
+ * 2つの形が残ったままだと書くときに迷うので、起動時に片付けておく。
+ */
+export function migrateSinglePhotos(): number {
+  const { beetles } = useKuwagataStore.getState();
+  const targets = beetles.filter((b) => b.photoId && !b.photoIds);
+  if (targets.length === 0) return 0;
+
+  useKuwagataStore.setState((s) => ({
+    beetles: s.beetles.map((b) =>
+      b.photoId && !b.photoIds ? { ...b, photoIds: [b.photoId], photoId: undefined } : b
+    ),
+  }));
+  return targets.length;
 }
 
 /**
@@ -61,9 +104,9 @@ export async function migrateEmbeddedPhotos(): Promise<number> {
  */
 export async function sweepOrphanPhotos(): Promise<number> {
   const { beetles, larvae } = useKuwagataStore.getState();
-  const used = new Set(
-    [...beetles, ...larvae].map((r) => r.photoId).filter((id): id is string => !!id)
-  );
+  // 1頭が何枚も持つので、参照は数え上げる。ここを1枚ぶんしか見ないと
+  // 2枚目以降を迷子と見なして消してしまう
+  const used = new Set([...beetles, ...larvae].flatMap(photoIdsOf));
 
   let removed = 0;
   for (const id of await listPhotoIds()) {
@@ -81,6 +124,7 @@ export async function sweepOrphanPhotos(): Promise<number> {
 /** 移行 → 掃除。順番が逆だと、移す前の写真を迷子と見なして消してしまう */
 export async function upkeepPhotos(): Promise<void> {
   await migrateEmbeddedPhotos();
+  migrateSinglePhotos();
   await sweepOrphanPhotos();
 }
 
@@ -92,13 +136,24 @@ export async function upkeepPhotos(): Promise<void> {
  * 出てくる形は写真を抱えていた頃と同じなので、ファイルの版は上げなくてよい。
  */
 export async function embedPhotos(d: BackupData): Promise<BackupData> {
-  const embed = async <T extends { photoId?: string; photoUrl?: string }>(r: T): Promise<T> => {
-    // 旧形式のまま持っているもの・写真が無いものはそのまま
-    if (r.photoUrl || !r.photoId) return r;
-    const photoUrl = await readPhotoDataUrl(r.photoId);
-    if (!photoUrl) return r;
-    const copy = { ...r, photoUrl };
+  const embed = async <T extends Beetle | Larva>(r: T): Promise<T> => {
+    const fromStore: string[] = [];
+    for (const id of photoIdsOf(r)) {
+      const url = await readPhotoDataUrl(id);
+      if (url) fromStore.push(url);
+    }
+    // まだ移行できていない写真 (記録が中身を抱えたまま) も1枚目として通す。
+    // 見えている順 (photoEntries) と同じ並びにする
+    const urls = [...(r.photoUrl ? [r.photoUrl] : []), ...fromStore];
+    if (urls.length === 0) return r;
+
+    // 主な1枚は photoUrl に入れる。この欄しか知らない古いくわらぼでも
+    // 1枚は読めるようにしておく
+    const [main, ...rest] = urls;
+    const copy: T = { ...r, photoUrl: main };
+    if (rest.length > 0) (copy as Beetle).photoUrls = rest;
     delete copy.photoId;
+    delete (copy as Beetle).photoIds;
     return copy;
   };
 

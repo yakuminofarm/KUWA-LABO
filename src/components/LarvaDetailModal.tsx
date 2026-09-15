@@ -775,7 +775,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
       </div>
 
       {viewingPhoto && (
-        <PhotoViewer photo={larva} onClose={() => setViewingPhoto(false)} />
+        <PhotoViewer photos={[larva]} onClose={() => setViewingPhoto(false)} />
       )}
     </div>
   );

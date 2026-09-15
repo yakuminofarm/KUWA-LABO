@@ -19,9 +19,8 @@ vi.mock("@/lib/photoStore", () => ({
   listPhotoIds: vi.fn(async () => [...store.keys()]),
 }));
 
-const { embedPhotos, migrateEmbeddedPhotos, sweepOrphanPhotos } = await import(
-  "@/lib/photoUpkeep"
-);
+const { embedPhotos, migrateEmbeddedPhotos, migrateSinglePhotos, sweepOrphanPhotos } =
+  await import("@/lib/photoUpkeep");
 const { useKuwagataStore } = await import("@/store/kuwagataStore");
 
 function seed(beetles: unknown[], larvae: unknown[] = []) {
@@ -54,9 +53,11 @@ describe("migrateEmbeddedPhotos (旧形式を置き場へ移す)", () => {
     expect(await migrateEmbeddedPhotos()).toBe(1);
 
     const [moved] = useKuwagataStore.getState().beetles;
-    expect(moved.photoId).toBeTruthy();
+    // 成虫は複数枚持てるので、移した先は photoIds の1枚目
+    expect(moved.photoIds).toHaveLength(1);
+    expect(moved.photoId).toBeUndefined();
     expect(moved.photoUrl).toBeUndefined();
-    expect(store.get(moved.photoId!)).toBe("data:image/jpeg;base64,AAA");
+    expect(store.get(moved.photoIds![0])).toBe("data:image/jpeg;base64,AAA");
   });
 
   it("成虫と幼虫の両方をまとめて移す", async () => {
@@ -79,10 +80,10 @@ describe("migrateEmbeddedPhotos (旧形式を置き場へ移す)", () => {
     expect(await migrateEmbeddedPhotos()).toBe(1);
 
     const [ok, ng] = useKuwagataStore.getState().beetles;
-    expect(ok.photoId).toBeTruthy();
+    expect(ok.photoIds).toHaveLength(1);
     expect(ok.photoUrl).toBeUndefined();
     // 消してしまうと写真が失われる
-    expect(ng.photoId).toBeUndefined();
+    expect(ng.photoIds).toBeUndefined();
     expect(ng.photoUrl).toBe("data:image/jpeg;base64,BBB");
   });
 
@@ -97,6 +98,74 @@ describe("migrateEmbeddedPhotos (旧形式を置き場へ移す)", () => {
     await migrateEmbeddedPhotos();
     await migrateEmbeddedPhotos();
     expect(store.size).toBe(1);
+  });
+
+  it("2枚目以降 (photoUrls) も順番どおりに移す", async () => {
+    seed([
+      beetle("a", {
+        photoUrl: "data:image/jpeg;base64,AAA",
+        photoUrls: ["data:image/jpeg;base64,BBB", "data:image/jpeg;base64,CCC"],
+      }),
+    ]);
+
+    expect(await migrateEmbeddedPhotos()).toBe(3);
+
+    const [moved] = useKuwagataStore.getState().beetles;
+    expect(moved.photoIds).toHaveLength(3);
+    expect(moved.photoUrls).toBeUndefined();
+    expect(moved.photoIds!.map((id) => store.get(id))).toEqual([
+      "data:image/jpeg;base64,AAA",
+      "data:image/jpeg;base64,BBB",
+      "data:image/jpeg;base64,CCC",
+    ]);
+  });
+
+  // 移行を待っているあいだに写真を足した記録。あとから前に足すので、
+  // もともと1枚目だった写真が1枚目のまま残る
+  it("移行前に足された写真を上書きしない", async () => {
+    store.set("new", "data:image/jpeg;base64,NEW");
+    seed([beetle("a", { photoUrl: "data:image/jpeg;base64,OLD", photoIds: ["new"] })]);
+
+    await migrateEmbeddedPhotos();
+
+    const [moved] = useKuwagataStore.getState().beetles;
+    expect(moved.photoIds!.map((id) => store.get(id))).toEqual([
+      "data:image/jpeg;base64,OLD",
+      "data:image/jpeg;base64,NEW",
+    ]);
+  });
+
+  it("幼虫は1枚のまま (photoId に入る)", async () => {
+    seed([], [beetle("v", { photoUrl: "data:image/jpeg;base64,BBB" })]);
+    await migrateEmbeddedPhotos();
+    const [larva] = useKuwagataStore.getState().larvae;
+    expect(larva.photoId).toBeTruthy();
+    expect((larva as { photoIds?: string[] }).photoIds).toBeUndefined();
+  });
+});
+
+describe("migrateSinglePhotos (1枚だけの形を複数枚の形に移す)", () => {
+  it("photoId を photoIds の1枚目にする", () => {
+    seed([beetle("a", { photoId: "p9" })]);
+
+    expect(migrateSinglePhotos()).toBe(1);
+
+    const [moved] = useKuwagataStore.getState().beetles;
+    expect(moved.photoIds).toEqual(["p9"]);
+    expect(moved.photoId).toBeUndefined();
+  });
+
+  it("もう photoIds を持っている記録には触らない", () => {
+    seed([beetle("a", { photoIds: ["p1", "p2"] })]);
+    expect(migrateSinglePhotos()).toBe(0);
+    expect(useKuwagataStore.getState().beetles[0].photoIds).toEqual(["p1", "p2"]);
+  });
+
+  it("2回走らせても同じ", () => {
+    seed([beetle("a", { photoId: "p9" })]);
+    migrateSinglePhotos();
+    expect(migrateSinglePhotos()).toBe(0);
+    expect(useKuwagataStore.getState().beetles[0].photoIds).toEqual(["p9"]);
   });
 });
 
@@ -125,6 +194,26 @@ describe("sweepOrphanPhotos (迷子の片付け)", () => {
     expect(await sweepOrphanPhotos()).toBe(0);
     expect(store.has("shared")).toBe(true);
   });
+
+  // ここを1枚ぶんしか見ないと、2枚目以降が毎回の起動で消える
+  it("2枚目以降も参照として数える", async () => {
+    store.set("p1", "data:image/jpeg;base64,AAA");
+    store.set("p2", "data:image/jpeg;base64,BBB");
+    store.set("p3", "data:image/jpeg;base64,CCC");
+    seed([beetle("a", { photoIds: ["p1", "p2", "p3"] })]);
+
+    expect(await sweepOrphanPhotos()).toBe(0);
+    expect([...store.keys()]).toEqual(["p1", "p2", "p3"]);
+  });
+
+  it("外した写真だけ消える", async () => {
+    store.set("keep", "data:image/jpeg;base64,AAA");
+    store.set("dropped", "data:image/jpeg;base64,BBB");
+    seed([beetle("a", { photoIds: ["keep"] })]);
+
+    expect(await sweepOrphanPhotos()).toBe(1);
+    expect([...store.keys()]).toEqual(["keep"]);
+  });
 });
 
 describe("embedPhotos (書き出し用に写真を埋め戻す)", () => {
@@ -150,6 +239,31 @@ describe("embedPhotos (書き出し用に写真を埋め戻す)", () => {
       data([beetle("a", { photoUrl: "data:image/jpeg;base64,ZZZ" })])
     );
     expect(out.beetles[0].photoUrl).toBe("data:image/jpeg;base64,ZZZ");
+  });
+
+  it("主な1枚は photoUrl、2枚目以降は photoUrls に入れる", async () => {
+    store.set("p1", "data:image/jpeg;base64,AAA");
+    store.set("p2", "data:image/jpeg;base64,BBB");
+
+    const out = await embedPhotos(data([beetle("a", { photoIds: ["p1", "p2"] })]));
+
+    // 古いくわらぼは photoUrl しか見ないので、主な1枚はそこに入れる
+    expect(out.beetles[0].photoUrl).toBe("data:image/jpeg;base64,AAA");
+    expect(out.beetles[0].photoUrls).toEqual(["data:image/jpeg;base64,BBB"]);
+    expect(out.beetles[0].photoIds).toBeUndefined();
+  });
+
+  it("1枚だけなら photoUrls は付けない", async () => {
+    store.set("p1", "data:image/jpeg;base64,AAA");
+    const out = await embedPhotos(data([beetle("a", { photoIds: ["p1"] })]));
+    expect(out.beetles[0].photoUrls).toBeUndefined();
+  });
+
+  it("読めなかった1枚は飛ばし、残りを書き出す", async () => {
+    store.set("p2", "data:image/jpeg;base64,BBB");
+    const out = await embedPhotos(data([beetle("a", { photoIds: ["missing", "p2"] })]));
+    expect(out.beetles[0].photoUrl).toBe("data:image/jpeg;base64,BBB");
+    expect(out.beetles[0].photoUrls).toBeUndefined();
   });
 
   it("元の記録を書き換えない", async () => {

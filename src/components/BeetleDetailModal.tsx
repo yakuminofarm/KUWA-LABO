@@ -38,7 +38,8 @@ import {
 } from "@/lib/breeding";
 import { formatDate, getGenderLabel } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
-import { PhotoPicker, PhotoThumb, PhotoViewer } from "@/components/KuwaUI";
+import { PhotoPickerMulti, PhotoThumb, PhotoViewer } from "@/components/KuwaUI";
+import { mainPhotoRef, photoEntries, photoPatch } from "@/lib/photoRef";
 import { PedigreeSection } from "@/components/PedigreeSection";
 import { buildShareCard, shareText } from "@/lib/shareCard";
 import { cardFileName, shareCardImage } from "@/lib/share";
@@ -117,7 +118,8 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
     setSharing(true);
     try {
       // 大きいほうの写真を載せる。無ければ文字だけの1枚になる
-      const src = beetle.photoUrl ?? (beetle.photoId ? await photoSrc(beetle.photoId, "full") : undefined);
+      const main = mainPhotoRef(beetle);
+      const src = main.photoUrl ?? (main.photoId ? await photoSrc(main.photoId, "full") : undefined);
       const card = await buildShareCard(beetle, src);
       const result = await shareCardImage(card, cardFileName(beetle.code), shareText(beetle));
       if (result === "saved") showToast("画像を保存しました");
@@ -150,7 +152,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
         <div className="kuwa-sheet-bar sticky top-0 px-5 py-4 flex items-center justify-between flex-shrink-0 rounded-t-[24px]">
           <div className="flex items-center gap-2.5 min-w-0">
             <PhotoThumb
-              photo={beetle}
+              photo={mainPhotoRef(beetle)}
               fallback={<SpeciesAvatar species={beetle.species} />}
               onClick={() => setViewingPhoto(true)}
             />
@@ -177,9 +179,9 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
         </div>
 
         <div className="kuwa-sheet-body flex-1 px-5 py-5 space-y-5">
-          <PhotoPicker
+          <PhotoPickerMulti
             value={beetle}
-            onChange={(id) => updateBeetle(beetle.id, { photoId: id, photoUrl: undefined })}
+            onChange={(ids) => updateBeetle(beetle.id, photoPatch(ids))}
             label="この子の写真"
           />
 
@@ -631,7 +633,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
       </div>
 
       {viewingPhoto && (
-        <PhotoViewer photo={beetle} onClose={() => setViewingPhoto(false)} />
+        <PhotoViewer photos={photoEntries(beetle)} onClose={() => setViewingPhoto(false)} />
       )}
     </div>
   );

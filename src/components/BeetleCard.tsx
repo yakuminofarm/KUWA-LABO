@@ -5,6 +5,7 @@ import { Beetle } from "@/types";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
 import { PhotoThumb } from "@/components/KuwaUI";
+import { mainPhotoRef } from "@/lib/photoRef";
 import {
   feedAgoLabel,
   feedIntervalLabel,
@@ -48,7 +49,7 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
       style={inactive ? { opacity: 0.66 } : undefined}
     >
       <div className="flex items-start gap-3.5">
-        <PhotoThumb photo={beetle} fallback={<SpeciesAvatar species={beetle.species} />} />
+        <PhotoThumb photo={mainPhotoRef(beetle)} fallback={<SpeciesAvatar species={beetle.species} />} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
