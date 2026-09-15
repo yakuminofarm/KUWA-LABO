@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PEDIGREE_DEPTH, ancestorCount, hasParents, pedigreeOf } from "@/lib/pedigree";
+import { PEDIGREE_DEPTH, ancestorCount, hasParents, pedigreeOf, roleLabel } from "@/lib/pedigree";
 import { Beetle, BreedingLine } from "@/types";
 
 const beetle = (id: string, extra: Partial<Beetle> = {}): Beetle => ({
@@ -139,5 +139,18 @@ describe("pedigreeOf", () => {
 
     expect(p.father?.father?.beetle.id).toBe("gf");
     expect(p.father?.father?.father).toBeUndefined();
+  });
+});
+
+describe("roleLabel", () => {
+  it("世代をさかのぼる数で言い方が変わる", () => {
+    expect([1, 2, 3].map((d) => roleLabel(d, true))).toEqual(["父", "祖父", "曽祖父"]);
+    expect([1, 2, 3].map((d) => roleLabel(d, false))).toEqual(["母", "祖母", "曽祖母"]);
+  });
+
+  // 言い方が増えても、図が壊れないように何かは返す
+  it("それより先はまとめて「先祖」にする", () => {
+    expect(roleLabel(4, true)).toBe("父方の先祖");
+    expect(roleLabel(9, false)).toBe("母方の先祖");
   });
 });

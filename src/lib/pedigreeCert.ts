@@ -14,7 +14,7 @@
  * 画面で見るときも横長のまま収まる。
  */
 import { Beetle } from "@/types";
-import { Pedigree } from "@/lib/pedigree";
+import { Pedigree, roleLabel } from "@/lib/pedigree";
 import { formatDate } from "@/lib/utils";
 import { todayStr } from "@/lib/breeding";
 import { drawCover, fitText, loadImage, roundRect } from "@/lib/canvasDraw";
@@ -66,12 +66,6 @@ function subtitle(b: Beetle): string {
   return [b.species, b.locality, b.generation].filter(Boolean).join(" ・ ");
 }
 
-function label(depth: number, male: boolean): string {
-  if (depth === 1) return male ? "父" : "母";
-  if (depth === 2) return male ? "祖父" : "祖母";
-  return male ? "曽祖父" : "曽祖母";
-}
-
 /**
  * 先祖の枠。記録が無いところは点線の空枠にする。
  * 埋まっている枠だけ並べると、家系のどこが分かっていないのかが伝わらない
@@ -85,7 +79,7 @@ function drawBox(
   depth: number,
   male: boolean
 ) {
-  const role = label(depth, male);
+  const role = roleLabel(depth, male);
 
   if (!node) {
     ctx.save();

@@ -61,6 +61,19 @@ export function pedigreeOf(
   return build(beetle, new Set([beetle.id]), depth);
 }
 
+/**
+ * 続柄の言い方。世代をさかのぼる数と性別で決まる。
+ *
+ * 一覧・図・血統書の3か所で出すので、言い方がずれないようここに置く。
+ * 数え方は本人からの距離で、1 が親、2 が祖父母。
+ */
+export function roleLabel(depth: number, male: boolean): string {
+  if (depth === 1) return male ? "父" : "母";
+  if (depth === 2) return male ? "祖父" : "祖母";
+  if (depth === 3) return male ? "曽祖父" : "曽祖母";
+  return male ? "父方の先祖" : "母方の先祖";
+}
+
 /** 親が1頭でも分かっているか (分からなければ血統の欄を出す意味がない) */
 export function hasParents(p: Pedigree): boolean {
   return Boolean(p.father || p.mother);

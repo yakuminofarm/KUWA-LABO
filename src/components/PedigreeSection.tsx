@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { FileDown } from "lucide-react";
-import { Pedigree, hasParents, pedigreeOf } from "@/lib/pedigree";
+import { Pedigree, hasParents, pedigreeOf, roleLabel } from "@/lib/pedigree";
+import { PedigreeTree } from "@/components/PedigreeTree";
 import { Beetle, BreedingLine } from "@/types";
 import { buildPedigreeCert, certText } from "@/lib/pedigreeCert";
 import { cardFileName, shareCardImage } from "@/lib/share";
@@ -17,16 +18,6 @@ import { useToast } from "@/components/ui/Toast";
  * そこで「字下げした一覧」にしてある。分かっている親だけが並ぶので、
  * 片親しか記録していなくても崩れない。
  */
-const ROLE = [
-  ["父", "母"],
-  ["祖父", "祖母"],
-  ["曽祖父", "曽祖母"],
-] as const;
-
-function roleLabel(depth: number, male: boolean): string {
-  return ROLE[depth - 1]?.[male ? 0 : 1] ?? "先祖";
-}
-
 /** 種類・産地・累代。分かっているものだけを中黒で繋ぐ */
 function subtitle(b: Beetle): string {
   return [b.species, b.locality, b.generation].filter(Boolean).join(" ・ ");
@@ -85,6 +76,8 @@ export function PedigreeSection({
 }) {
   const { showToast } = useToast();
   const [making, setMaking] = useState(false);
+  // 既定は図。どちらの系統から来た血かは、並んだ字より枝を見たほうが早い
+  const [view, setView] = useState<"tree" | "list">("tree");
   const pedigree = pedigreeOf(beetle, beetles, lines);
 
   // 買ってきた個体は出身ラインが無く、親をたどれない。
@@ -126,9 +119,34 @@ export function PedigreeSection({
         </p>
       )}
 
+      <div className="flex gap-2 mt-2.5">
+        {(
+          [
+            ["tree", "図で見る"],
+            ["list", "一覧で見る"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setView(key)}
+            data-on={view === key}
+            className="kuwa-chip font-maru"
+            style={{ fontSize: 12, padding: "6px 12px" }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="mt-2.5">
-        {pedigree.father && <Row node={pedigree.father} depth={1} male />}
-        {pedigree.mother && <Row node={pedigree.mother} depth={1} male={false} />}
+        {view === "tree" ? (
+          <PedigreeTree pedigree={pedigree} />
+        ) : (
+          <>
+            {pedigree.father && <Row node={pedigree.father} depth={1} male />}
+            {pedigree.mother && <Row node={pedigree.mother} depth={1} male={false} />}
+          </>
+        )}
       </div>
 
       <button
