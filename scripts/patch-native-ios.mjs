@@ -1,5 +1,14 @@
 /**
- * アプリ版を「日本語のアプリ」として iOS に知らせる。
+ * iOS の Info.plist に、Capacitor が入れてくれないものを当てる。
+ *
+ * 1. 日本語のアプリだと知らせる (日付を選ぶ欄の言葉)
+ * 2. カメラを何に使うのかを書く (ラベルのQRを読む)
+ *
+ * ios/ は Git に入れておらず `npx cap add ios` で作り直されるため、
+ * 手で直すと次に作り直したとき消える。同期のたびにここで当てる。
+ * 何度走らせても同じ結果になる。
+ *
+ * ── 1. 日本語のアプリだと知らせる ──
  *
  * 日付を選ぶ欄 (`<input type="date">`) の見た目は iOS が用意するもので、
  * Web 側からは言葉を変えられない。iOS はアプリが対応している言語を見て決めるが、
@@ -13,8 +22,11 @@
  * くわらぼの画面は日本語だけなので、対応言語も日本語だけを挙げる。
  * そうすれば端末の言語がどれであっても、ピッカーと画面の言葉が揃う。
  *
- * ios/ は Git に入れておらず `npx cap add ios` で作り直されるため、
- * 手で直すと次に作り直したとき消える。同期のたびにここで当てる。
+ * ── 2. カメラの使い道を書く ──
+ *
+ * iOS はカメラを使う前に「何に使うのか」を必ず要求する。
+ * NSCameraUsageDescription が無いまま呼ぶと、許可を聞く画面も出ずに
+ * その場で落ちる (審査でも弾かれる)。
  */
 import { readFile, writeFile } from "node:fs/promises";
 
@@ -60,8 +72,25 @@ if (!next.includes("<key>CFBundleLocalizations</key>")) {
   changed.push(`CFBundleLocalizations: ${LANG} を追加`);
 }
 
+// カメラの使い道を書く
+const CAMERA_KEY = "NSCameraUsageDescription";
+const CAMERA_TEXT = "ラベルのQRコードを読み取って、その個体の記録を開くために使います。";
+const camera = new RegExp(`(<key>${CAMERA_KEY}</key>\\s*<string>)([^<]*)(</string>)`);
+const foundCamera = next.match(camera);
+if (!foundCamera) {
+  const anchor = "\t<key>CFBundleName</key>";
+  next = next.replace(
+    anchor,
+    `\t<key>${CAMERA_KEY}</key>\n\t<string>${CAMERA_TEXT}</string>\n${anchor}`
+  );
+  changed.push(`${CAMERA_KEY}: 追加`);
+} else if (foundCamera[2] !== CAMERA_TEXT) {
+  next = next.replace(camera, `$1${CAMERA_TEXT}$3`);
+  changed.push(`${CAMERA_KEY}: 書き直し`);
+}
+
 if (changed.length === 0) {
-  console.log("日本語の設定は当たっています");
+  console.log("Info.plist の設定は当たっています");
   process.exit(0);
 }
 

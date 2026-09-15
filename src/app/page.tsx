@@ -15,6 +15,7 @@ import { ReminderSheet } from "@/components/ReminderSheet";
 import { BackupSheet } from "@/components/BackupSheet";
 import { GuideSheet } from "@/components/GuideSheet";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { ScanButton } from "@/components/ScanButton";
 import { upkeepPhotos } from "@/lib/photoUpkeep";
 import { CircleQuestionMark, DatabaseBackup, Settings } from "lucide-react";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
@@ -137,6 +138,10 @@ export default function KuwagataPage() {
           {tab === "cost" && <CostTab />}
           {tab === "articles" && <ArticlesTab />}
         </main>
+
+        {/* ラベルのQRを読むボタン。棚の前で使うので、成虫と育成の画面にだけ出す
+            (ホームや収支で出しても、読んだ先の記録を見る場所がない) */}
+        {(tab === "adults" || tab === "larvae") && <ScanButton />}
 
         <KuwagataBottomNav activeTab={tab} onChange={setActiveTab} />
 

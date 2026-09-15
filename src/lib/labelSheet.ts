@@ -23,6 +23,7 @@
 import { Beetle, BreedingLine, Larva } from "@/types";
 import { headCount, latestBottleChange } from "@/lib/breeding";
 import { fitText, roundRect } from "@/lib/canvasDraw";
+import { drawQr, recordQrText } from "@/lib/qr";
 
 /** A4 を 200dpi で。手元のプリンタでそのまま刷れる大きさ */
 export const SHEET_WIDTH = 1654;
@@ -31,23 +32,39 @@ export const SHEET_HEIGHT = 2339;
 const PX_PER_MM = SHEET_WIDTH / 210;
 const MARGIN = Math.round(10 * PX_PER_MM);
 
-export type LabelSize = "large" | "small";
+export type LabelSize = "large" | "small" | "qr";
 
 export interface LabelGrid {
   cols: number;
   rows: number;
   /** 画面に出す説明 */
   label: string;
+  /** QRを入れるか */
+  withQr?: boolean;
 }
 
 /**
  * 面の取り方。
+ *
  * 大はケース向け (遠くからでも管理番号が読める)、小はビン向け。
+ * QR付きは面を大きめに取ってある — QRは刷る大きさを削れない。
+ * 1目が 0.5mm を切ると、手元のカメラでは読めなくなる (下の QR_SIZE を参照)。
  */
 export const LABEL_GRIDS: Record<LabelSize, LabelGrid> = {
   large: { cols: 3, rows: 7, label: "大 (21面・ケース向け)" },
   small: { cols: 4, rows: 10, label: "小 (40面・ビン向け)" },
+  qr: { cols: 3, rows: 8, label: "QR付き (24面)", withQr: true },
 };
+
+/**
+ * QRの一辺 (点)。25mmほど。
+ *
+ * 記録のidを入れると25目になるので、まわりの余白 (4目ずつ) を足して33目。
+ * 200点なら1目6点 = 0.76mm で、手元のカメラでも読める。
+ * ここを小さくすると 0.5mm を割って読めなくなるので、
+ * 面を詰めたいときは面の数ではなく **QRなしの型** を使う。
+ */
+const QR_SIZE = 200;
 
 /** 1枚に入る面の数 */
 export function perSheet(size: LabelSize): number {
@@ -68,6 +85,8 @@ export interface LabelItem {
   code: string;
   /** 下に小さく添える行。2〜3行 */
   lines: string[];
+  /** QRに入れる字。QR付きの型で使う */
+  qrText: string;
 }
 
 const join = (parts: (string | undefined)[]) => parts.filter(Boolean).join(" ");
@@ -82,6 +101,7 @@ export function beetleLabel(b: Beetle): LabelItem {
       b.locality ?? "",
       join([b.generation, gender, b.sizeMm != null ? `${b.sizeMm}mm` : undefined]),
     ].filter((l) => l !== ""),
+    qrText: recordQrText("beetle", b.id),
   };
 }
 
@@ -97,6 +117,7 @@ export function larvaLabel(l: Larva, lines: BreedingLine[]): LabelItem {
       join([line?.name, heads > 1 ? `${heads}頭` : undefined]),
       join([bottle ? `ビン ${bottle.date}` : undefined, bottle?.bottleSize]),
     ].filter((x) => x !== ""),
+    qrText: recordQrText("larva", l.id),
   };
 }
 
@@ -112,10 +133,13 @@ export function buildLabelSheets(items: LabelItem[], size: LabelSize): string[] 
   const grid = LABEL_GRIDS[size];
   const cellW = (SHEET_WIDTH - MARGIN * 2) / grid.cols;
   const cellH = (SHEET_HEIGHT - MARGIN * 2) / grid.rows;
+  const withQr = grid.withQr === true;
   const big = size === "large";
-  const codeSize = big ? 62 : 44;
+  const codeSize = big ? 62 : withQr ? 46 : 44;
   const lineSize = big ? 28 : 22;
-  const pad = big ? 26 : 18;
+  const pad = big ? 26 : withQr ? 22 : 18;
+  // QRのぶんだけ字の幅が減る
+  const qrRoom = withQr ? QR_SIZE + 14 : 0;
 
   return paginate(items, perSheet(size)).map((page) => {
     const canvas = document.createElement("canvas");
@@ -141,7 +165,11 @@ export function buildLabelSheets(items: LabelItem[], size: LabelSize): string[] 
       ctx.stroke();
       ctx.restore();
 
-      const inner = cellW - pad * 2;
+      if (withQr) {
+        drawQr(ctx, item.qrText, x + cellW - pad - QR_SIZE, y + (cellH - QR_SIZE) / 2, QR_SIZE, INK);
+      }
+
+      const inner = cellW - pad * 2 - qrRoom;
       ctx.fillStyle = INK;
       ctx.font = `bold ${codeSize}px system-ui, sans-serif`;
       ctx.fillText(fitText(ctx, item.code, inner), x + pad, y + pad);

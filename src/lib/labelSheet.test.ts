@@ -69,6 +69,8 @@ describe("beetleLabel", () => {
     );
     expect(l.code).toBe("26OK-A1");
     expect(l.lines).toEqual(["オオクワガタ", "能勢YG血統", "CBF2 ♂ 85.5mm"]);
+    // QRは記録のidを指す (管理番号は書き換えられるので使わない)
+    expect(l.qrText).toBe("kuwalabo:b:b1");
   });
 
   it("空の項目は行そのものを作らない", () => {
@@ -100,6 +102,7 @@ describe("larvaLabel", () => {
       [line("L1", "2026-A")]
     );
     expect(l.lines).toEqual(["オオクワガタ", "2026-A 3頭", "ビン 2026-05-10 1400cc"]);
+    expect(l.qrText).toBe("kuwalabo:v:v1");
   });
 
   it("1頭のまとまりに頭数は書かない", () => {
@@ -118,6 +121,19 @@ describe("larvaLabel", () => {
       []
     );
     expect(l.lines.join("|")).not.toMatch(/予定|目安|あと\d+日/);
+  });
+});
+
+describe("QR付きの型", () => {
+  it("QRを入れる型がある", () => {
+    expect(LABEL_GRIDS.qr.withQr).toBe(true);
+    expect(LABEL_GRIDS.large.withQr).toBeUndefined();
+  });
+
+  // QRは刷る大きさを削れない。面を詰めると1目が0.5mmを割って読めなくなる
+  it("QR付きの面は、QRなしの小さい型より大きく取る", () => {
+    const area = (g: { cols: number; rows: number }) => 1 / (g.cols * g.rows);
+    expect(area(LABEL_GRIDS.qr)).toBeGreaterThan(area(LABEL_GRIDS.small));
   });
 });
 
