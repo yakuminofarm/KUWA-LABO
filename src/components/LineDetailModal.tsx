@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, Pencil, Shovel, Trash2, Worm, X } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
+import { Portal } from "@/components/KuwaUI";
 import { BreedingLine, Larva } from "@/types";
 import {
   LINE_STATUS_COLORS,
@@ -118,6 +119,7 @@ export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps
   ];
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-50 flex items-end" style={{ background: "rgba(36,26,17,0.55)" }} onClick={onClose}>
       <div
         className="kuwa-sheet w-full max-w-md mx-auto max-h-[88vh] flex flex-col"
@@ -381,5 +383,6 @@ export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

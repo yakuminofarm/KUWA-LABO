@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, X } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
+import { Portal } from "@/components/KuwaUI";
 import { BreedingLine } from "@/types";
 import { generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
@@ -48,6 +49,7 @@ export function AddLineModal({ onClose, initial }: AddLineModalProps) {
   };
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-50 flex items-end" style={{ background: "rgba(36,26,17,0.55)" }}>
       <div className="kuwa-sheet w-full max-w-md mx-auto max-h-[90vh] flex flex-col">
         <div className="kuwa-sheet-bar sticky top-0 px-5 py-4 flex items-center justify-between flex-shrink-0 rounded-t-[24px]">
@@ -88,5 +90,6 @@ export function AddLineModal({ onClose, initial }: AddLineModalProps) {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

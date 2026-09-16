@@ -18,7 +18,7 @@ import {
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Beetle } from "@/types";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
-import { MoneyInput } from "@/components/KuwaUI";
+import { MoneyInput, Portal } from "@/components/KuwaUI";
 import {
   FEED_INTERVAL_OPTIONS,
   JELLY_PER_FEED_OPTIONS,
@@ -144,6 +144,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
   };
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-50 flex items-end" style={{ background: "rgba(36,26,17,0.55)" }} onClick={onClose}>
       <div
         className="kuwa-sheet w-full max-w-md mx-auto max-h-[85vh] flex flex-col"
@@ -636,5 +637,6 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
         <PhotoViewer photos={photoEntries(beetle)} onClose={() => setViewingPhoto(false)} />
       )}
     </div>
+    </Portal>
   );
 }

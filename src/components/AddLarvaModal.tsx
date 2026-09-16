@@ -6,7 +6,7 @@ import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Larva } from "@/types";
 import { generateId } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
-import { PhotoPicker } from "@/components/KuwaUI";
+import { PhotoPicker, Portal } from "@/components/KuwaUI";
 import {
   LarvaFields,
   LarvaFormState,
@@ -47,6 +47,7 @@ export function AddLarvaModal({ onClose }: AddLarvaModalProps) {
 
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-50 flex items-end" style={{ background: "rgba(36,26,17,0.55)" }}>
       <div className="kuwa-sheet w-full max-w-md mx-auto max-h-[90vh] flex flex-col">
         <div className="kuwa-sheet-bar sticky top-0 px-5 py-4 flex items-center justify-between flex-shrink-0 rounded-t-[24px]">
@@ -89,5 +90,6 @@ export function AddLarvaModal({ onClose }: AddLarvaModalProps) {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

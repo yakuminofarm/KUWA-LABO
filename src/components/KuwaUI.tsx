@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Camera, ChevronLeft, ChevronRight, LucideIcon, Plus, Trash2, X } from "lucide-react";
 import { fileToPhoto } from "@/lib/photo";
 import { PhotoSize, photoSrc, savePhoto } from "@/lib/photoStore";
@@ -137,6 +138,25 @@ export function Fab({ onClick, label }: { onClick: () => void; label: string }) 
   );
 }
 
+/**
+ * 画面のいちばん上に出すための入れ物。中身を body の直下へ移す。
+ *
+ * シートの中からシートを開くことがある (データの持ち出し → 管理ラベル、
+ * 血統 → ライン作成)。書いた場所のまま出すと、外側のシートの
+ * **スクロールする箱の中** に入ってしまい、
+ *
+ * - 覆いが画面全体に広がらず、外側のシートが上に見えたまま重なる
+ * - 見出し帯の `sticky top-0` が外側の箱を基準に貼り付き、中身の途中に居座る
+ *
+ * という崩れ方をする。body の直下へ移せば、どこから開いても同じ形になる。
+ */
+export function Portal({ children }: { children: React.ReactNode }) {
+  // 書き出し時 (サーバ側) には body が無い。開くのは画面が動き出してからなので、
+  // ここで何も出さなくても見た目は変わらない
+  if (typeof document === "undefined") return null;
+  return createPortal(children, document.body);
+}
+
 /** ボトムシートの外枠 (ヘッダー + スクロール本体 + 固定フッター) */
 export function Sheet({
   title,
@@ -154,6 +174,7 @@ export function Sheet({
   actions?: React.ReactNode;
 }) {
   return (
+    <Portal>
     <div className="fixed inset-0 z-50 flex items-end" style={{ background: "rgba(36,26,17,0.55)" }}>
       <div
         className="kuwa-sheet w-full max-w-md mx-auto max-h-[90vh] flex flex-col"
@@ -189,6 +210,7 @@ export function Sheet({
         {footer && <div className="kuwa-sheet-foot flex-shrink-0 px-5 pt-4 pb-safe-lg">{footer}</div>}
       </div>
     </div>
+    </Portal>
   );
 }
 
@@ -504,6 +526,7 @@ export function PhotoViewer({
   };
 
   return (
+    <Portal>
     <div
       // シート (z-50) より上に出す
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
@@ -566,6 +589,7 @@ export function PhotoViewer({
         </>
       )}
     </div>
+    </Portal>
   );
 }
 

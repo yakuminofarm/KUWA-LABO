@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { useKuwagataStore } from "@/store/kuwagataStore";
-import { MoneyInput } from "@/components/KuwaUI";
+import { MoneyInput, Portal } from "@/components/KuwaUI";
 import { BottleChange, Gender, Larva } from "@/types";
 import {
   SPECIES_OPTIONS,
@@ -263,6 +263,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
   };
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-50 flex items-end" style={{ background: "rgba(36,26,17,0.55)" }} onClick={onClose}>
       <div
         className="kuwa-sheet w-full max-w-md mx-auto max-h-[88vh] flex flex-col"
@@ -778,5 +779,6 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
         <PhotoViewer photos={[larva]} onClose={() => setViewingPhoto(false)} />
       )}
     </div>
+    </Portal>
   );
 }
