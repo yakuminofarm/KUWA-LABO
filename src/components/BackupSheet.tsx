@@ -27,8 +27,9 @@ import {
 import { embedPhotos, upkeepPhotos } from "@/lib/photoUpkeep";
 import { ViewerSave, getViewerSave, saveTextFile } from "@/lib/download";
 import { buildInventoryCsv, csvFileName } from "@/lib/csv";
-import { FileSpreadsheet, Printer } from "lucide-react";
+import { FileSpreadsheet, FileText, Printer } from "lucide-react";
 import { LabelSheet } from "@/components/LabelSheet";
+import { SaleListSheet } from "@/components/SaleListSheet";
 import { resetInstallHint } from "@/components/InstallHint";
 
 /** 取り込み待ちのファイル (中身を見せてから、どう入れるか選んでもらう) */
@@ -72,6 +73,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
   const [pending, setPending] = useState<Pending | null>(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
+  const [showSaleList, setShowSaleList] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   // 共有ページでは閲覧側の保存ダイアログ経由でないとファイルを渡せない
@@ -343,6 +345,31 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
+      {/* ── 卓に置く紙 ── */}
+      <div
+        className="rounded-2xl p-4"
+        style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+      >
+        <p
+          className="font-maru text-sm font-bold flex items-center gap-2"
+          style={{ color: "var(--kuwa-ink)" }}
+        >
+          <FileText className="w-4 h-4" strokeWidth={2.2} style={{ color: "var(--kuwa-moss)" }} />
+          出品リストを作る
+        </p>
+        <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          即売会の卓に置く一覧です。お客さんに見せる配布用と、原価の入った
+          手元用を出し分けられます。
+        </p>
+        <button
+          onClick={() => setShowSaleList(true)}
+          disabled={total === 0}
+          className="kuwa-btn-ghost w-full mt-3 py-3 text-sm active:scale-[0.98] transition-all disabled:opacity-40"
+        >
+          並べるものを選ぶ
+        </button>
+      </div>
+
       {/* ── 読みこむ ── */}
       <div
         className="rounded-2xl p-4"
@@ -532,6 +559,7 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
 
       {/* ラベルを選ぶ画面は、この上に重ねて出す */}
       {showLabels && <LabelSheet onClose={() => setShowLabels(false)} />}
+      {showSaleList && <SaleListSheet onClose={() => setShowSaleList(false)} />}
     </Sheet>
   );
 }
