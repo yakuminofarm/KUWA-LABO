@@ -107,6 +107,25 @@ Xcode と Android Studio の画面での作業になる。
 `ios/` `android/` は Git に含めていないので、消して作り直したときは
 「土台を作る」を最初からやり直す (`assets:native` も忘れずに)。
 
+### package-lock.json を手で直すときは並び順に気をつける
+
+npm はこのファイルの項目を `localeCompare` の順に並べる。手で項目を足して
+位置がずれていると、**`npm install` のたびに npm が並べ直す** → 作業ツリーが
+汚れる → 次の `git pull` が「ローカルの変更が失われます」で拒否される、という
+連鎖になる。しかも `git pull` の失敗に気づかないまま `npm run ios` まで通って
+しまうので、「新しいはずの機能が実機に無い」という形で表に出る (実際に
+html5-qrcode の位置がずれていて起きた)。
+
+並びが崩れていないかは、これで確かめられる。
+
+```sh
+node -e '"'"'const fs=require("fs");
+const keys=[...fs.readFileSync("package-lock.json","utf8")
+  .matchAll(/^    "(node_modules\/[^"]+)": \{/gm)].map(m=>m[1]);
+const sorted=[...keys].sort((a,b)=>a.localeCompare(b));
+console.log(keys.every((k,i)=>k===sorted[i]) ? "並びOK" : "並びが崩れています");'"'"'
+```
+
 ### 直したのに実機で変わらないとき
 
 Xcode は `public` の中身だけが変わった場合、増分ビルドで見落とすことがある。
