@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
+import { allSpeciesOptions } from "@/lib/customSpecies";
 import { Beetle } from "@/types";
 import { SpeciesAvatar } from "@/components/KuwagataSVG";
 import { MoneyInput, Portal } from "@/components/KuwaUI";
@@ -31,7 +32,6 @@ import {
   foodFor,
   formatYen,
   genderColor,
-  SPECIES_OPTIONS,
   larvaCost,
   splitPairAmount,
   todayStr,
@@ -78,6 +78,7 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
 export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: BeetleDetailModalProps) {
   const { beetles, lines, larvae, reminder, updateBeetle, deleteBeetle, toggleFavorite, toggleFedToday } =
     useKuwagataStore();
+  const customSpecies = useKuwagataStore((s) => s.customSpecies);
   const speciesTuning = useKuwagataStore((s) => s.speciesTuning);
   const { showToast } = useToast();
   const [sharing, setSharing] = useState(false);
@@ -424,7 +425,7 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
           </div>
               <button
                 onClick={() => {
-                  setForm(beetleToForm(beetle, SPECIES_OPTIONS));
+                  setForm(beetleToForm(beetle, allSpeciesOptions(customSpecies)));
                   setEditing(true);
                 }}
                 className="kuwa-btn-ghost w-full mt-3 py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"

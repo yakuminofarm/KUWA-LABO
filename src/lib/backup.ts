@@ -19,6 +19,8 @@ export interface BackupData {
   schedule?: ScheduleSettings;
   /** 品種ごとに直した値 */
   speciesTuning?: SpeciesOverrides;
+  /** 自分で足した品種の名前 */
+  customSpecies?: string[];
 }
 
 /** 書き出すJSONファイルの形 */
@@ -279,6 +281,7 @@ export function parseBackup(text: string): ParseResult {
 
   const schedule = pickSchedule(d.schedule);
   const speciesTuning = pickSpeciesTuning(d.speciesTuning);
+  const customSpecies = asStrings(d.customSpecies);
 
   const reminder =
     isRecord(d.reminder) &&
@@ -296,6 +299,7 @@ export function parseBackup(text: string): ParseResult {
       reminder,
       schedule,
       speciesTuning,
+      customSpecies,
     },
     skipped: beetles.skipped + lines.skipped + larvae.skipped + expenses.skipped,
     exportedAt: typeof json.exportedAt === "string" ? json.exportedAt : undefined,

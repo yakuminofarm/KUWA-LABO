@@ -57,6 +57,13 @@ interface KuwagataStore {
    * 分からなくなる (src/lib/speciesTuning.ts)
    */
   speciesTuning: SpeciesOverrides;
+  /**
+   * 自分で足した品種。組み込みの一覧に無いものを、毎回打たずに選べるようにする
+   * (src/lib/customSpecies.ts)
+   */
+  customSpecies: string[];
+  addCustomSpecies: (name: string) => void;
+  removeCustomSpecies: (name: string) => void;
   setSpeciesTuning: (species: string, patch: TuningPatch) => void;
   /** その品種をAIの目安に戻す */
   clearSpeciesTuning: (species: string) => void;
@@ -139,6 +146,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
       reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー", showCost: true },
       schedule: { ...DEFAULT_SCHEDULE },
       speciesTuning: {},
+      customSpecies: [],
       lastBackupAt: undefined,
 
       toggleFedToday: (id) =>
@@ -173,6 +181,16 @@ export const useKuwagataStore = create<KuwagataStore>()(
       setReminder: (r) => set((s) => ({ reminder: { ...s.reminder, ...r } })),
 
       setSchedule: (v) => set((s) => ({ schedule: { ...s.schedule, ...v } })),
+
+      addCustomSpecies: (name) =>
+        set((s) =>
+          s.customSpecies.includes(name) ? s : { customSpecies: [...s.customSpecies, name] }
+        ),
+
+      // 名前を消しても、その品種の記録には触らない。
+      // 選択肢から外すだけなので、残っている記録は今までどおり動く
+      removeCustomSpecies: (name) =>
+        set((s) => ({ customSpecies: s.customSpecies.filter((x) => x !== name) })),
 
       setSpeciesTuning: (species, patch) =>
         set((s) => ({
@@ -402,6 +420,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           reminder: { enabled: false, time: "19:00", intervalDays: 1, foodType: "プロゼリー", showCost: true },
           schedule: { ...DEFAULT_SCHEDULE },
           speciesTuning: {},
+          customSpecies: [],
           lastBackupAt: undefined,
         }),
 
@@ -417,6 +436,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           reminder: s.reminder,
           schedule: s.schedule,
           speciesTuning: s.speciesTuning,
+          customSpecies: s.customSpecies,
         };
       },
 
@@ -434,6 +454,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           reminder: d.reminder ?? s.reminder,
           schedule: d.schedule ?? s.schedule,
           speciesTuning: d.speciesTuning ?? s.speciesTuning,
+          customSpecies: d.customSpecies ?? s.customSpecies,
         }));
         return {
           added: d.beetles.length + d.lines.length + d.larvae.length + d.expenses.length,
@@ -453,6 +474,9 @@ export const useKuwagataStore = create<KuwagataStore>()(
           lines: l.next,
           larvae: v.next,
           expenses: e.next,
+          // 設定は上書きしないが、品種の名前だけは足す。
+          // 取り込んだ記録の品種が選べないままだと、直すときに困る
+          customSpecies: [...new Set([...s.customSpecies, ...(d.customSpecies ?? [])])],
         });
         return {
           added: b.added + l.added + v.added + e.added,
@@ -493,6 +517,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           reminder: { ...current.reminder, ...(p?.reminder ?? {}) },
           schedule: { ...current.schedule, ...(p?.schedule ?? {}) },
           speciesTuning: p?.speciesTuning ?? current.speciesTuning,
+          customSpecies: p?.customSpecies ?? current.customSpecies,
           lastBackupAt: p?.lastBackupAt ?? current.lastBackupAt,
         };
       },

@@ -9,7 +9,8 @@ import { AddBeetleModal } from "@/components/AddBeetleModal";
 import { BeetleDetailModal } from "@/components/BeetleDetailModal";
 import { EmptyState, Fab } from "@/components/KuwaUI";
 import { EMPTY_IMAGE } from "@/lib/assets";
-import { SPECIES_OPTIONS, groupBySpecies, needsFeeding } from "@/lib/breeding";
+import { groupBySpecies, needsFeeding } from "@/lib/breeding";
+import { allSpeciesOptions } from "@/lib/customSpecies";
 import type { SpeciesOverrides } from "@/lib/speciesTuning";
 import { BeetleFormState, duplicateBeetleForm } from "@/components/BeetleFields";
 
@@ -67,6 +68,7 @@ function applySort(beetles: Beetle[], key: SortKey): Beetle[] {
 
 export function AdultTab() {
   const { beetles, reminder, speciesTuning } = useKuwagataStore();
+  const customSpecies = useKuwagataStore((s) => s.customSpecies);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -252,7 +254,7 @@ export function AdultTab() {
           onClose={() => setSelectedId(null)}
           onDuplicate={(b) => {
             setDuplicateOf(
-              duplicateBeetleForm(b, SPECIES_OPTIONS, beetles.map((x) => x.code))
+              duplicateBeetleForm(b, allSpeciesOptions(customSpecies), beetles.map((x) => x.code))
             );
             setSelectedId(null);
             setShowAdd(true);

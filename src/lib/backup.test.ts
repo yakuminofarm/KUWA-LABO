@@ -292,3 +292,49 @@ describe("写真の欄の取り込み", () => {
     expect(only.photoUrls).toBeUndefined();
   });
 });
+
+describe("自分で足した品種の持ち出し", () => {
+  // 記録が1件も無いファイルは取り込めない決まりなので、1頭だけ入れておく
+  const one = {
+    id: "b1",
+    code: "26OK-A1",
+    species: "オオクワガタ",
+    acquiredDate: "2026-01-01",
+    isAlive: true,
+    notes: "",
+  };
+  const file = (customSpecies: unknown) =>
+    JSON.stringify({
+      app: "kuwarabo",
+      version: 1,
+      data: { beetles: [one], lines: [], larvae: [], expenses: [], customSpecies },
+    });
+
+  it("書き出して読み戻せる", () => {
+    const out = buildBackup({
+      beetles: [one] as never,
+      lines: [],
+      larvae: [],
+      expenses: [],
+      customSpecies: ["タランドゥス"],
+    });
+    expect(out.data.customSpecies).toEqual(["タランドゥス"]);
+    expect(parseBackup(JSON.stringify(out)).data.customSpecies).toEqual(["タランドゥス"]);
+  });
+
+  // 人が触れるファイルから入ってくるので、形が違えば落とす
+  it("配列でなければ落とす", () => {
+    expect(parseBackup(file("タランドゥス")).data.customSpecies).toBeUndefined();
+    expect(parseBackup(file(42)).data.customSpecies).toBeUndefined();
+  });
+
+  it("混ざった中身は文字だけ残す", () => {
+    expect(parseBackup(file(["タランドゥス", null, 7, ""])).data.customSpecies).toEqual([
+      "タランドゥス",
+    ]);
+  });
+
+  it("入っていなくても読める (古いファイル)", () => {
+    expect(parseBackup(file(undefined)).data.customSpecies).toBeUndefined();
+  });
+});

@@ -1,11 +1,15 @@
 "use client";
 
-import { SPECIES_GROUPS } from "@/lib/breeding";
+import { speciesGroupsWith } from "@/lib/customSpecies";
+import { useKuwagataStore } from "@/store/kuwagataStore";
 
 /**
  * 種類の選択。国産・外国産に分けて出す。
  * 「その他」を選んだときだけ自由入力が出るところまで含めて1つにまとめてある
  * (成虫・幼虫・ラインの3画面で同じものを使うため)。
+ *
+ * 自分で足した品種 (設定 → 品種ごとの目安) も選べる。毎回「その他」で打つと
+ * 表記がぶれ、品種ごとの目安や組める相手の候補が分かれてしまうため。
  */
 export function SpeciesSelect({
   value,
@@ -22,6 +26,10 @@ export function SpeciesSelect({
   className?: string;
   label?: string;
 }) {
+  // custom は「その他」の自由入力。こちらは設定で足した品種の一覧
+  const added = useKuwagataStore((s) => s.customSpecies);
+  const groups = speciesGroupsWith(added);
+
   return (
     <div>
       <label className="block text-sm font-medium text-[#40352a] mb-1">{label}</label>
@@ -30,7 +38,7 @@ export function SpeciesSelect({
         onChange={(e) => onChange(e.target.value)}
         className={className}
       >
-        {SPECIES_GROUPS.map((group) => (
+        {groups.map((group) => (
           <optgroup key={group.label} label={group.label}>
             {group.species.map((s) => (
               <option key={s} value={s}>
