@@ -38,6 +38,7 @@ import {
   totalHeads,
   daysBetween,
 } from "@/lib/breeding";
+import { doneFeedback, tapFeedback } from "@/lib/haptics";
 import { dailyTrivia } from "@/lib/trivia";
 import { fetchTodayNews } from "@/lib/news";
 import { NewsItem } from "@/lib/newsFeed";
@@ -392,6 +393,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
                 <button
                   onClick={() => {
                     const n = feedAllToday();
+                    // 何頭ぶんも一度に済むので、1頭ずつとは違う合図にする
+                    doneFeedback();
                     showToast(`${n}頭にエサをあげました！`);
                   }}
                   className="kuwa-btn-primary px-4 py-3 text-sm flex items-center gap-1.5 flex-shrink-0 active:scale-[0.97] transition-all"
@@ -429,6 +432,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
                       key={b.id}
                       onClick={() => {
                         toggleFedToday(b.id);
+                        // ここに出ているのは未給餌の子だけなので、押せば必ず「あげた」
+                        tapFeedback();
                         showToast(`${b.code} にエサをあげました`);
                       }}
                       aria-label={`${b.code} にエサをあげた`}

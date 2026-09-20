@@ -44,6 +44,7 @@ import { PedigreeSection } from "@/components/PedigreeSection";
 import { buildShareCard, shareText } from "@/lib/shareCard";
 import { cardFileName, shareCardImage } from "@/lib/share";
 import { photoSrc } from "@/lib/photoStore";
+import { tapFeedback, undoFeedback } from "@/lib/haptics";
 import { ParentResultSection } from "@/components/ParentResultSection";
 import { PairingSection } from "@/components/PairingSection";
 import {
@@ -311,7 +312,12 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
           {/* 今日のエサやり */}
           {beetle.matured && beetle.isAlive && beetle.soldPriceYen == null && (
             <button
-              onClick={() => toggleFedToday(beetle.id)}
+              onClick={() => {
+                toggleFedToday(beetle.id);
+                // 押すと「あげた」と「取り消し」が入れ替わる
+                if (beetle.lastFedDate === todayStr()) undoFeedback();
+                else tapFeedback();
+              }}
               className="w-full rounded-2xl px-4 py-4 flex items-center gap-3.5 active:scale-[0.98] transition-all"
               style={
                 beetle.lastFedDate === todayStr()

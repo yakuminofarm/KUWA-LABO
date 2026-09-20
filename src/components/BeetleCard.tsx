@@ -14,6 +14,7 @@ import {
   needsFeeding,
   todayStr,
 } from "@/lib/breeding";
+import { tapFeedback, undoFeedback } from "@/lib/haptics";
 import { getGenderLabel } from "@/lib/utils";
 import { TOOL_IMAGE } from "@/lib/assets";
 
@@ -30,6 +31,13 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
   const isSold = beetle.soldPriceYen != null;
   const inactive = isSold || !beetle.isAlive;
   const fedToday = beetle.lastFedDate === todayStr();
+
+  // 押すと「あげた」と「取り消し」が入れ替わる。指に返す合図も分ける
+  const feed = () => {
+    toggleFedToday(beetle.id);
+    if (fedToday) undoFeedback();
+    else tapFeedback();
+  };
   const showFeed = beetle.matured && !inactive;
   const pendingFeed = needsFeeding(beetle, reminder.intervalDays, undefined, speciesTuning);
   // ふだんと違う餌・間隔の個体だけ、一覧でも分かるようにする
@@ -143,12 +151,12 @@ export function BeetleCard({ beetle, onClick }: BeetleCardProps) {
               aria-label={fedToday ? "エサやりを取り消す" : `${beetle.code} にエサをあげた`}
               onClick={(e) => {
                 e.stopPropagation();
-                toggleFedToday(beetle.id);
+                feed();
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.stopPropagation();
-                  toggleFedToday(beetle.id);
+                  feed();
                 }
               }}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${

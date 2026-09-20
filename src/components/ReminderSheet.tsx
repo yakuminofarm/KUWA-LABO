@@ -17,6 +17,7 @@ import {
 } from "@/lib/notify";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Sheet } from "@/components/KuwaUI";
+import { checkHaptics } from "@/lib/haptics";
 import { SpeciesTuningSection } from "@/components/SpeciesTuningSection";
 import { useToast } from "@/components/ui/Toast";
 
@@ -26,6 +27,7 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
   // アプリ版では端末に聞きにいくので、答えが返るまで分からない。
   // 出るまでは「まだ聞いていない」ではなく「使えない」側に倒しておく。
   // 誘っておいて実は使えなかった、という順番にはしたくない
+  const [hapticTried, setHapticTried] = useState(false);
   const [perm, setPerm] = useState<NotifyPermission>("unsupported");
 
   useEffect(() => {
@@ -184,6 +186,37 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
           )}
         </div>
       )}
+
+      {/* 手ごたえ (振動)。震えないときに、どこで止まっているかを切り分けるため */}
+      <div
+        className="rounded-2xl p-4"
+        style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+      >
+        <p className="font-maru text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+          手ごたえ (振動)
+        </p>
+        <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+          割り出しカウンターやエサやりのボタンは、押すと短く振動します。
+          入り切りは端末の設定で変えられます
+          {IS_NATIVE ? " (iPhone なら 設定 → サウンドと触覚 → システムの触覚)" : ""}。
+        </p>
+        <button
+          onClick={async () => {
+            setHapticTried(true);
+            const result = await checkHaptics();
+            if (result === "ok") {
+              showToast(
+                "いま振動を送りました。感じなければ、端末の設定で切れているか、低電力モードかもしれません"
+              );
+            } else {
+              showToast("この端末では振動を使えませんでした", "error");
+            }
+          }}
+          className="kuwa-btn-ghost w-full mt-3 py-3 text-sm active:scale-[0.98] transition-all"
+        >
+          {hapticTried ? "もう一度試す" : "振動を試す"}
+        </button>
+      </div>
 
       {/* 表示する画面。趣味で飼う人には売り買いの話が邪魔になる */}
       <div

@@ -47,3 +47,27 @@ export function undoFeedback(): void {
 export function doneFeedback(): void {
   run(({ Haptics, NotificationType }) => Haptics.notification({ type: NotificationType.Success }));
 }
+
+/** 手ごたえを試した結果 */
+export type HapticCheck =
+  /** 端末まで届いた (それでも何も感じないなら、端末側で切ってある) */
+  | "ok"
+  /** 届かなかった (振動の仕組みが無い・プラグインが入っていない) */
+  | "unavailable";
+
+/**
+ * 手ごたえが届くか試す。設定の画面から呼ぶ。
+ *
+ * ふだんは失敗を黙って流しているので、震えないときに
+ * 「アプリが呼べていない」のか「端末側で切ってある」のかが分からない。
+ * ここだけは結果を返して、どちらなのかを切り分けられるようにする。
+ */
+export async function checkHaptics(): Promise<HapticCheck> {
+  try {
+    const { Haptics, NotificationType } = await hapticsLib();
+    await Haptics.notification({ type: NotificationType.Success });
+    return "ok";
+  } catch {
+    return "unavailable";
+  }
+}
