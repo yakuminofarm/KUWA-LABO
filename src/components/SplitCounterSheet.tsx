@@ -7,6 +7,7 @@ import { BreedingLine } from "@/types";
 import { Sheet } from "@/components/KuwaUI";
 import { useToast } from "@/components/ui/Toast";
 import { todayStr } from "@/lib/breeding";
+import { doneFeedback, tapFeedback, undoFeedback } from "@/lib/haptics";
 import {
   SPLIT_STAGES,
   SplitStage,
@@ -51,6 +52,12 @@ export function SplitCounterSheet({
 
   const count = (stage: SplitStage, by: number) => {
     const next = bump(tally, stage, by);
+    // もう0のところで戻しても数は変わらない。手ごたえも返さない
+    // (返すと「戻せた」と思ってしまう)
+    if (next[stage] !== tally[stage]) {
+      if (by > 0) tapFeedback();
+      else undoFeedback();
+    }
     setTally(next);
     if (tallyTotal(next) > 0) saveDraft({ lineId: line.id, tally: next, date });
     else clearDraft();
@@ -68,6 +75,7 @@ export function SplitCounterSheet({
       eggCount: tally.egg || undefined,
     });
     clearDraft();
+    doneFeedback();
     showToast(`割り出しを記録しました (${made.length}件を作成)`);
     onClose();
   };
