@@ -25,11 +25,17 @@ export interface GuideSection {
   /** lucide のアイコン名。GuideSheet 側で対応表を持つ */
   icon: string;
   title: string;
+  /**
+   * 閉じているときに見える1行。
+   * 見出しだけを並べると、中身を見るまで自分に要るかが分からず、
+   * 結局ぜんぶ開くことになる。
+   */
+  lead: string;
   blocks: GuideBlock[];
 }
 
 export const GUIDE_INTRO =
-  "くわらぼの使い方をまとめました。はじめての方は 1 と 2 だけ読めば使いはじめられます。" +
+  "気になるところだけ開いて読めます。はじめての方は 1 と 2 だけで使いはじめられます。" +
   "ブリードをする方は 4 と 5 もどうぞ。";
 
 export const GUIDE_SECTIONS: GuideSection[] = [
@@ -37,6 +43,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: "tabs",
     icon: "grid",
     title: "下のタブの役割",
+    lead: "ホーム・成虫・ブリード・育成・記事、それぞれ何をする画面か。",
     blocks: [
       { kind: "text", text: "画面の下にタブがあります。役割で分かれています。" },
       {
@@ -66,6 +73,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: "first",
     icon: "plus",
     title: "最初の1頭を登録する",
+    lead: "必須は管理番号だけ。3つの手順で登録できます。",
     blocks: [
       {
         kind: "steps",
@@ -96,6 +104,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: "feeding",
     icon: "food",
     title: "毎日のエサやり",
+    lead: "まとめて記録するやり方と、一覧のバッジの読み方。",
     blocks: [
       {
         kind: "list",
@@ -122,6 +131,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: "breeding",
     icon: "heart",
     title: "ブリードの流れ",
+    lead: "ペアリングから割り出しまで、4つの状態で進みます。",
     blocks: [
       {
         kind: "steps",
@@ -146,6 +156,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: "rearing",
     icon: "sprout",
     title: "幼虫を育てて成虫にする",
+    lead: "ステージの進め方、まとまりでの管理、成虫への引き上げ。",
     blocks: [
       {
         kind: "text",
@@ -178,6 +189,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: "schedule",
     icon: "calendar",
     title: "予定とスケジュール",
+    lead: "やることリストとカレンダー。日数の目安は変えられます。",
     blocks: [
       {
         kind: "text",
@@ -208,6 +220,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: "quantity",
     icon: "calc",
     title: "使う量から、ひと月のめやすを出す",
+    lead: "ゼリーがひと月に何個・いくら要りそうかの見込みを出します。",
     only: "cost",
     blocks: [
       {
@@ -239,6 +252,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: "records",
     icon: "trophy",
     title: "自己ベスト",
+    lead: "種類ごとの最大サイズ。飼育品と野外品は分けて数えます。",
     blocks: [
       {
         kind: "text",
@@ -262,6 +276,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: "backup",
     icon: "backup",
     title: "記録の保存とバックアップ",
+    lead: "記録はこの端末の中だけ。機種変更の前には必ず書き出しを。",
     blocks: [
       {
         kind: "text",
@@ -292,6 +307,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     id: "trouble",
     icon: "help",
     title: "困ったとき",
+    lead: "登録した子が見当たらない、エサまだが出ない、など。",
     blocks: [
       {
         kind: "list",

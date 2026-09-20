@@ -8,6 +8,8 @@ import { BeetleCard } from "@/components/BeetleCard";
 import { AddBeetleModal } from "@/components/AddBeetleModal";
 import { BeetleDetailModal } from "@/components/BeetleDetailModal";
 import { EmptyState, Fab } from "@/components/KuwaUI";
+import { FilterBar } from "@/components/FilterBar";
+import { activeLabels } from "@/lib/listFilter";
 import { EMPTY_IMAGE } from "@/lib/assets";
 import { groupBySpecies, needsFeeding } from "@/lib/breeding";
 import { allSpeciesOptions } from "@/lib/customSpecies";
@@ -99,6 +101,10 @@ export function AdultTab() {
     sortKey
   );
   const selected = beetles.find((b) => b.id === selectedId);
+  const viewLabels = [
+    SORT_OPTIONS.find((s) => s.key === sortKey)?.label,
+    grouped ? "種類ごと" : undefined,
+  ].filter((v): v is string => v != null);
 
   return (
     <div className="space-y-4">
@@ -117,64 +123,66 @@ export function AdultTab() {
         />
       </div>
 
-      <div className="space-y-2.5">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-          {FILTER_OPTIONS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => toggleFilter(f.key)}
-              data-on={activeFilters.has(f.key)}
-              className="kuwa-chip font-maru"
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-          {SORT_OPTIONS.map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setSortKey(s.key)}
-              data-on={sortKey === s.key}
-              className="kuwa-chip kuwa-chip-amber font-maru"
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-        {/* 何種類も飼っている人向け。種類ごとにまとめて見せる */}
-        <div className="flex items-center gap-2">
-          <span
-            className="text-[11px] font-semibold flex-shrink-0"
-            style={{ color: "var(--kuwa-ink-soft)" }}
-          >
-            グループ化
-          </span>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setGrouped(false)}
-              className="kuwa-chip"
-              style={{ padding: "4px 11px", fontSize: 11 }}
-              data-on={!grouped}
-            >
-              なし
-            </button>
-            <button
-              onClick={() => setGrouped(true)}
-              className="kuwa-chip"
-              style={{ padding: "4px 11px", fontSize: 11 }}
-              data-on={grouped}
-            >
-              種類ごと
-            </button>
-          </div>
-        </div>
-      </div>
-
       {beetles.length > 0 && (
-        <p className="text-xs px-1" style={{ color: "var(--kuwa-ink-soft)" }}>
-          {sorted.length} 頭を表示中
-        </p>
+        <FilterBar
+          count={sorted.length}
+          unit="頭"
+          conditions={activeLabels(FILTER_OPTIONS, activeFilters)}
+          view={viewLabels}
+          onClear={() => setActiveFilters(new Set())}
+        >
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+            {FILTER_OPTIONS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => toggleFilter(f.key)}
+                data-on={activeFilters.has(f.key)}
+                className="kuwa-chip font-maru"
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+            {SORT_OPTIONS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setSortKey(s.key)}
+                data-on={sortKey === s.key}
+                className="kuwa-chip kuwa-chip-amber font-maru"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          {/* 何種類も飼っている人向け。種類ごとにまとめて見せる */}
+          <div className="flex items-center gap-2">
+            <span
+              className="text-[11px] font-semibold flex-shrink-0"
+              style={{ color: "var(--kuwa-ink-soft)" }}
+            >
+              グループ化
+            </span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setGrouped(false)}
+                className="kuwa-chip"
+                style={{ padding: "4px 11px", fontSize: 11 }}
+                data-on={!grouped}
+              >
+                なし
+              </button>
+              <button
+                onClick={() => setGrouped(true)}
+                className="kuwa-chip"
+                style={{ padding: "4px 11px", fontSize: 11 }}
+                data-on={grouped}
+              >
+                種類ごと
+              </button>
+            </div>
+          </div>
+        </FilterBar>
       )}
 
       {sorted.length === 0 ? (

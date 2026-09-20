@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, ChevronLeft, ChevronRight, LucideIcon, Plus, Trash2, X } from "lucide-react";
+import { Camera, ChevronDown, ChevronLeft, ChevronRight, LucideIcon, Plus, Trash2, X } from "lucide-react";
 import { fileToPhoto } from "@/lib/photo";
 import { PhotoSize, photoSrc, savePhoto } from "@/lib/photoStore";
 import { PHOTO_MAX, PhotoHolder, photoEntries, photoIdsOf } from "@/lib/photoRef";
@@ -66,6 +66,84 @@ export function SectionTitle({
       <h2 className="font-maru text-[15px] font-bold" style={{ color: "var(--kuwa-ink)" }}>
         {children}
       </h2>
+    </div>
+  );
+}
+
+/**
+ * 開け閉めできるひとかたまり。
+ *
+ * 閉じているときも `lead` の1行だけは見せる。見出しだけが並んでいると、
+ * 中身が自分に要るものかどうかを確かめるために結局ぜんぶ開くことになり、
+ * 畳んだ意味がなくなる。
+ */
+export function Accordion({
+  title,
+  lead,
+  icon,
+  mark,
+  defaultOpen = false,
+  children,
+}: {
+  title: React.ReactNode;
+  /** 閉じているときに見える1行。中身の要約 */
+  lead?: React.ReactNode;
+  /** 見出しの左に置く印 (章のアイコンなど) */
+  icon?: React.ReactNode;
+  /** 見出しの右に置く印 (効いている条件の数など) */
+  mark?: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const bodyId = useId();
+
+  return (
+    <div className="kuwa-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={bodyId}
+        className="w-full px-4 py-3 flex items-center gap-2.5 text-left"
+      >
+        {icon}
+        <span className="min-w-0 flex-1">
+          <span
+            className="font-maru text-[15px] font-bold block"
+            style={{ color: "var(--kuwa-ink)" }}
+          >
+            {title}
+          </span>
+          {lead && (
+            <span
+              className="text-[11.5px] leading-relaxed block mt-0.5"
+              style={{ color: "var(--kuwa-ink-soft)" }}
+            >
+              {lead}
+            </span>
+          )}
+        </span>
+        {mark}
+        <ChevronDown
+          className="w-4 h-4 flex-shrink-0 transition-transform"
+          strokeWidth={2.2}
+          style={{
+            color: "var(--kuwa-ink-soft)",
+            transform: open ? "rotate(180deg)" : undefined,
+          }}
+        />
+      </button>
+
+      {open && (
+        <div
+          id={bodyId}
+          className="px-4 py-3.5 animate-open"
+          style={{ borderTop: "1px solid var(--kuwa-line)" }}
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
 }

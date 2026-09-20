@@ -17,6 +17,7 @@ import { formatDateShort } from "@/lib/utils";
 import { AddLineModal } from "@/components/AddLineModal";
 import { LineDetailModal } from "@/components/LineDetailModal";
 import { EmptyState, Fab } from "@/components/KuwaUI";
+import { FilterBar } from "@/components/FilterBar";
 import { EMPTY_IMAGE } from "@/lib/assets";
 
 type StatusFilter = "all" | LineStatus;
@@ -134,38 +135,48 @@ export function BreedingTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-        {(["all", ...LINE_STATUS_ORDER] as StatusFilter[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            data-on={statusFilter === s}
-            className="kuwa-chip font-maru"
-          >
-            {s === "all" ? "すべて" : LINE_STATUS_LABELS[s]}
-          </button>
-        ))}
-      </div>
+      {lines.length > 0 && (
+        <FilterBar
+          count={sorted.length}
+          unit="ライン"
+          conditions={statusFilter === "all" ? [] : [LINE_STATUS_LABELS[statusFilter]]}
+          view={[ORDER_LABELS[order]]}
+          onClear={() => setStatusFilter("all")}
+        >
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+            {(["all", ...LINE_STATUS_ORDER] as StatusFilter[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                data-on={statusFilter === s}
+                className="kuwa-chip font-maru"
+              >
+                {s === "all" ? "すべて" : LINE_STATUS_LABELS[s]}
+              </button>
+            ))}
+          </div>
 
-      <div className="flex items-center gap-2">
-        {(Object.keys(ORDER_LABELS) as Order[]).map((o) => (
-          <button
-            key={o}
-            onClick={() => setOrder(o)}
-            data-on={order === o}
-            className="kuwa-chip font-maru"
-          >
-            {ORDER_LABELS[o]}
-          </button>
-        ))}
-      </div>
+          <div className="flex items-center gap-2">
+            {(Object.keys(ORDER_LABELS) as Order[]).map((o) => (
+              <button
+                key={o}
+                onClick={() => setOrder(o)}
+                data-on={order === o}
+                className="kuwa-chip font-maru"
+              >
+                {ORDER_LABELS[o]}
+              </button>
+            ))}
+          </div>
 
-      {/* 何の順なのかを書いておく。「成績」の中身は人によって違う */}
-      {order === "result" && sorted.length > 0 && (
-        <p className="text-[11px] leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
-          その血から出た最大個体の大きい順です。
-          まだ大きさが分かっていないラインは、羽化した頭数の順で後ろに並びます。
-        </p>
+          {/* 何の順なのかを書いておく。「成績」の中身は人によって違う */}
+          {order === "result" && (
+            <p className="text-[11px] leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+              その血から出た最大個体の大きい順です。
+              まだ大きさが分かっていないラインは、羽化した頭数の順で後ろに並びます。
+            </p>
+          )}
+        </FilterBar>
       )}
 
       {sorted.length === 0 ? (

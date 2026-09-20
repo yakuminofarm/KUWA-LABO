@@ -13,7 +13,7 @@ import {
   Trophy,
   UtensilsCrossed,
 } from "lucide-react";
-import { Sheet } from "@/components/KuwaUI";
+import { Accordion, Sheet } from "@/components/KuwaUI";
 import { GUIDE_INTRO, GUIDE_SECTIONS, GuideBlock } from "@/lib/guide";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 
@@ -100,7 +100,7 @@ export function GuideSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <Sheet title="使い方" onClose={onClose}>
-      <div className="space-y-5">
+      <div className="space-y-3">
         <div className="rounded-2xl px-4 py-3.5" style={{ background: "var(--kuwa-bark-bg)" }}>
           <p className="text-sm leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
             {GUIDE_INTRO}
@@ -110,26 +110,30 @@ export function GuideSheet({ onClose }: { onClose: () => void }) {
         {GUIDE_SECTIONS.filter((sec) => !sec.only || (sec.only === "cost") === showCost).map((sec, i) => {
           const Icon = ICONS[sec.icon] ?? HelpCircle;
           return (
-            <section key={sec.id}>
-              <div className="flex items-center gap-2.5 mb-3">
+            <Accordion
+              key={sec.id}
+              title={`${i + 1}. ${sec.title}`}
+              lead={sec.lead}
+              // 最初の1章だけ開いておく。全部閉じた状態で出すと、
+              // 開けるものだと気づかれないまま閉じられてしまう
+              defaultOpen={i === 0}
+              icon={
                 <span
                   className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: "var(--kuwa-bark-bg)", color: "var(--kuwa-bark)" }}
                 >
                   <Icon className="w-[17px] h-[17px]" strokeWidth={2.2} />
                 </span>
-                <h3 className="font-maru text-base font-bold" style={{ color: "var(--kuwa-ink)" }}>
-                  {i + 1}. {sec.title}
-                </h3>
-              </div>
-              <div className="kuwa-card p-4 space-y-3.5">
+              }
+            >
+              <div className="space-y-3.5">
                 {sec.blocks
                   .filter((b) => !b.only || (b.only === "cost") === showCost)
                   .map((b, j) => (
                     <Block key={j} block={b} showCost={showCost} />
                   ))}
               </div>
-            </section>
+            </Accordion>
           );
         })}
 

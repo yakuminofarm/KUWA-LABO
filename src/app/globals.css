@@ -30,6 +30,14 @@ body {
 }
 .animate-slide-up { animation: slideUp 0.35s ease-out both; }
 
+/* 開け閉めの中身。下から生えるのではなく、上から降りてくる形にして
+   「見出しの続き」に見せる */
+@keyframes kuwaOpen {
+  from { transform: translateY(-6px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.animate-open { animation: kuwaOpen 0.2s ease-out both; }
+
 /* ── スクロールバー非表示（モバイル横スクロール） ── */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

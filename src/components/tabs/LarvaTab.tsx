@@ -23,6 +23,7 @@ import { getGenderLabel } from "@/lib/utils";
 import { AddLarvaModal } from "@/components/AddLarvaModal";
 import { LarvaDetailModal } from "@/components/LarvaDetailModal";
 import { EmptyState, Fab, PhotoThumb } from "@/components/KuwaUI";
+import { FilterBar } from "@/components/FilterBar";
 import { EMPTY_IMAGE } from "@/lib/assets";
 import { STAGE_IMAGE } from "@/lib/assets";
 
@@ -253,23 +254,26 @@ export function LarvaTab() {
         />
       </div>
 
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-        {(["all", ...STAGE_ORDER] as StageFilter[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => setStageFilter(s)}
-            data-on={stageFilter === s}
-            className="kuwa-chip kuwa-chip-moss font-maru"
-          >
-            {s === "all" ? "すべて" : STAGE_LABELS[s]}
-          </button>
-        ))}
-      </div>
-
       {larvae.length > 0 && (
-        <p className="text-xs px-1" style={{ color: "var(--kuwa-ink-soft)" }}>
-          {total} 頭を表示中
-        </p>
+        <FilterBar
+          count={total}
+          unit="頭"
+          conditions={stageFilter === "all" ? [] : [STAGE_LABELS[stageFilter]]}
+          onClear={() => setStageFilter("all")}
+        >
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+            {(["all", ...STAGE_ORDER] as StageFilter[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => setStageFilter(s)}
+                data-on={stageFilter === s}
+                className="kuwa-chip kuwa-chip-moss font-maru"
+              >
+                {s === "all" ? "すべて" : STAGE_LABELS[s]}
+              </button>
+            ))}
+          </div>
+        </FilterBar>
       )}
 
       {total === 0 ? (
