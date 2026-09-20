@@ -148,6 +148,77 @@ export function Accordion({
   );
 }
 
+/**
+ * 一覧の中の見出し。押すと、その束だけ畳める。
+ *
+ * 最初は開けておく。畳んだ状態で出すと一覧が空に見えるし、一覧そのものが
+ * その画面に来た目的だから。幼虫を見ているあいだ「羽化した子」を伏せておく、
+ * といった使い方を想定している。
+ */
+export function ListGroup({
+  icon,
+  title,
+  count,
+  size = "md",
+  children,
+}: {
+  /** 見出しの左に置く絵 */
+  icon?: React.ReactNode;
+  title: React.ReactNode;
+  /** 右端に出す数え ("5頭")。畳んでいるときの手がかりになるので必ず出す */
+  count: React.ReactNode;
+  /** md = ステージの見出し / sm = 種類ごとのまとまり */
+  size?: "md" | "sm";
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+  const bodyId = useId();
+
+  return (
+    <section>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={bodyId}
+        className="w-full mb-3 px-0.5 flex items-center gap-2 text-left"
+      >
+        {icon}
+        {size === "md" ? (
+          <h2 className="font-maru text-[15px] font-bold" style={{ color: "var(--kuwa-ink)" }}>
+            {title}
+          </h2>
+        ) : (
+          <h2 className="text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+            {title}
+          </h2>
+        )}
+        <span
+          className={`text-xs font-bold ${size === "md" ? "ml-auto" : ""}`}
+          style={{ color: "var(--kuwa-ink-soft)" }}
+        >
+          {count}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 flex-shrink-0 transition-transform ${size === "md" ? "" : "ml-auto"}`}
+          strokeWidth={2.2}
+          style={{
+            color: "var(--kuwa-ink-soft)",
+            transform: open ? "rotate(180deg)" : undefined,
+          }}
+        />
+      </button>
+
+      {/* カードは1枚ずつ動いて出てくるので、外側は動かさない */}
+      {open && (
+        <div id={bodyId} className="space-y-3">
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
 /** 空状態: 挿絵と、次の行動を促す一言を添える */
 export function EmptyState({
   icon: Icon,

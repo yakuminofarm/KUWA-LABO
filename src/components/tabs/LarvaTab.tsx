@@ -22,7 +22,7 @@ import {
 import { getGenderLabel } from "@/lib/utils";
 import { AddLarvaModal } from "@/components/AddLarvaModal";
 import { LarvaDetailModal } from "@/components/LarvaDetailModal";
-import { EmptyState, Fab, PhotoThumb } from "@/components/KuwaUI";
+import { EmptyState, Fab, ListGroup, PhotoThumb } from "@/components/KuwaUI";
 import { FilterBar } from "@/components/FilterBar";
 import { EMPTY_IMAGE } from "@/lib/assets";
 import { STAGE_IMAGE } from "@/lib/assets";
@@ -306,39 +306,30 @@ export function LarvaTab() {
       ) : (
         <div className="space-y-6">
           {groups.map((g) => (
-            <section key={g.key}>
-              <div className="mb-3 px-0.5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={g.img} alt="" width={24} height={24} />
-                  </span>
-                  <h2
-                    className="font-maru text-[15px] font-bold"
-                    style={{ color: "var(--kuwa-ink)" }}
-                  >
-                    {g.title}
-                  </h2>
-                </div>
-                <span className="text-xs font-bold" style={{ color: "var(--kuwa-ink-soft)" }}>
-                  {g.items.length}頭
+            <ListGroup
+              key={g.key}
+              title={g.title}
+              count={`${g.items.length}頭`}
+              icon={
+                <span
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: "var(--kuwa-card)", border: "1px solid var(--kuwa-line)" }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={g.img} alt="" width={24} height={24} />
                 </span>
-              </div>
-              <div className="space-y-3">
-                {g.items.map((l, i) => (
-                  <div
-                    key={l.id}
-                    className="animate-slide-up"
-                    style={{ animationDelay: `${i * 30}ms` }}
-                  >
-                    <LarvaCard larva={l} onClick={() => setSelectedId(l.id)} />
-                  </div>
-                ))}
-              </div>
-            </section>
+              }
+            >
+              {g.items.map((l, i) => (
+                <div
+                  key={l.id}
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${i * 30}ms` }}
+                >
+                  <LarvaCard larva={l} onClick={() => setSelectedId(l.id)} />
+                </div>
+              ))}
+            </ListGroup>
           ))}
         </div>
       )}

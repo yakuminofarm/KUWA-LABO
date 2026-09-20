@@ -7,7 +7,7 @@ import { Beetle } from "@/types";
 import { BeetleCard } from "@/components/BeetleCard";
 import { AddBeetleModal } from "@/components/AddBeetleModal";
 import { BeetleDetailModal } from "@/components/BeetleDetailModal";
-import { EmptyState, Fab } from "@/components/KuwaUI";
+import { EmptyState, Fab, ListGroup } from "@/components/KuwaUI";
 import { FilterBar } from "@/components/FilterBar";
 import { activeLabels } from "@/lib/listFilter";
 import { EMPTY_IMAGE } from "@/lib/assets";
@@ -216,23 +216,18 @@ export function AdultTab() {
       ) : grouped ? (
         <div className="space-y-6">
           {groupBySpecies(sorted).map((g) => (
-            <section key={g.species}>
-              <div className="mb-3 px-0.5 flex items-center gap-2">
-                <span className="text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
-                  {g.species}
-                </span>
-                <span className="text-xs" style={{ color: "var(--kuwa-ink-soft)" }}>
-                  {g.items.length}頭
-                </span>
-              </div>
-              <div className="space-y-3">
-                {g.items.map((b, i) => (
-                  <div key={b.id} className="animate-slide-up" style={{ animationDelay: `${i * 30}ms` }}>
-                    <BeetleCard beetle={b} onClick={() => setSelectedId(b.id)} />
-                  </div>
-                ))}
-              </div>
-            </section>
+            <ListGroup
+              key={g.species}
+              title={g.species}
+              count={`${g.items.length}頭`}
+              size="sm"
+            >
+              {g.items.map((b, i) => (
+                <div key={b.id} className="animate-slide-up" style={{ animationDelay: `${i * 30}ms` }}>
+                  <BeetleCard beetle={b} onClick={() => setSelectedId(b.id)} />
+                </div>
+              ))}
+            </ListGroup>
           ))}
         </div>
       ) : (
