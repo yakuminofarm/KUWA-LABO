@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Pencil, Shovel, Trash2, Worm, X } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Portal } from "@/components/KuwaUI";
+import { SplitCounterSheet } from "@/components/SplitCounterSheet";
 import { BreedingLine, Larva } from "@/types";
 import {
   LINE_STATUS_COLORS,
@@ -57,6 +58,8 @@ export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps
     eggCount: "",
     autoCreate: true,
   });
+
+  const [counting, setCounting] = useState(false);
 
   const recordSet = () => {
     updateLine(line.id, {
@@ -310,6 +313,15 @@ export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps
                 <CheckCircle2 className="w-4 h-4" />
                 割り出しを記録
               </button>
+
+              {/* 掘りながら数えるとき用。数が分かっているなら上の欄で足りる */}
+              <button
+                onClick={() => setCounting(true)}
+                className="w-full py-3 rounded-xl border border-[rgba(107,68,35,0.25)] text-[#77644b] text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+              >
+                <Shovel className="w-4 h-4" />
+                数えながら割り出す
+              </button>
             </div>
           )}
 
@@ -383,6 +395,8 @@ export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps
         </div>
       </div>
     </div>
+
+    {counting && <SplitCounterSheet line={line} onClose={() => setCounting(false)} />}
     </Portal>
   );
 }
