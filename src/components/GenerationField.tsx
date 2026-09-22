@@ -19,7 +19,11 @@ import {
 const KINDS: { kind: GenKind; label: string; hint: string }[] = [
   { kind: "wd", label: "WD 野外採集", hint: "山や林で採ってきた個体そのもの。" },
   { kind: "wf", label: "WF 野外の子", hint: "採ってきた個体から数えて何代目か。WF1 は WD の子。" },
-  { kind: "cb", label: "CB 累代", hint: "飼育している親どうしから採れた個体。CBF1 がその最初の代。" },
+  {
+    kind: "cb",
+    label: "CB 累代",
+    hint: "飼育している親どうしから採れた個体。何代目か数えていなければ「わからない」を選ぶと、お店のラベルと同じ「CB」で残ります。",
+  },
   { kind: "f", label: "F 代数のみ", hint: "WD 由来かどうかを分けず、代数だけで書く流儀。" },
   { kind: "unknown", label: "不明", hint: "分からないときはこのまま。累代の欄は空で記録します。" },
   { kind: "free", label: "自分で書く", hint: "打ったとおりに記録します。" },
@@ -43,6 +47,13 @@ export function GenerationField({
   const [freeOpen, setFreeOpen] = useState(() => parsed.kind === "free");
   const kind: GenKind = freeOpen ? "free" : parsed.kind;
   const n = parsed.n ?? 1;
+  /**
+   * 代数を「わからない」にできるか。
+   * CB は、お店のラベルに「CB」とだけ刷られていることが実際にあり、
+   * 何代目かを数えていないという意味を持つ。ほかの区分では、いまの記録が
+   * すでにその書き方のときだけ選べるようにして、選択肢を増やさない。
+   */
+  const allowNoNumber = kind === "cb" || parsed.n == null;
 
   const pick = (next: GenKind) => {
     setFreeOpen(next === "free");
@@ -78,11 +89,19 @@ export function GenerationField({
             何代目
           </span>
           <select
-            value={n}
-            onChange={(e) => onChange(formatGeneration({ kind, n: parseInt(e.target.value, 10) }))}
+            value={parsed.n ?? ""}
+            onChange={(e) =>
+              onChange(
+                formatGeneration({
+                  kind,
+                  n: e.target.value === "" ? undefined : parseInt(e.target.value, 10),
+                })
+              )
+            }
             className="kuwa-input"
-            style={{ width: "5.5rem" }}
+            style={{ width: "7rem" }}
           >
+            {allowNoNumber && <option value="">わからない</option>}
             {generationNumbers(parsed.n).map((i) => (
               <option key={i} value={i}>
                 {i}

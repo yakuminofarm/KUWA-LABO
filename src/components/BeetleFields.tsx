@@ -55,13 +55,19 @@ export function emptyBeetleForm(): BeetleFormState {
 }
 
 /** 選択肢に無い種類は「その他」に寄せて、自由入力側へ入れておく */
+export function speciesFields(
+  name: string,
+  speciesOptions: readonly string[]
+): Pick<BeetleFormState, "species" | "customSpecies"> {
+  const known = speciesOptions.includes(name);
+  return { species: known ? name : "その他", customSpecies: known ? "" : name };
+}
+
 export function beetleToForm(b: Beetle, speciesOptions: readonly string[]): BeetleFormState {
-  const known = speciesOptions.includes(b.species);
   return {
+    ...speciesFields(b.species, speciesOptions),
     code: b.code,
     name: b.name ?? "",
-    species: known ? b.species : "その他",
-    customSpecies: known ? "" : b.species,
     locality: b.locality ?? "",
     generation: b.generation ?? "",
     gender: b.gender,

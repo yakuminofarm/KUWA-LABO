@@ -18,8 +18,10 @@ import {
   formSpecies,
   formToBeetle,
   isBeetleFormValid,
+  speciesFields,
 } from "@/components/BeetleFields";
 import { nextCode, suggestCode } from "@/lib/beetleCode";
+import { allSpeciesOptions } from "@/lib/customSpecies";
 
 interface AddBeetleModalProps {
   onClose: () => void;
@@ -38,11 +40,22 @@ function DraftNote({ species }: { species: string }) {
   );
 }
 
-/** その品種の続きの番号を下書きした状態で返す */
-function withDraftCode(
-  form: BeetleFormState,
-  beetles: readonly { code: string; species: string }[]
+/**
+ * 登録画面をどこから始めるか。
+ *
+ * **前に登録した子と同じ品種から始める。** 続けて登録するときはたいてい
+ * 同じ品種だし、いつもオオクワガタから始まると、その品種を飼っていない人には
+ * 番号の下書きも出てこない (下書きは同じ品種の続きしか出さないため)。
+ */
+function startForm(
+  beetles: readonly { code: string; species: string }[],
+  speciesOptions: readonly string[]
 ): BeetleFormState {
+  const last = beetles[beetles.length - 1]?.species;
+  const form = {
+    ...emptyBeetleForm(),
+    ...(last ? speciesFields(last, speciesOptions) : {}),
+  };
   return { ...form, code: suggestCode(beetles, formSpecies(form)) };
 }
 
@@ -50,19 +63,22 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
   const addBeetle = useKuwagataStore((s) => s.addBeetle);
   const addBeetlePair = useKuwagataStore((s) => s.addBeetlePair);
   const beetles = useKuwagataStore((s) => s.beetles);
+  const customSpecies = useKuwagataStore((s) => s.customSpecies);
   const { showToast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [mode, setMode] = useState<Mode>("single");
-  // 開いた時点で、その品種の続きの番号を下書きしておく。
+  // 開いた時点で、前に登録した品種と、その続きの番号を入れておく。
   // 打ち直しは要らず、違うならそのまま書き換えられる
   const [form, setForm] = useState<BeetleFormState>(
-    () => initial ?? withDraftCode(emptyBeetleForm(), beetles)
+    () => initial ?? startForm(beetles, allSpeciesOptions(customSpecies))
   );
   const [photoIds, setPhotoIds] = useState<string[]>([]);
   const [male, setMale] = useState<PairMemberState>(() => ({
     ...emptyPairMember(),
-    code: suggestCode(beetles, formSpecies(initial ?? emptyBeetleForm())),
+    code: initial
+      ? suggestCode(beetles, formSpecies(initial))
+      : startForm(beetles, allSpeciesOptions(customSpecies)).code,
   }));
   const [female, setFemale] = useState<PairMemberState>(emptyPairMember);
   // 下書きを自分で直したあとは、こちらから書き換えない

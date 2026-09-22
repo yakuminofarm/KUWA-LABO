@@ -840,6 +840,8 @@ export function nextGeneration(parent?: string): string {
   const g = parent?.trim().toUpperCase();
   if (!g) return "";
   if (g === "WD" || g === "WILD") return "WF1";
+  // 「CB」(飼育品だが何代目かは数えていない) を起点にすると、その子が CBF1
+  if (g === "CB") return "CBF1";
   const m = /^(WF|CBF|CB|F)(\d+)$/.exec(g);
   if (!m) return "";
   const prefix = m[1] === "CB" ? "CBF" : m[1];

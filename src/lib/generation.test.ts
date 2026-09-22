@@ -32,8 +32,11 @@ describe("parseGeneration", () => {
     expect(parseGeneration("CB F2")).toEqual({ kind: "cb", n: 2 });
   });
 
+  it("代数の無い CB も読む (お店のラベルで使われる書き方)", () => {
+    expect(parseGeneration("CB")).toEqual({ kind: "cb" });
+  });
+
   it("読めない書き方は、打たれたまま残す", () => {
-    expect(parseGeneration("CB")).toEqual({ kind: "free", text: "CB" });
     expect(parseGeneration("F2 (自己ブリード)")).toEqual({
       kind: "free",
       text: "F2 (自己ブリード)",
@@ -51,8 +54,9 @@ describe("formatGeneration", () => {
     expect(formatGeneration({ kind: "cb", n: 2 })).toBe("CBF2");
   });
 
-  it("代数が無ければ1代目として書く", () => {
-    expect(formatGeneration({ kind: "wf" })).toBe("WF1");
+  it("代数が無ければ、代数を書かない (CB は CBF1 と別もの)", () => {
+    expect(formatGeneration({ kind: "cb" })).toBe("CB");
+    expect(formatGeneration({ kind: "cb", n: 1 })).toBe("CBF1");
   });
 
   it("不明は空にする (ラベルや血統書に「不明」と刷られないように)", () => {
@@ -80,5 +84,13 @@ describe("generationNumbers", () => {
 
   it("いまの値がそれより大きければ、そこまで出す", () => {
     expect(generationNumbers(25)).toHaveLength(25);
+  });
+});
+
+describe("CB と CBF1 は別もの", () => {
+  it("どちらも、開いて閉じただけでは入れ替わらない", () => {
+    // お店のラベルが「CB」なら CB のまま、「CBF1」なら CBF1 のまま残す
+    expect(roundTrip("CB")).toBe("CB");
+    expect(roundTrip("CBF1")).toBe("CBF1");
   });
 });

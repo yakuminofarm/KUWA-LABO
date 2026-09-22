@@ -11,6 +11,7 @@ import {
   larvaCost,
   larvaCostPerHead,
   needsFeeding,
+  nextGeneration,
   NOTICE_DAYS,
   packBreakdown,
   planFeedingNotices,
@@ -376,5 +377,21 @@ describe("planFeedingNotices (アプリ版で端末に積むお知らせ)", () =
 
   it("積みすぎない (端末の上限があるため)", () => {
     expect(planFeedingNotices([hungry], reminder, morning).length).toBeLessThanOrEqual(NOTICE_DAYS);
+  });
+});
+
+describe("nextGeneration (CB を起点にする)", () => {
+  it("CB の子は CBF1", () => {
+    // 「CB」は飼育品だが何代目か数えていない、という意味。
+    // そこから採れた子は、数え始めの1代目になる
+    expect(nextGeneration("CB")).toBe("CBF1");
+  });
+
+  it("CBF1 の子は CBF2", () => {
+    expect(nextGeneration("CBF1")).toBe("CBF2");
+  });
+
+  it("WD の子は WF1", () => {
+    expect(nextGeneration("WD")).toBe("WF1");
   });
 });

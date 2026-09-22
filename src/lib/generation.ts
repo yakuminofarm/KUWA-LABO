@@ -28,14 +28,14 @@ export function parseGeneration(raw: string | undefined): GenValue {
   const g = text.toUpperCase().replace(/\s+/g, "");
   if (g === "WD" || g === "WILD") return { kind: "wd" };
 
-  const m = /^(WF|CBF|CB|F)(\d+)$/.exec(g);
+  const m = /^(WF|CBF|CB|F)(\d*)$/.exec(g);
   if (m) {
+    const kind = m[1] === "WF" ? "wf" : m[1] === "F" ? "f" : "cb";
+    // 「CB」のように代数の無い書き方。お店のラベルで実際に使われていて、
+    // 「飼育品だが何代目かは数えていない」を指す
+    if (m[2] === "") return { kind };
     const n = parseInt(m[2], 10);
-    // CB だけ数字なしの書き方もあるので、0 は型に当てはめない
-    if (n >= 1) {
-      const kind = m[1] === "WF" ? "wf" : m[1] === "F" ? "f" : "cb";
-      return { kind, n };
-    }
+    if (n >= 1) return { kind, n };
   }
   return { kind: "free", text };
 }
@@ -47,13 +47,13 @@ export function formatGeneration(v: GenValue): string {
     case "wd":
       return "WD";
     case "wf":
-      return `WF${v.n ?? 1}`;
-    // 保存する形は CBF に揃える。手元の記録も、親から引き継ぐ計算も CBF で
-    // 書かれているため
+      return v.n == null ? "WF" : `WF${v.n}`;
+    // 代数を決めているときは CBF に揃える。手元の記録も、親から引き継ぐ計算も
+    // CBF で書かれているため。代数が無いときは、ラベルどおり「CB」のまま
     case "cb":
-      return `CBF${v.n ?? 1}`;
+      return v.n == null ? "CB" : `CBF${v.n}`;
     case "f":
-      return `F${v.n ?? 1}`;
+      return v.n == null ? "F" : `F${v.n}`;
     case "free":
       return (v.text ?? "").trim();
   }
