@@ -15,10 +15,11 @@ import {
   PairMemberState,
   emptyBeetleForm,
   emptyPairMember,
+  formSpecies,
   formToBeetle,
   isBeetleFormValid,
-  nextCode,
 } from "@/components/BeetleFields";
+import { nextCode, suggestCode } from "@/lib/beetleCode";
 
 interface AddBeetleModalProps {
   onClose: () => void;
@@ -28,6 +29,23 @@ interface AddBeetleModalProps {
 
 type Mode = "single" | "pair";
 
+/** 下書きの番号だと分かるようにしておく。黙って入れると打ち間違いに見える */
+function DraftNote({ species }: { species: string }) {
+  return (
+    <p className="text-[11px] mt-1" style={{ color: "var(--kuwa-ink-soft)" }}>
+      {species}の続きの番号です
+    </p>
+  );
+}
+
+/** その品種の続きの番号を下書きした状態で返す */
+function withDraftCode(
+  form: BeetleFormState,
+  beetles: readonly { code: string; species: string }[]
+): BeetleFormState {
+  return { ...form, code: suggestCode(beetles, formSpecies(form)) };
+}
+
 export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
   const addBeetle = useKuwagataStore((s) => s.addBeetle);
   const addBeetlePair = useKuwagataStore((s) => s.addBeetlePair);
@@ -36,12 +54,22 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [mode, setMode] = useState<Mode>("single");
-  const [form, setForm] = useState<BeetleFormState>(initial ?? emptyBeetleForm);
+  // 開いた時点で、その品種の続きの番号を下書きしておく。
+  // 打ち直しは要らず、違うならそのまま書き換えられる
+  const [form, setForm] = useState<BeetleFormState>(
+    () => initial ?? withDraftCode(emptyBeetleForm(), beetles)
+  );
   const [photoIds, setPhotoIds] = useState<string[]>([]);
-  const [male, setMale] = useState<PairMemberState>(emptyPairMember);
+  const [male, setMale] = useState<PairMemberState>(() => ({
+    ...emptyPairMember(),
+    code: suggestCode(beetles, formSpecies(initial ?? emptyBeetleForm())),
+  }));
   const [female, setFemale] = useState<PairMemberState>(emptyPairMember);
-  // ♀の番号は♂の続きを下書きする。自分で直したあとは、もう触らない
+  // 下書きを自分で直したあとは、こちらから書き換えない
+  const [codeEdited, setCodeEdited] = useState(() => (initial?.code ?? "") !== "");
+  const [maleEdited, setMaleEdited] = useState(false);
   const [femaleEdited, setFemaleEdited] = useState(false);
+  const codes = beetles.map((b) => b.code);
 
   const pair = mode === "pair";
   const total = form.priceYen ? parseInt(form.priceYen, 10) : undefined;
@@ -54,12 +82,30 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
 
   /** ♂の番号を入れたら、♀は続き番号を下書きしておく */
   const onMaleChange = (next: PairMemberState) => {
+    if (next.code !== male.code) setMaleEdited(true);
     setMale(next);
     if (femaleEdited) return;
-    setFemale((f) => ({
-      ...f,
-      code: nextCode(next.code.trim(), beetles.map((b) => b.code)),
-    }));
+    setFemale((f) => ({ ...f, code: nextCode(next.code.trim(), codes) }));
+  };
+
+  /**
+   * 品種が変わったら、番号の下書きも引き直す。
+   * 品種ごとに記号を変えている人に、別の品種の続きを出したままにしないため。
+   */
+  const onFormChange = (next: BeetleFormState) => {
+    if (next.code !== form.code) setCodeEdited(true);
+
+    const speciesChanged = formSpecies(next) !== formSpecies(form);
+    if (!speciesChanged) {
+      setForm(next);
+      return;
+    }
+
+    const draft = suggestCode(beetles, formSpecies(next));
+    setForm(codeEdited ? next : { ...next, code: draft });
+    if (maleEdited) return;
+    setMale((m) => ({ ...m, code: draft }));
+    if (!femaleEdited) setFemale((f) => ({ ...f, code: nextCode(draft, codes) }));
   };
 
   const handleSubmit = () => {
@@ -151,7 +197,12 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
 
           {pair ? (
             <>
-              <PairMemberFields gender="male" form={male} onChange={onMaleChange} />
+              <PairMemberFields
+                gender="male"
+                form={male}
+                onChange={onMaleChange}
+                codeHint={!maleEdited && male.code ? <DraftNote species={formSpecies(form)} /> : undefined}
+              />
               <PairMemberFields
                 gender="female"
                 form={female}
@@ -159,6 +210,13 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
                   setFemaleEdited(true);
                   setFemale(f);
                 }}
+                codeHint={
+                  !femaleEdited && female.code ? (
+                    <p className="text-[11px] mt-1" style={{ color: "var(--kuwa-ink-soft)" }}>
+                      ♂ の続きの番号です
+                    </p>
+                  ) : undefined
+                }
               />
             </>
           ) : (
@@ -167,8 +225,11 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
 
           <BeetleFields
             form={form}
-            onChange={setForm}
+            onChange={onFormChange}
             showIdentity={!pair}
+            codeHint={
+              !pair && !codeEdited && form.code ? <DraftNote species={formSpecies(form)} /> : undefined
+            }
             priceLabel={pair ? "入手金額 (ペアの合計・税込)" : undefined}
             priceHint={
               pair && total != null ? (

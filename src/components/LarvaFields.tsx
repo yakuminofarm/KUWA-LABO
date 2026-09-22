@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { DatePrecision, Gender, Larva, LarvaStage } from "@/types";
 import { DateField } from "@/components/DateField";
 import { MoneyInput } from "@/components/KuwaUI";
 import { STAGE_LABELS, STAGE_ORDER } from "@/lib/breeding";
 import { SpeciesSelect } from "@/components/SpeciesSelect";
 import { useKuwagataStore } from "@/store/kuwagataStore";
+import { larvaCode, nextCodeNumber } from "@/lib/splitCount";
 
 /**
  * 幼虫の入力欄。登録と編集で同じものを使う。
@@ -118,13 +120,28 @@ export function LarvaFields({
   showGrowth?: boolean;
 }) {
   const lines = useKuwagataStore((s) => s.lines);
+  const larvae = useKuwagataStore((s) => s.larvae);
   const set = (patch: Partial<LarvaFormState>) => onChange({ ...form, ...patch });
+  // 直しに来たときは番号がすでにある。こちらから書き換えない
+  const [codeEdited, setCodeEdited] = useState(() => form.code.trim() !== "");
 
-  // ラインを選んだら種類はそちらに合わせる (親と違う種類にはならない)
+  // ラインを選んだら種類はそちらに合わせる (親と違う種類にはならない)。
+  // 番号も、そのラインの続きを下書きしておく
   const onLine = (lineId: string) => {
     const line = lines.find((l) => l.id === lineId);
-    set(line ? { lineId, species: line.species, customSpecies: "" } : { lineId });
+    if (!line) {
+      set({ lineId });
+      return;
+    }
+    set({
+      lineId,
+      species: line.species,
+      customSpecies: "",
+      ...(codeEdited ? {} : { code: larvaCode(line.name, nextCodeNumber(line.name, larvae)) }),
+    });
   };
+
+  const line = lines.find((l) => l.id === form.lineId);
 
   return (
     <>
@@ -132,10 +149,18 @@ export function LarvaFields({
         <label className="block text-sm font-medium text-[#40352a] mb-1">管理番号 *</label>
         <input
           value={form.code}
-          onChange={(e) => set({ code: e.target.value })}
+          onChange={(e) => {
+            setCodeEdited(true);
+            set({ code: e.target.value });
+          }}
           placeholder="例: 2026-A-01"
           className={inputCls}
         />
+        {!codeEdited && form.code && line && (
+          <p className="text-[11px] mt-1" style={{ color: "var(--kuwa-ink-soft)" }}>
+            {line.name} の続きの番号です
+          </p>
+        )}
       </div>
 
       <div>

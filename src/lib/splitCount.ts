@@ -49,6 +49,11 @@ export function bump(t: SplitTally, stage: SplitStage, by: number): SplitTally {
   return { ...t, [stage]: Math.max(0, t[stage] + by) };
 }
 
+/** ラインの中の管理番号。数えながら割り出すときも、手で登録するときも同じ形 */
+export function larvaCode(lineName: string, n: number): string {
+  return `${lineName}-${String(n).padStart(2, "0")}`;
+}
+
 /**
  * 次に使う番号。
  *
@@ -83,7 +88,7 @@ export function buildSplitLarvae(
     for (let i = 0; i < tally[stage]; i++) {
       out.push({
         id: generateId(),
-        code: `${line.name}-${String(num).padStart(2, "0")}`,
+        code: larvaCode(line.name, num),
         lineId: line.id,
         species: line.species,
         stage,

@@ -6,6 +6,8 @@ import { DateField } from "@/components/DateField";
 import { genderColor } from "@/lib/breeding";
 import { MoneyInput } from "@/components/KuwaUI";
 import { SpeciesSelect } from "@/components/SpeciesSelect";
+import { GenerationField } from "@/components/GenerationField";
+import { nextCode } from "@/lib/beetleCode";
 
 /**
  * 成虫の入力欄。登録と編集で同じものを使う。
@@ -95,22 +97,13 @@ export function duplicateBeetleForm(
   };
 }
 
-/** "26OK-A1" → "26OK-A2"。すでにある番号は飛ばす。数字が無ければ空にする */
-export function nextCode(code: string, existing: readonly string[]): string {
-  const m = code.match(/^(.*?)(\d+)$/);
-  if (!m) return "";
-  const [, head, digits] = m;
-  const taken = new Set(existing);
-  for (let n = parseInt(digits, 10) + 1; n < parseInt(digits, 10) + 200; n++) {
-    // 元が "01" なら "02" になるよう桁を保つ
-    const candidate = head + String(n).padStart(digits.length, "0");
-    if (!taken.has(candidate)) return candidate;
-  }
-  return "";
+/** 「その他」を選んでいるときは自由入力のほうが本当の品種 */
+export function formSpecies(f: Pick<BeetleFormState, "species" | "customSpecies">): string {
+  return f.species === "その他" ? f.customSpecies.trim() || "その他" : f.species;
 }
 
 export function formToBeetle(f: BeetleFormState): Omit<Beetle, "id" | "isAlive"> {
-  const species = f.species === "その他" ? f.customSpecies.trim() || "その他" : f.species;
+  const species = formSpecies(f);
   return {
     code: f.code.trim(),
     name: f.name.trim() || undefined,
@@ -160,10 +153,13 @@ export function PairMemberFields({
   gender,
   form,
   onChange,
+  /** 管理番号の下に添える一言 (下書きの出どころ) */
+  codeHint,
 }: {
   gender: "male" | "female";
   form: PairMemberState;
   onChange: (f: PairMemberState) => void;
+  codeHint?: ReactNode;
 }) {
   const set = (patch: Partial<PairMemberState>) => onChange({ ...form, ...patch });
   const male = gender === "male";
@@ -181,6 +177,7 @@ export function PairMemberFields({
             placeholder={male ? "例: 26OK-A1" : "例: 26OK-A2"}
             className={inputCls}
           />
+          {codeHint}
         </div>
         <div>
           <label className="block text-sm font-medium text-[#40352a] mb-1">愛称</label>
@@ -232,6 +229,8 @@ export function BeetleFields({
   priceLabel,
   /** 金額欄の下に添える説明 (ペアの割り振り結果など) */
   priceHint,
+  /** 管理番号の下に添える一言 (下書きの出どころ) */
+  codeHint,
 }: {
   form: BeetleFormState;
   onChange: (f: BeetleFormState) => void;
@@ -239,6 +238,7 @@ export function BeetleFields({
   showIdentity?: boolean;
   priceLabel?: string;
   priceHint?: ReactNode;
+  codeHint?: ReactNode;
 }) {
   const set = (patch: Partial<BeetleFormState>) => onChange({ ...form, ...patch });
 
@@ -254,6 +254,7 @@ export function BeetleFields({
               placeholder="例: 26OK-A1"
               className={inputCls}
             />
+            {codeHint}
           </div>
           <div>
             <label className="block text-sm font-medium text-[#40352a] mb-1">愛称</label>
@@ -275,26 +276,17 @@ export function BeetleFields({
         className={inputCls}
       />
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-[#40352a] mb-1">産地・血統</label>
-          <input
-            value={form.locality}
-            onChange={(e) => set({ locality: e.target.value })}
-            placeholder="例: 能勢YG血統"
-            className={inputCls}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-[#40352a] mb-1">累代</label>
-          <input
-            value={form.generation}
-            onChange={(e) => set({ generation: e.target.value })}
-            placeholder="例: CBF2 / WD"
-            className={inputCls}
-          />
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-[#40352a] mb-1">産地・血統</label>
+        <input
+          value={form.locality}
+          onChange={(e) => set({ locality: e.target.value })}
+          placeholder="例: 能勢YG血統"
+          className={inputCls}
+        />
       </div>
+
+      <GenerationField value={form.generation} onChange={(generation) => set({ generation })} />
 
       {showIdentity && (
         <>

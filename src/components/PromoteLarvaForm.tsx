@@ -5,6 +5,7 @@ import { ArrowUpRight, Check } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Gender, Larva } from "@/types";
 import { deriveOffspringInfo, larvaCost, formatYen } from "@/lib/breeding";
+import { GenerationField } from "@/components/GenerationField";
 import { useToast } from "@/components/ui/Toast";
 
 const GENDERS: { value: Gender; label: string }[] = [
@@ -176,32 +177,25 @@ export function PromoteLarvaForm({ larva }: { larva: Larva }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--kuwa-ink)" }}>
-              体長 (mm)
-            </label>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.1"
-              value={form.sizeMm}
-              onChange={(e) => setForm({ ...form, sizeMm: e.target.value })}
-              className="kuwa-input"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--kuwa-ink)" }}>
-              累代
-            </label>
-            <input
-              value={form.generation}
-              onChange={(e) => setForm({ ...form, generation: e.target.value })}
-              className="kuwa-input"
-              placeholder="CBF2"
-            />
-          </div>
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--kuwa-ink)" }}>
+            体長 (mm)
+          </label>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.1"
+            value={form.sizeMm}
+            onChange={(e) => setForm({ ...form, sizeMm: e.target.value })}
+            className="kuwa-input"
+          />
         </div>
+
+        <GenerationField
+          value={form.generation}
+          onChange={(generation) => setForm({ ...form, generation })}
+          labelClass="text-xs font-medium text-[color:var(--kuwa-ink)]"
+        />
 
         <div>
           <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--kuwa-ink)" }}>

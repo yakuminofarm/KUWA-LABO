@@ -5,6 +5,7 @@ import {
   buildSplitLarvae,
   clearDraft,
   emptyTally,
+  larvaCode,
   loadDraft,
   nextCodeNumber,
   saveDraft,
@@ -148,5 +149,16 @@ describe("途中の数を残す", () => {
       JSON.stringify({ lineId: "L1", date: "2026-06-01", tally: { egg: -3, L1: "x", L2: 2.7 } })
     );
     expect(loadDraft("L1")?.tally).toEqual({ egg: 0, L1: 0, L2: 2, L3: 0 });
+  });
+});
+
+describe("larvaCode", () => {
+  it("2桁に揃える (並べたときに順番が崩れないように)", () => {
+    expect(larvaCode("2026-A", 1)).toBe("2026-A-01");
+    expect(larvaCode("2026-A", 12)).toBe("2026-A-12");
+  });
+
+  it("3桁になっても切らない", () => {
+    expect(larvaCode("2026-A", 120)).toBe("2026-A-120");
   });
 });

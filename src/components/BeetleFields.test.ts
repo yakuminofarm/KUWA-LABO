@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Beetle } from "@/types";
-import { duplicateBeetleForm, nextCode } from "@/components/BeetleFields";
+import { duplicateBeetleForm } from "@/components/BeetleFields";
 
 function beetle(overrides: Partial<Beetle> = {}): Beetle {
   return {
@@ -14,24 +14,6 @@ function beetle(overrides: Partial<Beetle> = {}): Beetle {
     ...overrides,
   };
 }
-
-describe("nextCode", () => {
-  it("末尾の数字を1つ進める", () => {
-    expect(nextCode("26OK-A1", [])).toBe("26OK-A2");
-  });
-
-  it("桁を保つ (01 → 02)", () => {
-    expect(nextCode("26OK-A01", [])).toBe("26OK-A02");
-  });
-
-  it("すでにある番号は飛ばす", () => {
-    expect(nextCode("26OK-A1", ["26OK-A2", "26OK-A3"])).toBe("26OK-A4");
-  });
-
-  it("末尾に数字が無ければ自動採番できない (空欄にして手入力にゆだねる)", () => {
-    expect(nextCode("オオクワガタ号", [])).toBe("");
-  });
-});
 
 describe("duplicateBeetleForm (個体の複製)", () => {
   it("入手金額は引き継がない (複製した頭数ぶん総支出が膨らむのを防ぐ)", () => {
