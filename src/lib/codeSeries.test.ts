@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   checkSeriesName,
+  codeFromParts,
   joinCode,
   knownSeries,
   nextNumberIn,
@@ -111,5 +112,22 @@ describe("checkSeriesName", () => {
 
   it("長すぎる名前は弾く", () => {
     expect(checkSeriesName("あ".repeat(21), [])).toEqual({ issue: "too-long" });
+  });
+});
+
+describe("codeFromParts", () => {
+  it("2つそろえば管理番号になる", () => {
+    expect(codeFromParts("TD-", "1")).toBe("TD-1");
+  });
+
+  it("番号が空のあいだは、まだ管理番号になっていない", () => {
+    // 「TD-」を管理番号にすると、系統と番号に分け直せず、
+    // 開き直したときに系統の欄まで空に見える
+    expect(codeFromParts("TD-", "")).toBe("");
+    expect(codeFromParts("", "")).toBe("");
+  });
+
+  it("記号なしで番号だけの人も組み立てられる", () => {
+    expect(codeFromParts("", "7")).toBe("7");
   });
 });

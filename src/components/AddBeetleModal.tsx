@@ -96,7 +96,10 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
     if (next.code !== male.code) setMaleEdited(true);
     setMale(next);
     if (femaleEdited) return;
-    setFemale((f) => ({ ...f, code: nextCode(next.code.trim(), codes) }));
+    const draft = nextCode(next.code.trim(), codes);
+    // ♂ の番号を打ち直している途中は、続きを出しようがない。
+    // ここで空にすると、♀ の系統まで消えてしまう
+    if (draft !== "") setFemale((f) => ({ ...f, code: draft }));
   };
 
   /**

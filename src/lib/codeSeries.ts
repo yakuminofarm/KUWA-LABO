@@ -25,6 +25,17 @@ export function joinCode(series: string, number: string): string {
   return `${series}${number}`;
 }
 
+/**
+ * 打っている途中の2つの欄から、管理番号を組み立てる。
+ *
+ * **番号が空のあいだは、管理番号もまだできていない扱いにする。**
+ * 系統だけを管理番号にすると「TD-」のような番号で登録できてしまううえ、
+ * それは系統と番号に分け直せないので、次に開いたときに系統の欄まで空に見える。
+ */
+export function codeFromParts(series: string, number: string): string {
+  return number === "" ? "" : joinCode(series, number);
+}
+
 /** 記号を付けず 1, 2, 3… と振っている人の系統。選ぶときはこう出す */
 export const NO_SERIES_LABEL = "(記号なし)";
 

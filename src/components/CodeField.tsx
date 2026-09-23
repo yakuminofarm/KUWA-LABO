@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import {
   SERIES_MAX,
-  joinCode,
+  codeFromParts,
   knownSeries,
   nextNumberIn,
   seriesLabel,
@@ -39,26 +39,37 @@ export function CodeField({
 }) {
   const beetles = useKuwagataStore((s) => s.beetles);
   const registered = useKuwagataStore((s) => s.codeSeries);
-  const series = knownSeries(beetles, registered);
+  const seriesList = knownSeries(beetles, registered);
 
   const parts = splitCode(value);
   // 開いたときの番号は、直しに来た本人のもの。重なりの知らせから外す
   const [own] = useState(value);
 
+  /**
+   * 番号を消しているあいだ、系統は管理番号から読み取れない
+   * (「TD-」は系統と番号に分けられない)。覚えておいて、そのまま出す。
+   */
+  const [heldSeries, setHeldSeries] = useState(() => parts?.series ?? "");
+  const series = parts?.series ?? heldSeries;
+  const number = parts?.number ?? "";
+
   const [mode, setMode] = useState<Mode>(() => {
     if (value !== "" && !parts) return "free";
     // 一覧に無い系統 (新しく決めた系統や、まだ何も登録していないとき) は打つ欄で出す
-    if (parts && !series.includes(parts.series)) return "new";
-    return series.length > 0 ? "pick" : "new";
+    if (parts && !seriesList.includes(parts.series)) return "new";
+    return seriesList.length > 0 ? "pick" : "new";
   });
 
-  const set = (s: string, n: string) => onChange(joinCode(s, n));
+  const set = (s: string, n: string) => {
+    setHeldSeries(s);
+    onChange(codeFromParts(s, n));
+  };
 
   /** 系統を選び直したら、番号はその系統の続きにする */
   const pickSeries = (next: string) => {
     if (next === NEW) {
       setMode("new");
-      set("", parts?.number ?? "1");
+      set("", number || "1");
       return;
     }
     if (next === FREE) {
@@ -88,11 +99,11 @@ export function CodeField({
           <div className="min-w-0 flex-1">
             {mode === "pick" ? (
               <select
-                value={parts?.series ?? ""}
+                value={series}
                 onChange={(e) => pickSeries(e.target.value)}
                 className="kuwa-input"
               >
-                {series.map((s) => (
+                {seriesList.map((s) => (
                   <option key={s} value={s}>
                     {seriesLabel(s)}
                   </option>
@@ -102,8 +113,8 @@ export function CodeField({
               </select>
             ) : (
               <input
-                value={parts?.series ?? ""}
-                onChange={(e) => set(e.target.value, parts?.number ?? "1")}
+                value={series}
+                onChange={(e) => set(e.target.value, number || "1")}
                 placeholder="系統 (例: 26OK-A)"
                 maxLength={SERIES_MAX}
                 className="kuwa-input"
@@ -111,10 +122,10 @@ export function CodeField({
             )}
           </div>
           <input
-            value={parts?.number ?? ""}
+            value={number}
             onChange={(e) =>
               // 番号は数字だけ。桁をそろえたい人のために 0 も落とさない
-              set(parts?.series ?? "", e.target.value.replace(/[^0-9]/g, ""))
+              set(series, e.target.value.replace(/[^0-9]/g, ""))
             }
             inputMode="numeric"
             placeholder="番号"
@@ -124,12 +135,12 @@ export function CodeField({
         </div>
       )}
 
-      {mode === "new" && series.length > 0 && (
+      {mode === "new" && seriesList.length > 0 && (
         <button
           type="button"
           onClick={() => {
             setMode("pick");
-            set(series[0], nextNumberIn(series[0], beetles));
+            set(seriesList[0], nextNumberIn(seriesList[0], beetles));
           }}
           className="text-[11px] mt-1 underline underline-offset-2"
           style={{ color: "var(--kuwa-ink-soft)" }}
@@ -141,6 +152,12 @@ export function CodeField({
       {mode !== "free" && value !== "" && (
         <p className="text-[11px] mt-1" style={{ color: "var(--kuwa-ink-soft)" }}>
           <strong style={{ color: "var(--kuwa-ink)" }}>{value}</strong> として記録します
+        </p>
+      )}
+
+      {mode !== "free" && value === "" && series !== "" && (
+        <p className="text-[11px] mt-1" style={{ color: "var(--kuwa-ink-soft)" }}>
+          番号を入れてください
         </p>
       )}
 
