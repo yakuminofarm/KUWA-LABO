@@ -8,6 +8,7 @@ import { MoneyInput } from "@/components/KuwaUI";
 import { SpeciesSelect } from "@/components/SpeciesSelect";
 import { CodeField } from "@/components/CodeField";
 import { GenerationField } from "@/components/GenerationField";
+import { LocalityField } from "@/components/LocalityField";
 import { nextCode } from "@/lib/beetleCode";
 
 /**
@@ -264,15 +265,11 @@ export function BeetleFields({
         className={inputCls}
       />
 
-      <div>
-        <label className="block text-sm font-medium text-[#40352a] mb-1">産地・血統</label>
-        <input
-          value={form.locality}
-          onChange={(e) => set({ locality: e.target.value })}
-          placeholder="例: 能勢YG血統"
-          className={inputCls}
-        />
-      </div>
+      <LocalityField
+        value={form.locality}
+        onChange={(locality) => set({ locality })}
+        species={formSpecies(form)}
+      />
 
       <GenerationField value={form.generation} onChange={(generation) => set({ generation })} />
 

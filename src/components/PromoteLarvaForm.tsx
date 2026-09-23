@@ -6,6 +6,7 @@ import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Gender, Larva } from "@/types";
 import { deriveOffspringInfo, larvaCost, formatYen } from "@/lib/breeding";
 import { GenerationField } from "@/components/GenerationField";
+import { LocalityField } from "@/components/LocalityField";
 import { useToast } from "@/components/ui/Toast";
 
 const GENDERS: { value: Gender; label: string }[] = [
@@ -197,17 +198,12 @@ export function PromoteLarvaForm({ larva }: { larva: Larva }) {
           labelClass="text-xs font-medium text-[color:var(--kuwa-ink)]"
         />
 
-        <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--kuwa-ink)" }}>
-            産地
-          </label>
-          <input
-            value={form.locality}
-            onChange={(e) => setForm({ ...form, locality: e.target.value })}
-            className="kuwa-input"
-            placeholder="山梨県韮崎"
-          />
-        </div>
+        <LocalityField
+          value={form.locality}
+          onChange={(locality) => setForm({ ...form, locality })}
+          species={larva.species}
+          labelClass="text-xs font-medium text-[color:var(--kuwa-ink)]"
+        />
 
         {(inherited.locality || inherited.generation) && (
           <p className="text-[11px] leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
