@@ -17,7 +17,7 @@ import {
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { KuwagataTabId } from "@/components/KuwagataBottomNav";
 import { HERO_BG_SRC, NAV_MASK, PUPA_MASK, TOOL_IMAGE } from "@/lib/assets";
-import { SectionTitle } from "@/components/KuwaUI";
+import { FoldableSection, SectionTitle } from "@/components/KuwaUI";
 import { GuideSheet } from "@/components/GuideSheet";
 import { RecordsSheet } from "@/components/RecordsSheet";
 import { BackupSheet } from "@/components/BackupSheet";
@@ -61,6 +61,13 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   const [showBackupPrompt, setShowBackupPrompt] = useState(false);
   const [taskView, setTaskView] = useState<"list" | "calendar">("list");
   const records = speciesRecords(beetles);
+  const foldedHome = useKuwagataStore((s) => s.foldedHome);
+  const toggleHomeSection = useKuwagataStore((s) => s.toggleHomeSection);
+  // 節ごとの畳み方。どの節も、はじめは開いている
+  const fold = (id: string) => ({
+    folded: foldedHome.includes(id),
+    onToggle: () => toggleHomeSection(id),
+  });
   // まだ1件も記録がない = 使い始めたばかりの人
   const isEmpty =
     beetles.length === 0 && lines.length === 0 && larvae.length === 0 && expenses.length === 0;
@@ -352,8 +359,13 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
 
       {/* 今日のエサやり */}
       {feeding.targets.length > 0 && (
-        <section>
-          <div className="mb-3 px-0.5">
+        <FoldableSection
+          label="今日のエサやり"
+          summary={
+            feeding.pending.length === 0 ? "ぜんぶ済み" : `のこり${feeding.pending.length}頭`
+          }
+          {...fold("feeding")}
+          header={
             <div className="flex items-center gap-2">
               <span
                 className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -366,7 +378,8 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
                 今日のエサやり
               </h2>
             </div>
-          </div>
+          }
+        >
           <div className="kuwa-card px-5 py-4">
             <div className="flex items-end justify-between gap-3">
               <div>
@@ -459,33 +472,39 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
               </>
             )}
           </div>
-        </section>
+        </FoldableSection>
       )}
 
       {/* やること */}
-      <section>
-        <div className="mb-3 px-0.5 flex items-center gap-2">
-          <SectionTitle icon={CalendarClock} color="var(--kuwa-amber)">
-            やることリスト
-          </SectionTitle>
-          {/* 一覧は「今日やること」、カレンダーは「山がいつ来るか」を見るもの */}
-          <div className="flex gap-1 ml-auto">
-            {([
-              { key: "list", label: "リスト" },
-              { key: "calendar", label: "カレンダー" },
-            ] as const).map((v) => (
-              <button
-                key={v.key}
-                onClick={() => setTaskView(v.key)}
-                className="kuwa-chip"
-                style={{ padding: "4px 11px", fontSize: 11 }}
-                data-on={taskView === v.key}
-              >
-                {v.label}
-              </button>
-            ))}
+      <FoldableSection
+        label="やることリスト"
+        summary={tasks.length === 0 ? "おやすみ" : `${tasks.length}件`}
+        {...fold("tasks")}
+        header={
+          <div className="flex items-center gap-2">
+            <SectionTitle icon={CalendarClock} color="var(--kuwa-amber)">
+              やることリスト
+            </SectionTitle>
+            {/* 一覧は「今日やること」、カレンダーは「山がいつ来るか」を見るもの */}
+            <div className="flex gap-1 ml-auto">
+              {([
+                { key: "list", label: "リスト" },
+                { key: "calendar", label: "カレンダー" },
+              ] as const).map((v) => (
+                <button
+                  key={v.key}
+                  onClick={() => setTaskView(v.key)}
+                  className="kuwa-chip"
+                  style={{ padding: "4px 11px", fontSize: 11 }}
+                  data-on={taskView === v.key}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        }
+      >
         {taskView === "calendar" ? (
           <TaskCalendar byDate={tasksByDate(lines, larvae, schedule, speciesTuning)} />
         ) : tasks.length === 0 ? (
@@ -553,19 +572,25 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
             ))}
           </div>
         )}
-      </section>
+      </FoldableSection>
 
       {/* 進行中ライン */}
-      <section>
-        <button
-          onClick={() => onNavigate("breeding")}
-          className="w-full flex items-center justify-between mb-3 px-0.5"
-        >
-          <SectionTitle icon={GitBranch} color="var(--kuwa-bark)">
-            進行中のブリードライン
-          </SectionTitle>
-          <ChevronRight className="w-4 h-4" style={{ color: "var(--kuwa-bark)", opacity: 0.55 }} />
-        </button>
+      <FoldableSection
+        label="進行中のブリードライン"
+        summary={activeLines.length === 0 ? "なし" : `${activeLines.length}ライン`}
+        {...fold("lines")}
+        header={
+          <button
+            onClick={() => onNavigate("breeding")}
+            className="flex items-center gap-2 active:scale-[0.99] transition-all"
+          >
+            <SectionTitle icon={GitBranch} color="var(--kuwa-bark)">
+              進行中のブリードライン
+            </SectionTitle>
+            <ChevronRight className="w-4 h-4" style={{ color: "var(--kuwa-bark)", opacity: 0.55 }} />
+          </button>
+        }
+      >
         {activeLines.length === 0 ? (
           <div className="rounded-2xl p-6 text-center kuwa-shadow" style={cardStyle}>
             <p className="text-sm" style={{ color: "var(--kuwa-ink-soft)" }}>
@@ -608,20 +633,29 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
             ))}
           </div>
         )}
-      </section>
+      </FoldableSection>
 
       {/* 大型候補 */}
       {topLarvae.length > 0 && (
-        <section>
-          <button
-            onClick={() => onNavigate("larvae")}
-            className="w-full flex items-center justify-between mb-3 px-0.5"
-          >
-            <SectionTitle icon={Worm} color="var(--kuwa-moss)">
-              大型候補たち
-            </SectionTitle>
-            <ChevronRight className="w-4 h-4" style={{ color: "var(--kuwa-moss)", opacity: 0.55 }} />
-          </button>
+        <FoldableSection
+          label="大型候補たち"
+          summary={`${topLarvae.length}頭`}
+          {...fold("larvae")}
+          header={
+            <button
+              onClick={() => onNavigate("larvae")}
+              className="flex items-center gap-2 active:scale-[0.99] transition-all"
+            >
+              <SectionTitle icon={Worm} color="var(--kuwa-moss)">
+                大型候補たち
+              </SectionTitle>
+              <ChevronRight
+                className="w-4 h-4"
+                style={{ color: "var(--kuwa-moss)", opacity: 0.55 }}
+              />
+            </button>
+          }
+        >
           <div className="space-y-3">
             {topLarvae.map((l, i) => (
               <div
@@ -659,21 +693,30 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
               </div>
             ))}
           </div>
-        </section>
+        </FoldableSection>
       )}
 
       {/* 自己ベスト。収支を隠している人にも残る「積み上がっていく」手ごたえ */}
       {records.length > 0 && (
-        <section>
-          <button
-            onClick={() => setShowRecords(true)}
-            className="w-full flex items-center gap-2 mb-3 px-0.5 active:scale-[0.99] transition-all"
-          >
-            <SectionTitle icon={Trophy} color="var(--kuwa-gold)">
-              自己ベスト
-            </SectionTitle>
-            <ChevronRight className="w-4 h-4" style={{ color: "var(--kuwa-bark)", opacity: 0.55 }} />
-          </button>
+        <FoldableSection
+          label="自己ベスト"
+          summary={`${records.length}種類`}
+          {...fold("records")}
+          header={
+            <button
+              onClick={() => setShowRecords(true)}
+              className="flex items-center gap-2 active:scale-[0.99] transition-all"
+            >
+              <SectionTitle icon={Trophy} color="var(--kuwa-gold)">
+                自己ベスト
+              </SectionTitle>
+              <ChevronRight
+                className="w-4 h-4"
+                style={{ color: "var(--kuwa-bark)", opacity: 0.55 }}
+              />
+            </button>
+          }
+        >
           <button
             onClick={() => setShowRecords(true)}
             className="kuwa-card w-full p-4 space-y-2.5 text-left active:scale-[0.98] transition-all"
@@ -706,7 +749,7 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
               </p>
             )}
           </button>
-        </section>
+        </FoldableSection>
       )}
 
       {reminder.showCost && (

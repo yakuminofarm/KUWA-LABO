@@ -202,3 +202,30 @@ describe("addBeetlePair (ペアで迎える)", () => {
     expect(calcCostSummary(s.beetles, s.larvae, s.expenses).salesTotal).toBe(16001);
   });
 });
+
+describe("ホームの畳み方", () => {
+  beforeEach(() => {
+    useKuwagataStore.setState({ foldedHome: [] });
+  });
+
+  it("押すたびに畳む・開くが入れ替わる", () => {
+    const { toggleHomeSection } = useKuwagataStore.getState();
+    toggleHomeSection("records");
+    expect(useKuwagataStore.getState().foldedHome).toEqual(["records"]);
+    toggleHomeSection("records");
+    expect(useKuwagataStore.getState().foldedHome).toEqual([]);
+  });
+
+  it("節ごとに別々に覚える", () => {
+    const { toggleHomeSection } = useKuwagataStore.getState();
+    toggleHomeSection("records");
+    toggleHomeSection("larvae");
+    toggleHomeSection("records");
+    expect(useKuwagataStore.getState().foldedHome).toEqual(["larvae"]);
+  });
+
+  it("控えには入れない (端末ごとの見た目の好みなので)", () => {
+    useKuwagataStore.setState({ foldedHome: ["records"] });
+    expect("foldedHome" in useKuwagataStore.getState().snapshot()).toBe(false);
+  });
+});

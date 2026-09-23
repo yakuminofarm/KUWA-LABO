@@ -72,6 +72,12 @@ interface KuwagataStore {
   codeSeries: string[];
   addCodeSeries: (name: string) => void;
   removeCodeSeries: (name: string) => void;
+  /**
+   * ホームで畳んでいる節。
+   * 端末ごとの見た目の好みなので、控え (バックアップ) には入れない
+   */
+  foldedHome: string[];
+  toggleHomeSection: (id: string) => void;
   setSpeciesTuning: (species: string, patch: TuningPatch) => void;
   /** その品種をAIの目安に戻す */
   clearSpeciesTuning: (species: string) => void;
@@ -156,6 +162,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
       speciesTuning: {},
       customSpecies: [],
       codeSeries: [],
+      foldedHome: [],
       lastBackupAt: undefined,
 
       toggleFedToday: (id) =>
@@ -200,6 +207,13 @@ export const useKuwagataStore = create<KuwagataStore>()(
       // 選択肢から外すだけなので、残っている記録は今までどおり動く
       removeCustomSpecies: (name) =>
         set((s) => ({ customSpecies: s.customSpecies.filter((x) => x !== name) })),
+
+      toggleHomeSection: (id) =>
+        set((s) => ({
+          foldedHome: s.foldedHome.includes(id)
+            ? s.foldedHome.filter((x) => x !== id)
+            : [...s.foldedHome, id],
+        })),
 
       addCodeSeries: (name) =>
         set((s) => (s.codeSeries.includes(name) ? s : { codeSeries: [...s.codeSeries, name] })),
@@ -540,6 +554,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           speciesTuning: p?.speciesTuning ?? current.speciesTuning,
           customSpecies: p?.customSpecies ?? current.customSpecies,
           codeSeries: p?.codeSeries ?? current.codeSeries,
+          foldedHome: p?.foldedHome ?? current.foldedHome,
           lastBackupAt: p?.lastBackupAt ?? current.lastBackupAt,
         };
       },

@@ -219,6 +219,70 @@ export function ListGroup({
   );
 }
 
+/**
+ * ホームの節。見出しはそのままに、右端の印だけで畳めるようにする。
+ *
+ * 見出し自体は「一覧へ移る」「自己ベストを開く」など、すでに役目を持っている。
+ * そこに畳む役目まで足すと、押すたびにどちらが起きるか分からなくなるので、
+ * **畳む印は別の場所に置く**。
+ */
+export function FoldableSection({
+  header,
+  summary,
+  folded,
+  onToggle,
+  label,
+  className,
+  children,
+}: {
+  /** 見出し。これまでどおりの中身をそのまま渡す */
+  header: React.ReactNode;
+  /** 畳んでいるときに見出しの右に出す一言 (「のこり3頭」など) */
+  summary?: React.ReactNode;
+  folded: boolean;
+  onToggle: () => void;
+  /** 読み上げ用の名前 */
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const bodyId = useId();
+
+  return (
+    <section className={className}>
+      <div className="flex items-center gap-2 mb-3 px-0.5">
+        <div className="min-w-0 flex-1">{header}</div>
+        {folded && summary != null && (
+          <span
+            className="text-[11px] font-bold flex-shrink-0"
+            style={{ color: "var(--kuwa-ink-soft)" }}
+          >
+            {summary}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={!folded}
+          aria-controls={bodyId}
+          aria-label={`${label}を${folded ? "開く" : "畳む"}`}
+          className="p-1.5 flex-shrink-0 active:scale-90 transition-transform"
+        >
+          <ChevronDown
+            className="w-4 h-4 transition-transform"
+            strokeWidth={2.2}
+            style={{
+              color: "var(--kuwa-ink-soft)",
+              transform: folded ? undefined : "rotate(180deg)",
+            }}
+          />
+        </button>
+      </div>
+      {!folded && <div id={bodyId}>{children}</div>}
+    </section>
+  );
+}
+
 /** 空状態: 挿絵と、次の行動を促す一言を添える */
 export function EmptyState({
   icon: Icon,
