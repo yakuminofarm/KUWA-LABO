@@ -338,3 +338,37 @@ describe("自分で足した品種の持ち出し", () => {
     expect(parseBackup(file(undefined)).data.customSpecies).toBeUndefined();
   });
 });
+
+describe("管理系統の持ち出し", () => {
+  const one = {
+    id: "b1",
+    code: "26OK-A1",
+    species: "オオクワガタ",
+    acquiredDate: "2026-01-01",
+    isAlive: true,
+    notes: "",
+  };
+  const file = (codeSeries: unknown) =>
+    JSON.stringify({
+      app: "kuwarabo",
+      version: 1,
+      data: { beetles: [one], lines: [], larvae: [], expenses: [], codeSeries },
+    });
+
+  it("書き出して読み戻せる", () => {
+    const out = buildBackup({
+      beetles: [one] as never,
+      lines: [],
+      larvae: [],
+      expenses: [],
+      codeSeries: ["26OK-B"],
+    });
+    expect(out.data.codeSeries).toEqual(["26OK-B"]);
+    expect(parseBackup(JSON.stringify(out)).data.codeSeries).toEqual(["26OK-B"]);
+  });
+
+  it("形が違えば落とす", () => {
+    expect(parseBackup(file("26OK-B")).data.codeSeries).toBeUndefined();
+    expect(parseBackup(file(["26OK-B", null, 7, ""])).data.codeSeries).toEqual(["26OK-B"]);
+  });
+});

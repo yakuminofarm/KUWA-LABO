@@ -64,6 +64,14 @@ interface KuwagataStore {
   customSpecies: string[];
   addCustomSpecies: (name: string) => void;
   removeCustomSpecies: (name: string) => void;
+  /**
+   * 登録しておく管理系統 (25OK-A など)。使ったことのある系統は記録から
+   * 分かるので、ここに入るのは**まだ使っていない系統**だけ
+   * (src/lib/codeSeries.ts)
+   */
+  codeSeries: string[];
+  addCodeSeries: (name: string) => void;
+  removeCodeSeries: (name: string) => void;
   setSpeciesTuning: (species: string, patch: TuningPatch) => void;
   /** その品種をAIの目安に戻す */
   clearSpeciesTuning: (species: string) => void;
@@ -147,6 +155,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
       schedule: { ...DEFAULT_SCHEDULE },
       speciesTuning: {},
       customSpecies: [],
+      codeSeries: [],
       lastBackupAt: undefined,
 
       toggleFedToday: (id) =>
@@ -191,6 +200,14 @@ export const useKuwagataStore = create<KuwagataStore>()(
       // 選択肢から外すだけなので、残っている記録は今までどおり動く
       removeCustomSpecies: (name) =>
         set((s) => ({ customSpecies: s.customSpecies.filter((x) => x !== name) })),
+
+      addCodeSeries: (name) =>
+        set((s) => (s.codeSeries.includes(name) ? s : { codeSeries: [...s.codeSeries, name] })),
+
+      // 名前を消しても、その系統の管理番号には触らない。
+      // 選ぶときの一覧から外すだけ
+      removeCodeSeries: (name) =>
+        set((s) => ({ codeSeries: s.codeSeries.filter((x) => x !== name) })),
 
       setSpeciesTuning: (species, patch) =>
         set((s) => ({
@@ -421,6 +438,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           schedule: { ...DEFAULT_SCHEDULE },
           speciesTuning: {},
           customSpecies: [],
+          codeSeries: [],
           lastBackupAt: undefined,
         }),
 
@@ -437,6 +455,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           schedule: s.schedule,
           speciesTuning: s.speciesTuning,
           customSpecies: s.customSpecies,
+          codeSeries: s.codeSeries,
         };
       },
 
@@ -455,6 +474,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           schedule: d.schedule ?? s.schedule,
           speciesTuning: d.speciesTuning ?? s.speciesTuning,
           customSpecies: d.customSpecies ?? s.customSpecies,
+          codeSeries: d.codeSeries ?? s.codeSeries,
         }));
         return {
           added: d.beetles.length + d.lines.length + d.larvae.length + d.expenses.length,
@@ -477,6 +497,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           // 設定は上書きしないが、品種の名前だけは足す。
           // 取り込んだ記録の品種が選べないままだと、直すときに困る
           customSpecies: [...new Set([...s.customSpecies, ...(d.customSpecies ?? [])])],
+          codeSeries: [...new Set([...s.codeSeries, ...(d.codeSeries ?? [])])],
         });
         return {
           added: b.added + l.added + v.added + e.added,
@@ -518,6 +539,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           schedule: { ...current.schedule, ...(p?.schedule ?? {}) },
           speciesTuning: p?.speciesTuning ?? current.speciesTuning,
           customSpecies: p?.customSpecies ?? current.customSpecies,
+          codeSeries: p?.codeSeries ?? current.codeSeries,
           lastBackupAt: p?.lastBackupAt ?? current.lastBackupAt,
         };
       },

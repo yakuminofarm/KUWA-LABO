@@ -6,6 +6,7 @@ import { DateField } from "@/components/DateField";
 import { genderColor } from "@/lib/breeding";
 import { MoneyInput } from "@/components/KuwaUI";
 import { SpeciesSelect } from "@/components/SpeciesSelect";
+import { CodeField } from "@/components/CodeField";
 import { GenerationField } from "@/components/GenerationField";
 import { nextCode } from "@/lib/beetleCode";
 
@@ -174,17 +175,9 @@ export function PairMemberFields({
     <div className="rounded-2xl p-3.5 space-y-3" style={{ background: "var(--kuwa-bark-bg)" }}>
       <p className={`text-sm font-bold ${genderColor(gender)}`}>{male ? "♂ オス" : "♀ メス"}</p>
 
+      <CodeField value={form.code} onChange={(code) => set({ code })} hint={codeHint} />
+
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-[#40352a] mb-1">管理番号 *</label>
-          <input
-            value={form.code}
-            onChange={(e) => set({ code: e.target.value })}
-            placeholder={male ? "例: 26OK-A1" : "例: 26OK-A2"}
-            className={inputCls}
-          />
-          {codeHint}
-        </div>
         <div>
           <label className="block text-sm font-medium text-[#40352a] mb-1">愛称</label>
           <input
@@ -194,9 +187,6 @@ export function PairMemberFields({
             className={inputCls}
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-[#40352a] mb-1">体長 (mm)</label>
           <input
@@ -209,14 +199,15 @@ export function PairMemberFields({
             className={inputCls}
           />
         </div>
-        <DateField
-          label="羽化日"
-          value={form.emergedDate}
-          precision={form.emergedDatePrecision}
-          onChange={(v, p) => set({ emergedDate: v, emergedDatePrecision: p })}
-          clearable
-        />
       </div>
+
+      <DateField
+        label="羽化日"
+        value={form.emergedDate}
+        precision={form.emergedDatePrecision}
+        onChange={(v, p) => set({ emergedDate: v, emergedDatePrecision: p })}
+        clearable
+      />
     </div>
   );
 }
@@ -251,17 +242,8 @@ export function BeetleFields({
   return (
     <>
       {showIdentity && (
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-[#40352a] mb-1">管理番号 *</label>
-            <input
-              value={form.code}
-              onChange={(e) => set({ code: e.target.value })}
-              placeholder="例: 26OK-A1"
-              className={inputCls}
-            />
-            {codeHint}
-          </div>
+        <>
+          <CodeField value={form.code} onChange={(code) => set({ code })} hint={codeHint} />
           <div>
             <label className="block text-sm font-medium text-[#40352a] mb-1">愛称</label>
             <input
@@ -271,7 +253,7 @@ export function BeetleFields({
               className={inputCls}
             />
           </div>
-        </div>
+        </>
       )}
 
       <SpeciesSelect
