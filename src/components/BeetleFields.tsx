@@ -177,8 +177,8 @@ export function PairMemberFields({
 
       <CodeField value={form.code} onChange={(code) => set({ code })} hint={codeHint} />
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
+      <div className="flex flex-wrap gap-3 items-start">
+        <div className="min-w-0 flex-1">
           <label className="block text-sm font-medium text-[#40352a] mb-1">愛称</label>
           <input
             value={form.name}
@@ -195,8 +195,8 @@ export function PairMemberFields({
             min="0"
             value={form.sizeMm}
             onChange={(e) => set({ sizeMm: e.target.value })}
-            placeholder={male ? "例: 85.5" : "例: 52.0"}
-            className={inputCls}
+            placeholder={male ? "85.5" : "52.0"}
+            className={`${inputCls} kuwa-input-num`}
           />
         </div>
       </div>
@@ -298,7 +298,8 @@ export function BeetleFields({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* 中身の長さが決まっている欄どうし。入りきらない画面では折り返す */}
+          <div className="flex flex-wrap gap-3 items-start">
             <div>
               <label className="block text-sm font-medium text-[#40352a] mb-1">体長 (mm)</label>
               <input
@@ -307,8 +308,8 @@ export function BeetleFields({
                 min="0"
                 value={form.sizeMm}
                 onChange={(e) => set({ sizeMm: e.target.value })}
-                placeholder="例: 85.5"
-                className={inputCls}
+                placeholder="85.5"
+                className={`${inputCls} kuwa-input-num`}
               />
             </div>
             <DateField
@@ -323,7 +324,7 @@ export function BeetleFields({
         </>
       )}
 
-      <div className={showMatured ? "grid grid-cols-2 gap-3 items-end" : ""}>
+      <div className={showMatured ? "flex flex-wrap gap-3 items-end" : ""}>
         <DateField
           label="入手日"
           required
@@ -335,7 +336,7 @@ export function BeetleFields({
           <button
             type="button"
             onClick={() => set({ matured: !form.matured })}
-            className={`py-3 rounded-xl text-sm font-semibold border transition-colors min-h-[44px] ${
+            className={`px-5 py-3 rounded-xl text-sm font-semibold border transition-colors min-h-[44px] flex-1 min-w-[7rem] ${
               form.matured
                 ? "bg-[#55682f] text-[#fdf6e7] border-[#55682f]"
                 : "border-[rgba(107,68,35,0.16)] text-[#77644b]"

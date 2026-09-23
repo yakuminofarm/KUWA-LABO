@@ -38,9 +38,7 @@ export function DateField({
   const rough = precision === "month";
 
   return (
-    // グリッドの中では既定で min-width:auto になり、日付欄の最小幅ぶん
-    // 列が広がって隣にはみ出す。縮めるよう明示しておく
-    <div style={{ minWidth: 0 }}>
+    <div>
       <div className="flex items-center gap-2 mb-1">
         <label className="block text-sm font-medium text-[#40352a] flex-1 min-w-0 truncate">
           {label}
@@ -68,7 +66,9 @@ export function DateField({
         onChange={(e) =>
           onChange(rough ? monthToDate(e.target.value) : e.target.value, precision)
         }
-        className="kuwa-input"
+        // iOS の日付欄は、指定した幅より固有幅のほうが勝つことがある。
+        // 折り返せる行に置いてあるので、広がっても隣を押し出さない
+        className="kuwa-input kuwa-input-date"
       />
       {/* 見出しの行に3つ並べると、狭い列では見出しが折り返して崩れる。
           消す操作は使う頻度が低いので下に置く */}

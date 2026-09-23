@@ -69,6 +69,43 @@ export function nextNumberIn(series: string, beetles: readonly { code: string }[
   return splitCode(next)?.number ?? "1";
 }
 
+/**
+ * その系統で選べる番号。**すでに使われている番号は出さない。**
+ *
+ * 1 から「いちばん大きい番号 + 10」までを並べ、埋まっているものを落とす。
+ * 途中が抜けている (消した子の番号) ときは、その番号も選べる。
+ * 桁は、その系統でいま使っている書き方に合わせる (01 なら 02, 03…)。
+ */
+export function numberOptions(
+  series: string,
+  beetles: readonly { code: string }[],
+  own?: string
+): string[] {
+  const taken = new Set<string>();
+  let width = 1;
+  let max = 0;
+  for (const b of beetles) {
+    const p = splitCode(b.code);
+    if (!p || p.series !== series) continue;
+    taken.add(p.number);
+    width = p.number.length;
+    max = Math.max(max, parseInt(p.number, 10));
+  }
+
+  const out: string[] = [];
+  for (let n = 1; n <= max + 10; n++) {
+    const s = String(n).padStart(width, "0");
+    // 直しに来た本人の番号は、埋まっていても選べる
+    if (!taken.has(s) || s === own) out.push(s);
+  }
+  // 桁の違う番号で直しに来たときのために、本人のぶんは必ず入れる
+  if (own != null && own !== "" && !out.includes(own)) {
+    out.push(own);
+    out.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+  }
+  return out;
+}
+
 /** その系統を使っている記録があるか (登録一覧から外せるかの判断) */
 export function seriesInUse(series: string, beetles: readonly { code: string }[]): boolean {
   return beetles.some((b) => splitCode(b.code)?.series === series);

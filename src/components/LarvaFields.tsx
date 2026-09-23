@@ -205,7 +205,7 @@ export function LarvaFields({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex flex-wrap gap-3 items-start">
         <DateField
           label="孵化 / 割出日"
           value={form.hatchDate}
@@ -213,7 +213,7 @@ export function LarvaFields({
           onChange={(v, p) => set({ hatchDate: v, hatchDatePrecision: p })}
           clearable
         />
-        <div style={{ minWidth: 0 }}>
+        <div>
           <label className="block text-sm font-medium text-[#40352a] mb-1">頭数</label>
           <input
             type="number"
@@ -222,7 +222,7 @@ export function LarvaFields({
             step="1"
             value={form.count}
             onChange={(e) => set({ count: e.target.value })}
-            className={inputCls}
+            className={`${inputCls} kuwa-input-num`}
           />
         </div>
       </div>

@@ -5,6 +5,7 @@ import {
   joinCode,
   knownSeries,
   nextNumberIn,
+  numberOptions,
   seriesInUse,
   splitCode,
 } from "@/lib/codeSeries";
@@ -129,5 +130,48 @@ describe("codeFromParts", () => {
 
   it("記号なしで番号だけの人も組み立てられる", () => {
     expect(codeFromParts("", "7")).toBe("7");
+  });
+});
+
+describe("numberOptions", () => {
+  it("すでに使われている番号は出さない", () => {
+    const opts = numberOptions("A-", [c("A-1"), c("A-2")]);
+    expect(opts).not.toContain("1");
+    expect(opts).not.toContain("2");
+    expect(opts[0]).toBe("3");
+  });
+
+  it("途中が抜けていれば、その番号も選べる", () => {
+    // 2番の子を消したあと。番号を詰め直したい人もいる
+    expect(numberOptions("A-", [c("A-1"), c("A-3")])).toContain("2");
+  });
+
+  it("いちばん大きい番号の先を10個ぶん出す", () => {
+    expect(numberOptions("A-", [c("A-5")])).toEqual(
+      ["1", "2", "3", "4", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]
+    );
+  });
+
+  it("その系統がまだ無ければ1〜10", () => {
+    expect(numberOptions("B-", [c("A-1")])).toEqual(
+      ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+    );
+  });
+
+  it("桁は、その系統の書き方に合わせる", () => {
+    expect(numberOptions("A-", [c("A-01")])[0]).toBe("02");
+  });
+
+  it("ほかの系統の番号には引きずられない", () => {
+    expect(numberOptions("A-", [c("A-1"), c("B-9")])).toContain("2");
+  });
+
+  it("直しに来た本人の番号は、埋まっていても選べる", () => {
+    expect(numberOptions("A-", [c("A-1"), c("A-2")], "2")).toContain("2");
+    expect(numberOptions("A-", [c("A-1"), c("A-2")], "2")).not.toContain("1");
+  });
+
+  it("桁の違う番号で直しに来ても、本人のぶんは消えない", () => {
+    expect(numberOptions("A-", [c("A-01")], "7")).toContain("7");
   });
 });

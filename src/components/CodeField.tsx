@@ -7,6 +7,7 @@ import {
   codeFromParts,
   knownSeries,
   nextNumberIn,
+  numberOptions,
   seriesLabel,
   splitCode,
 } from "@/lib/codeSeries";
@@ -52,6 +53,13 @@ export function CodeField({
   const [heldSeries, setHeldSeries] = useState(() => parts?.series ?? "");
   const series = parts?.series ?? heldSeries;
   const number = parts?.number ?? "";
+  // 直しに来た本人の番号。同じ系統のままなら、埋まっていても選べる
+  const ownParts = splitCode(own);
+  const numbers = numberOptions(
+    series,
+    beetles,
+    ownParts?.series === series ? ownParts.number : undefined
+  );
 
   const [mode, setMode] = useState<Mode>(() => {
     if (value !== "" && !parts) return "free";
@@ -65,11 +73,21 @@ export function CodeField({
     onChange(codeFromParts(s, n));
   };
 
+  /**
+   * その系統で使う番号。続きが空いていればその続き、
+   * 埋まっていれば空いている最初のもの。選べない番号を持ち回らないようにする
+   */
+  const numberFor = (s: string): string => {
+    const opts = numberOptions(s, beetles);
+    const next = nextNumberIn(s, beetles);
+    return opts.includes(next) ? next : opts[0] ?? "1";
+  };
+
   /** 系統を選び直したら、番号はその系統の続きにする */
   const pickSeries = (next: string) => {
     if (next === NEW) {
       setMode("new");
-      set("", number || "1");
+      set("", numberFor(""));
       return;
     }
     if (next === FREE) {
@@ -77,7 +95,7 @@ export function CodeField({
       return;
     }
     setMode("pick");
-    set(next, nextNumberIn(next, beetles));
+    set(next, numberFor(next));
   };
 
   const taken =
@@ -114,24 +132,34 @@ export function CodeField({
             ) : (
               <input
                 value={series}
-                onChange={(e) => set(e.target.value, number || "1")}
+                onChange={(e) => {
+                  // 打ち終わった系統でその番号が埋まっていたら、空いている番号に移す
+                  const s = e.target.value;
+                  const opts = numberOptions(s, beetles);
+                  set(s, opts.includes(number) ? number : numberFor(s));
+                }}
                 placeholder="系統 (例: 26OK-A)"
                 maxLength={SERIES_MAX}
                 className="kuwa-input"
               />
             )}
           </div>
-          <input
+          {/* 番号は選ぶだけにする。埋まっている番号は並ばないので、
+              同じ管理番号を2つ作ってしまうことがない */}
+          <select
             value={number}
-            onChange={(e) =>
-              // 番号は数字だけ。桁をそろえたい人のために 0 も落とさない
-              set(series, e.target.value.replace(/[^0-9]/g, ""))
-            }
-            inputMode="numeric"
-            placeholder="番号"
-            className="kuwa-input flex-shrink-0 text-center"
-            style={{ width: "5.5rem", fontVariantNumeric: "tabular-nums" }}
-          />
+            onChange={(e) => set(series, e.target.value)}
+            aria-label="番号"
+            className="kuwa-input flex-shrink-0"
+            style={{ width: "6rem", fontVariantNumeric: "tabular-nums" }}
+          >
+            {number === "" && <option value="">番号</option>}
+            {numbers.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 
@@ -140,7 +168,7 @@ export function CodeField({
           type="button"
           onClick={() => {
             setMode("pick");
-            set(seriesList[0], nextNumberIn(seriesList[0], beetles));
+            set(seriesList[0], numberFor(seriesList[0]));
           }}
           className="text-[11px] mt-1 underline underline-offset-2"
           style={{ color: "var(--kuwa-ink-soft)" }}
