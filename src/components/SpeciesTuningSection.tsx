@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import {
   SpeciesTuning,
   TuningSource,
@@ -12,7 +12,9 @@ import {
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import {
   SPECIES_NAME_MAX,
+  checkRename,
   checkSpeciesName,
+  isBuiltInSpecies,
   speciesInUse,
   tuningTargets,
 } from "@/lib/customSpecies";
@@ -57,9 +59,12 @@ function SourceTag({ source }: { source: TuningSource }) {
 
 function SpeciesRow({
   species,
+  onRename,
   onRemove,
 }: {
   species: string;
+  /** 組み込みでない品種だけ渡される。記録のほうもまとめて付け替える */
+  onRename?: (to: string) => void;
   /** 自分で足した品種で、まだ記録が無いときだけ渡される */
   onRemove?: () => void;
 }) {
@@ -69,6 +74,7 @@ function SpeciesRow({
   const setSpeciesTuning = useKuwagataStore((s) => s.setSpeciesTuning);
   const clearSpeciesTuning = useKuwagataStore((s) => s.clearSpeciesTuning);
   const [open, setOpen] = useState(false);
+  const [renaming, setRenaming] = useState<string | null>(null);
 
   const values = tuningFor(species, schedule, reminder.intervalDays, speciesTuning);
   const group = husbandryOf(species);
@@ -151,6 +157,38 @@ function SpeciesRow({
             </button>
           )}
 
+          {onRename &&
+            (renaming == null ? (
+              <button
+                onClick={() => setRenaming(species)}
+                className="w-full py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+                style={{ color: "var(--kuwa-ink-soft)" }}
+              >
+                <Pencil className="w-3.5 h-3.5" strokeWidth={2.2} />
+                名前を直す
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  value={renaming}
+                  onChange={(e) => setRenaming(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") onRename(renaming);
+                  }}
+                  maxLength={SPECIES_NAME_MAX}
+                  autoFocus
+                  className="kuwa-input flex-1 min-w-0"
+                />
+                <button
+                  onClick={() => onRename(renaming)}
+                  aria-label="名前を直す"
+                  className="kuwa-btn-ghost px-4 flex items-center justify-center flex-shrink-0 active:scale-95 transition-all"
+                >
+                  <Check className="w-4 h-4" strokeWidth={2.6} />
+                </button>
+              </div>
+            ))}
+
           {onRemove && (
             <button
               onClick={onRemove}
@@ -171,6 +209,8 @@ const ISSUE_TEXT = {
   empty: "品種名を入れてください",
   "too-long": `品種名は${SPECIES_NAME_MAX}文字までにしてください`,
   duplicate: "その品種はもう選べます",
+  same: "名前が変わっていません",
+  "built-in": "はじめから入っている品種の名前は直せません",
 } as const;
 
 export function SpeciesTuningSection() {
@@ -179,14 +219,30 @@ export function SpeciesTuningSection() {
   const customSpecies = useKuwagataStore((s) => s.customSpecies);
   const addCustomSpecies = useKuwagataStore((s) => s.addCustomSpecies);
   const removeCustomSpecies = useKuwagataStore((s) => s.removeCustomSpecies);
+  const renameSpecies = useKuwagataStore((s) => s.renameSpecies);
+  const lines = useKuwagataStore((s) => s.lines);
   const { showToast } = useToast();
   const [adding, setAdding] = useState("");
 
-  const records = [...beetles, ...larvae];
-  const species = tuningTargets(
-    records.map((x) => x.species),
-    customSpecies
-  );
+  const records = [...beetles, ...larvae, ...lines];
+  const inUse = records.map((x) => x.species);
+  const species = tuningTargets(inUse, customSpecies);
+
+  const rename = (from: string, raw: string) => {
+    const result = checkRename(from, raw, customSpecies, inUse);
+    if ("issue" in result) {
+      showToast(ISSUE_TEXT[result.issue], "error");
+      return;
+    }
+    const moved = renameSpecies(from, result.name);
+    showToast(
+      result.merging
+        ? `${result.name} にまとめました (記録${moved}件)`
+        : moved > 0
+        ? `${result.name} に直しました (記録${moved}件)`
+        : `${result.name} に直しました`
+    );
+  };
 
   const add = () => {
     const result = checkSpeciesName(adding, customSpecies);
@@ -228,6 +284,8 @@ export function SpeciesTuningSection() {
           <SpeciesRow
             key={name}
             species={name}
+            // 組み込みの名前は直せない。次の更新で足された名前と食い違うため
+            onRename={isBuiltInSpecies(name) ? undefined : (to) => rename(name, to)}
             onRemove={
               customSpecies.includes(name) && !speciesInUse(name, records)
                 ? () => remove(name)

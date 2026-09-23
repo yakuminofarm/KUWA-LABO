@@ -12,7 +12,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { activeLabels } from "@/lib/listFilter";
 import { EMPTY_IMAGE } from "@/lib/assets";
 import { groupBySpecies, needsFeeding } from "@/lib/breeding";
-import { allSpeciesOptions } from "@/lib/customSpecies";
+import { useSpeciesOptions } from "@/store/useSpeciesOptions";
 import type { SpeciesOverrides } from "@/lib/speciesTuning";
 import { BeetleFormState, duplicateBeetleForm } from "@/components/BeetleFields";
 
@@ -70,7 +70,7 @@ function applySort(beetles: Beetle[], key: SortKey): Beetle[] {
 
 export function AdultTab() {
   const { beetles, reminder, speciesTuning } = useKuwagataStore();
-  const customSpecies = useKuwagataStore((s) => s.customSpecies);
+  const speciesOptions = useSpeciesOptions();
   const [showAdd, setShowAdd] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -257,7 +257,7 @@ export function AdultTab() {
           onClose={() => setSelectedId(null)}
           onDuplicate={(b) => {
             setDuplicateOf(
-              duplicateBeetleForm(b, allSpeciesOptions(customSpecies), beetles.map((x) => x.code))
+              duplicateBeetleForm(b, speciesOptions, beetles.map((x) => x.code))
             );
             setSelectedId(null);
             setShowAdd(true);

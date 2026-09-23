@@ -44,6 +44,24 @@ export function checkSpeciesName(
   return { name };
 }
 
+/**
+ * 組み込みの一覧に無いのに、記録では使われている品種。
+ *
+ * 「その他」で打った品種は、これまで記録に残るだけで**次から選べなかった**。
+ * 打ち直すたびに表記がぶれるので、一度使った名前は選べるようにする。
+ */
+export function extraSpecies(custom: string[], inUse: string[]): string[] {
+  const names = [...custom, ...inUse]
+    .map(normalizeSpeciesName)
+    .filter((s) => s !== "" && !isBuiltInSpecies(s));
+  return [...new Set(names)].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+/** 組み込みの一覧にある品種か。足す・直す前の確かめに使う */
+export function isBuiltInSpecies(name: string): boolean {
+  return SPECIES_OPTIONS.includes(name);
+}
+
 /** 選択肢の並び。自分で足したぶんは最後にまとめる */
 export function speciesGroupsWith(custom: string[]): { label: string; species: string[] }[] {
   if (custom.length === 0) return SPECIES_GROUPS;
@@ -53,6 +71,32 @@ export function speciesGroupsWith(custom: string[]): { label: string; species: s
 /** 「その他」も含めた、選べる名前の全部 */
 export function allSpeciesOptions(custom: string[]): string[] {
   return [...SPECIES_OPTIONS, ...custom];
+}
+
+/**
+ * 品種の名前を直したときに、記録のほうも付け替える。
+ *
+ * 直せないと、打ち間違えた名前がずっと選択肢に残り、その記録だけ仲間外れに
+ * なる (目安も、組める相手の候補も、名前で見ているため)。
+ */
+export type RenameIssue = SpeciesNameIssue | "same" | "built-in";
+
+export function checkRename(
+  from: string,
+  raw: string,
+  custom: string[],
+  inUse: string[]
+): { name: string; merging: boolean } | { issue: RenameIssue } {
+  // 組み込みの名前は直せない。直すと、次の更新で足された名前と食い違う
+  if (isBuiltInSpecies(from)) return { issue: "built-in" };
+  const name = normalizeSpeciesName(raw);
+  if (name === "") return { issue: "empty" };
+  if (name.length > SPECIES_NAME_MAX) return { issue: "too-long" };
+  if (name === from) return { issue: "same" };
+  // 行き先が組み込みでも、すでにある名前でも、そこへまとめるだけ。
+  // 「ニジイロ」を「ニジイロクワガタ」に直したい、が実際に起きる
+  const merging = isBuiltInSpecies(name) || custom.includes(name) || inUse.includes(name);
+  return { name, merging };
 }
 
 /**

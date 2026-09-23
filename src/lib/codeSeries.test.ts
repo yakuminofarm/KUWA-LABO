@@ -5,6 +5,7 @@ import {
   joinCode,
   knownSeries,
   nextNumberIn,
+  freeNumbers,
   numberOptions,
   seriesInUse,
   splitCode,
@@ -134,48 +135,52 @@ describe("codeFromParts", () => {
 });
 
 describe("numberOptions", () => {
-  it("すでに使われている番号は出さない", () => {
+  it("すでに使われている番号は、選べない印を付けて残す", () => {
+    // 抜いてしまうと「002, 007, 008…」と飛び飛びになり、
+    // なぜその並びなのか分からない
     const opts = numberOptions("A-", [c("A-1"), c("A-2")]);
-    expect(opts).not.toContain("1");
-    expect(opts).not.toContain("2");
-    expect(opts[0]).toBe("3");
+    expect(opts.slice(0, 3)).toEqual([
+      { number: "1", taken: true },
+      { number: "2", taken: true },
+      { number: "3", taken: false },
+    ]);
   });
 
   it("途中が抜けていれば、その番号も選べる", () => {
     // 2番の子を消したあと。番号を詰め直したい人もいる
-    expect(numberOptions("A-", [c("A-1"), c("A-3")])).toContain("2");
+    expect(freeNumbers("A-", [c("A-1"), c("A-3")])).toContain("2");
   });
 
   it("少ないうちは1〜50まで出す", () => {
-    const opts = numberOptions("A-", [c("A-5")]);
+    const opts = freeNumbers("A-", [c("A-5")]);
     expect(opts[0]).toBe("1");
     expect(opts).not.toContain("5");
     expect(opts[opts.length - 1]).toBe("50");
   });
 
   it("その系統がまだ無くても1〜50", () => {
-    expect(numberOptions("B-", [c("A-1")])).toHaveLength(50);
+    expect(freeNumbers("B-", [c("A-1")])).toHaveLength(50);
   });
 
   it("進んでいる系統では、いまの番号の先を20個ぶん出す", () => {
-    const opts = numberOptions("A-", [c("A-100")]);
+    const opts = freeNumbers("A-", [c("A-100")]);
     expect(opts[opts.length - 1]).toBe("120");
   });
 
   it("桁は、その系統の書き方に合わせる", () => {
-    expect(numberOptions("A-", [c("A-01")])[0]).toBe("02");
+    expect(freeNumbers("A-", [c("A-01")])[0]).toBe("02");
   });
 
   it("ほかの系統の番号には引きずられない", () => {
-    expect(numberOptions("A-", [c("A-1"), c("B-9")])).toContain("2");
+    expect(freeNumbers("A-", [c("A-1"), c("B-9")])).toContain("2");
   });
 
   it("直しに来た本人の番号は、埋まっていても選べる", () => {
-    expect(numberOptions("A-", [c("A-1"), c("A-2")], "2")).toContain("2");
-    expect(numberOptions("A-", [c("A-1"), c("A-2")], "2")).not.toContain("1");
+    expect(freeNumbers("A-", [c("A-1"), c("A-2")], "2")).toContain("2");
+    expect(freeNumbers("A-", [c("A-1"), c("A-2")], "2")).not.toContain("1");
   });
 
   it("桁の違う番号で直しに来ても、本人のぶんは消えない", () => {
-    expect(numberOptions("A-", [c("A-01")], "7")).toContain("7");
+    expect(freeNumbers("A-", [c("A-01")], "7")).toContain("7");
   });
 });

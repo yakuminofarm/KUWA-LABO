@@ -1,7 +1,7 @@
 "use client";
 
 import { speciesGroupsWith } from "@/lib/customSpecies";
-import { useKuwagataStore } from "@/store/kuwagataStore";
+import { useExtraSpecies } from "@/store/useSpeciesOptions";
 
 /**
  * 種類の選択。国産・外国産に分けて出す。
@@ -27,7 +27,7 @@ export function SpeciesSelect({
   label?: string;
 }) {
   // custom は「その他」の自由入力。こちらは設定で足した品種の一覧
-  const added = useKuwagataStore((s) => s.customSpecies);
+  const added = useExtraSpecies();
   const groups = speciesGroupsWith(added);
 
   return (

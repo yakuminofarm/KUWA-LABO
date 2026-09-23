@@ -10,6 +10,7 @@ import {
   ScheduleSettings,
 } from "@/types";
 import { DEFAULT_SCHEDULE, headCount, needsFeeding, todayStr } from "@/lib/breeding";
+import { isBuiltInSpecies } from "@/lib/customSpecies";
 import type { SpeciesOverrides, TuningPatch } from "@/lib/speciesTuning";
 import { generateId } from "@/lib/utils";
 import { mockBeetles, mockExpenses, mockLarvae, mockLines } from "@/lib/mockData";
@@ -64,6 +65,11 @@ interface KuwagataStore {
   customSpecies: string[];
   addCustomSpecies: (name: string) => void;
   removeCustomSpecies: (name: string) => void;
+  /**
+   * 品種の名前を直す。**記録のほうもまとめて付け替える。**
+   * 名前だけ直しても、その記録が古い名前のまま取り残される
+   */
+  renameSpecies: (from: string, to: string) => number;
   /**
    * 登録しておく管理系統 (25OK-A など)。使ったことのある系統は記録から
    * 分かるので、ここに入るのは**まだ使っていない系統**だけ
@@ -207,6 +213,40 @@ export const useKuwagataStore = create<KuwagataStore>()(
       // 選択肢から外すだけなので、残っている記録は今までどおり動く
       removeCustomSpecies: (name) =>
         set((s) => ({ customSpecies: s.customSpecies.filter((x) => x !== name) })),
+
+      renameSpecies: (from, to) => {
+        let moved = 0;
+        set((s) => {
+          const swap = <T extends { species: string }>(list: T[]) =>
+            list.map((x) => {
+              if (x.species !== from) return x;
+              moved++;
+              return { ...x, species: to };
+            });
+          // 目安は名前で持っているので、一緒に付け替える。
+          // 行き先にすでに目安があれば、そちらを残す (まとめる側を優先)
+          const tuning = { ...s.speciesTuning };
+          if (tuning[from] != null) {
+            if (tuning[to] == null) tuning[to] = tuning[from];
+            delete tuning[from];
+          }
+          return {
+            beetles: swap(s.beetles),
+            larvae: swap(s.larvae),
+            lines: swap(s.lines),
+            speciesTuning: tuning,
+            // 組み込みの名前へまとめたときは、足した品種としては持たない
+            customSpecies: [
+              ...new Set(
+                s.customSpecies
+                  .filter((x) => x !== from)
+                  .concat(isBuiltInSpecies(to) ? [] : [to])
+              ),
+            ],
+          };
+        });
+        return moved;
+      },
 
       toggleHomeSection: (id) =>
         set((s) => ({

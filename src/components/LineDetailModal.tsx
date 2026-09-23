@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, Pencil, Shovel, Trash2, Worm, X } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
-import { allSpeciesOptions } from "@/lib/customSpecies";
+import { useSpeciesOptions } from "@/store/useSpeciesOptions";
 import { Portal } from "@/components/KuwaUI";
 import { SplitCounterSheet } from "@/components/SplitCounterSheet";
 import { BreedingLine, Larva } from "@/types";
@@ -33,7 +33,7 @@ const inputCls =
 export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps) {
   const { lines, beetles, updateLine, deleteLine, addLarva, getLarvaeByLine } =
     useKuwagataStore();
-  const customSpecies = useKuwagataStore((s) => s.customSpecies);
+  const speciesOptions = useSpeciesOptions();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -383,7 +383,7 @@ export function LineDetailModal({ line: initial, onClose }: LineDetailModalProps
 
               <button
                 onClick={() => {
-                  setEditForm(lineToForm(line, allSpeciesOptions(customSpecies)));
+                  setEditForm(lineToForm(line, speciesOptions));
                   setEditing(true);
                 }}
                 className="kuwa-btn-ghost w-full py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"

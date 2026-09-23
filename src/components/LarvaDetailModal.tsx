@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { useKuwagataStore } from "@/store/kuwagataStore";
-import { allSpeciesOptions } from "@/lib/customSpecies";
+import { useSpeciesOptions } from "@/store/useSpeciesOptions";
 import { MoneyInput, Portal } from "@/components/KuwaUI";
 import { BottleChange, Gender, Larva } from "@/types";
 import {
@@ -165,7 +165,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
     deleteBottleChange,
     splitLarva,
   } = useKuwagataStore();
-  const customSpecies = useKuwagataStore((s) => s.customSpecies);
+  const speciesOptions = useSpeciesOptions();
   const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState(false);
@@ -763,7 +763,7 @@ export function LarvaDetailModal({ larva: initial, onClose }: LarvaDetailModalPr
 
               <button
                 onClick={() => {
-                  setForm(larvaToForm(larva, allSpeciesOptions(customSpecies)));
+                  setForm(larvaToForm(larva, speciesOptions));
                   setEditing(true);
                 }}
                 className="kuwa-btn-ghost w-full py-3 text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"

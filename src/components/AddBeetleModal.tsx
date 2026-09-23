@@ -21,7 +21,7 @@ import {
   speciesFields,
 } from "@/components/BeetleFields";
 import { nextCode, suggestCode } from "@/lib/beetleCode";
-import { allSpeciesOptions } from "@/lib/customSpecies";
+import { useSpeciesOptions } from "@/store/useSpeciesOptions";
 
 interface AddBeetleModalProps {
   onClose: () => void;
@@ -54,7 +54,7 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
   const addBeetle = useKuwagataStore((s) => s.addBeetle);
   const addBeetlePair = useKuwagataStore((s) => s.addBeetlePair);
   const beetles = useKuwagataStore((s) => s.beetles);
-  const customSpecies = useKuwagataStore((s) => s.customSpecies);
+  const speciesOptions = useSpeciesOptions();
   const { showToast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -64,7 +64,7 @@ export function AddBeetleModal({ onClose, initial }: AddBeetleModalProps) {
   // 打ち直しは要らず、違うならそのまま書き換えられる。
   // 開いているあいだ変わらない下書きなので、はじめに1回だけ出す
   const [draft] = useState<BeetleFormState>(
-    () => initial ?? startForm(beetles, allSpeciesOptions(customSpecies))
+    () => initial ?? startForm(beetles, speciesOptions)
   );
   const [form, setForm] = useState<BeetleFormState>(draft);
   const [photoIds, setPhotoIds] = useState<string[]>([]);

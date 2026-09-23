@@ -5,8 +5,7 @@ import { HeartHandshake, Plus } from "lucide-react";
 import { Candidate, Caution, pairingCandidates, suggestLineName } from "@/lib/pairing";
 import { Relation } from "@/lib/relation";
 import { Beetle, BreedingLine, Larva } from "@/types";
-import { allSpeciesOptions } from "@/lib/customSpecies";
-import { useKuwagataStore } from "@/store/kuwagataStore";
+import { useSpeciesOptions } from "@/store/useSpeciesOptions";
 import { AddLineModal } from "@/components/AddLineModal";
 
 /**
@@ -137,7 +136,7 @@ export function PairingSection({
   lines: BreedingLine[];
   larvae: Larva[];
 }) {
-  const customSpecies = useKuwagataStore((s) => s.customSpecies);
+  const speciesOptions = useSpeciesOptions();
   const [expanded, setExpanded] = useState(false);
   const [pairWith, setPairWith] = useState<Beetle | null>(null);
 
@@ -154,7 +153,7 @@ export function PairingSection({
   const openPairing = (other: Beetle) => setPairWith(other);
   const male = beetle.gender === "male" ? beetle : pairWith;
   const female = beetle.gender === "male" ? pairWith : beetle;
-  const known = allSpeciesOptions(customSpecies).includes(beetle.species);
+  const known = speciesOptions.includes(beetle.species);
 
   return (
     <div

@@ -229,3 +229,59 @@ describe("ホームの畳み方", () => {
     expect("foldedHome" in useKuwagataStore.getState().snapshot()).toBe(false);
   });
 });
+
+describe("品種の名前を直す", () => {
+  const beetle = (o: Partial<Beetle>): Beetle => ({
+    id: "b1",
+    code: "26OK-A1",
+    species: "オオクワガタ",
+    gender: "male",
+    acquiredDate: "2026-01-01",
+    isAlive: true,
+    notes: "",
+    ...o,
+  });
+
+  beforeEach(() => {
+    resetStore();
+    useKuwagataStore.setState({ customSpecies: [], speciesTuning: {} });
+  });
+
+  it("記録のほうもまとめて付け替える", () => {
+    useKuwagataStore.getState().addBeetle(beetle({ id: "b1", species: "タウルスヒタラ" }));
+    useKuwagataStore.getState().addLarva(larva({ id: "l1", species: "タウルスヒタラ" }));
+    const moved = useKuwagataStore.getState().renameSpecies("タウルスヒタラ", "タウルスヒラタ");
+    const s = useKuwagataStore.getState();
+    expect(moved).toBe(2);
+    expect(s.beetles[0].species).toBe("タウルスヒラタ");
+    expect(s.larvae[0].species).toBe("タウルスヒラタ");
+  });
+
+  it("ほかの品種の記録には触らない", () => {
+    useKuwagataStore.getState().addBeetle(beetle({ id: "b1", species: "タウルス" }));
+    useKuwagataStore.getState().addBeetle(beetle({ id: "b2", species: "オオクワガタ" }));
+    useKuwagataStore.getState().renameSpecies("タウルス", "タウルスヒラタ");
+    expect(useKuwagataStore.getState().beetles[1].species).toBe("オオクワガタ");
+  });
+
+  it("目安も一緒に付け替える", () => {
+    useKuwagataStore.getState().setSpeciesTuning("タウルス", { digOutDays: 40 });
+    useKuwagataStore.getState().renameSpecies("タウルス", "タウルスヒラタ");
+    const tuning = useKuwagataStore.getState().speciesTuning;
+    expect(tuning["タウルス"]).toBeUndefined();
+    expect(tuning["タウルスヒラタ"]?.digOutDays).toBe(40);
+  });
+
+  it("まとめる先に目安があれば、そちらを残す", () => {
+    useKuwagataStore.getState().setSpeciesTuning("ニジイロ", { digOutDays: 40 });
+    useKuwagataStore.getState().setSpeciesTuning("ニジイロクワガタ", { digOutDays: 21 });
+    useKuwagataStore.getState().renameSpecies("ニジイロ", "ニジイロクワガタ");
+    expect(useKuwagataStore.getState().speciesTuning["ニジイロクワガタ"]?.digOutDays).toBe(21);
+  });
+
+  it("組み込みの名前へまとめたら、足した品種としては持たない", () => {
+    useKuwagataStore.getState().addCustomSpecies("ニジイロ");
+    useKuwagataStore.getState().renameSpecies("ニジイロ", "ニジイロクワガタ");
+    expect(useKuwagataStore.getState().customSpecies).toEqual([]);
+  });
+});

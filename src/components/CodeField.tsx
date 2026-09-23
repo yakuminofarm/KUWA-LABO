@@ -5,6 +5,7 @@ import { useKuwagataStore } from "@/store/kuwagataStore";
 import {
   SERIES_MAX,
   codeFromParts,
+  freeNumbers,
   knownSeries,
   nextNumberIn,
   numberOptions,
@@ -78,9 +79,9 @@ export function CodeField({
    * 埋まっていれば空いている最初のもの。選べない番号を持ち回らないようにする
    */
   const numberFor = (s: string): string => {
-    const opts = numberOptions(s, beetles);
+    const free = freeNumbers(s, beetles);
     const next = nextNumberIn(s, beetles);
-    return opts.includes(next) ? next : opts[0] ?? "1";
+    return free.includes(next) ? next : free[0] ?? "1";
   };
 
   /** 系統を選び直したら、番号はその系統の続きにする */
@@ -135,8 +136,7 @@ export function CodeField({
                 onChange={(e) => {
                   // 打ち終わった系統でその番号が埋まっていたら、空いている番号に移す
                   const s = e.target.value;
-                  const opts = numberOptions(s, beetles);
-                  set(s, opts.includes(number) ? number : numberFor(s));
+                  set(s, freeNumbers(s, beetles).includes(number) ? number : numberFor(s));
                 }}
                 placeholder="系統 (例: 26OK-A)"
                 maxLength={SERIES_MAX}
@@ -154,9 +154,12 @@ export function CodeField({
             style={{ width: "6rem", fontVariantNumeric: "tabular-nums" }}
           >
             {number === "" && <option value="">番号</option>}
+            {/* 埋まっている番号も、選べない形で残す。抜いてしまうと
+                「002, 007, 008…」と飛び飛びになり、なぜその並びなのか
+                分からなくなる */}
             {numbers.map((n) => (
-              <option key={n} value={n}>
-                {n}
+              <option key={n.number} value={n.number} disabled={n.taken}>
+                {n.taken ? `${n.number}（使用中）` : n.number}
               </option>
             ))}
           </select>

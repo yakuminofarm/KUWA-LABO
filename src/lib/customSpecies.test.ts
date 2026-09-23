@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   SPECIES_NAME_MAX,
   allSpeciesOptions,
+  checkRename,
   checkSpeciesName,
+  extraSpecies,
   normalizeSpeciesName,
   speciesGroupsWith,
   speciesInUse,
@@ -110,5 +112,70 @@ describe("speciesInUse", () => {
     expect(speciesInUse("コクワガタ", records)).toBe(true);
     expect(speciesInUse("タランドゥス", records)).toBe(false);
     expect(speciesInUse("タランドゥス", [])).toBe(false);
+  });
+});
+
+describe("extraSpecies (記録で使っている品種も選べるようにする)", () => {
+  it("「その他」で打った品種を拾う", () => {
+    expect(extraSpecies([], ["タウルスヒラタクワガタ", "オオクワガタ"])).toEqual([
+      "タウルスヒラタクワガタ",
+    ]);
+  });
+
+  it("組み込みの品種は足さない (二重に並ぶので)", () => {
+    expect(extraSpecies([], ["オオクワガタ", "ニジイロクワガタ"])).toEqual([]);
+  });
+
+  it("自分で足した品種と混ぜて、重なりを落とす", () => {
+    expect(extraSpecies(["タランドゥス"], ["タランドゥス", "タウルス"])).toEqual([
+      "タウルス",
+      "タランドゥス",
+    ]);
+  });
+
+  it("空白のゆれはそろえる", () => {
+    expect(extraSpecies([], [" タウルス ", "タウルス"])).toEqual(["タウルス"]);
+  });
+
+  it("空の品種は拾わない", () => {
+    expect(extraSpecies([], ["", "  "])).toEqual([]);
+  });
+});
+
+describe("checkRename (品種の名前を直す)", () => {
+  it("そろえた名前を返す", () => {
+    expect(checkRename("タウルス", " タウルスヒラタ ", ["タウルス"], ["タウルス"])).toEqual({
+      name: "タウルスヒラタ",
+      merging: false,
+    });
+  });
+
+  it("組み込みの品種は直せない", () => {
+    expect(checkRename("オオクワガタ", "オオクワ", [], [])).toEqual({ issue: "built-in" });
+  });
+
+  it("同じ名前は直したことにならない", () => {
+    expect(checkRename("タウルス", "タウルス", ["タウルス"], [])).toEqual({ issue: "same" });
+  });
+
+  it("空や長すぎる名前は弾く", () => {
+    expect(checkRename("タウルス", "  ", ["タウルス"], [])).toEqual({ issue: "empty" });
+    expect(checkRename("タウルス", "あ".repeat(31), ["タウルス"], [])).toEqual({
+      issue: "too-long",
+    });
+  });
+
+  it("すでにある名前へ直すときは、まとめると分かるようにする", () => {
+    // 「ニジイロ」を「ニジイロクワガタ」に直したい、が実際に起きる
+    expect(checkRename("ニジイロ", "ニジイロクワガタ", ["ニジイロ"], [])).toEqual({
+      name: "ニジイロクワガタ",
+      merging: true,
+    });
+  });
+});
+
+describe("組み込みの名前が紛れ込んでも二重に出さない", () => {
+  it("足した品種の中に組み込みがあっても落とす", () => {
+    expect(extraSpecies(["オオクワガタ", "タウルス"], [])).toEqual(["タウルス"]);
   });
 });
