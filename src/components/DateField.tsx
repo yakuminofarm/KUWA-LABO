@@ -39,11 +39,21 @@ export function DateField({
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-1">
-        <label className="block text-sm font-medium text-[#40352a] flex-1 min-w-0 truncate">
-          {label}
-          {required && " *"}
-        </label>
+      <label className="block text-sm font-medium text-[#40352a] mb-1">
+        {label}
+        {required && " *"}
+      </label>
+      {/* 「だいたい」は日付欄のすぐ隣に置く。見出しの行の右端に離して置くと、
+          どの欄にかかる操作なのか分からず、気づかれない */}
+      <div className="flex items-center gap-2">
+        <input
+          type={rough ? "month" : "date"}
+          value={rough ? value.slice(0, 7) : value}
+          onChange={(e) =>
+            onChange(rough ? monthToDate(e.target.value) : e.target.value, precision)
+          }
+          className="kuwa-input kuwa-input-date"
+        />
         <button
           type="button"
           onClick={() =>
@@ -60,16 +70,6 @@ export function DateField({
           だいたい
         </button>
       </div>
-      <input
-        type={rough ? "month" : "date"}
-        value={rough ? value.slice(0, 7) : value}
-        onChange={(e) =>
-          onChange(rough ? monthToDate(e.target.value) : e.target.value, precision)
-        }
-        // iOS の日付欄は、指定した幅より固有幅のほうが勝つことがある。
-        // 折り返せる行に置いてあるので、広がっても隣を押し出さない
-        className="kuwa-input kuwa-input-date"
-      />
       {/* 見出しの行に3つ並べると、狭い列では見出しが折り返して崩れる。
           消す操作は使う頻度が低いので下に置く */}
       {clearable && value && (

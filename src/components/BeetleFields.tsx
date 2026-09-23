@@ -336,7 +336,7 @@ export function BeetleFields({
           <button
             type="button"
             onClick={() => set({ matured: !form.matured })}
-            className={`px-5 py-3 rounded-xl text-sm font-semibold border transition-colors min-h-[44px] flex-1 min-w-[7rem] ${
+            className={`px-5 py-3 rounded-xl text-sm font-semibold border transition-colors min-h-[44px] flex-1 min-w-[6rem] ${
               form.matured
                 ? "bg-[#55682f] text-[#fdf6e7] border-[#55682f]"
                 : "border-[rgba(107,68,35,0.16)] text-[#77644b]"

@@ -166,9 +166,9 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .kuwa-input-search { padding-left: 44px; }
 /* 中身の長さが決まっている欄は、横いっぱいに伸ばさない。
    数字4桁や日付のために画面の半分を使うと、空白ばかりの画面になる */
-.kuwa-input-num  { width: 7rem; }
+.kuwa-input-num  { width: 6rem; }
 .kuwa-input-date {
-  width: 11rem;
+  width: 10rem;
   max-width: 100%;
   /* iOS は日付欄の固有幅を優先し、指定した幅より広く描く。
      端末まかせの見た目を切ると、指定した幅どおりに収まる */
