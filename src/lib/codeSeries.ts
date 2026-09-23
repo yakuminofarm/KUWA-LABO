@@ -72,9 +72,12 @@ export function nextNumberIn(series: string, beetles: readonly { code: string }[
 /**
  * その系統で選べる番号。**すでに使われている番号は出さない。**
  *
- * 1 から「いちばん大きい番号 + 10」までを並べ、埋まっているものを落とす。
- * 途中が抜けている (消した子の番号) ときは、その番号も選べる。
+ * 1 から「いちばん大きい番号 + 20」(少なくとも50) までを並べ、埋まっている
+ * ものを落とす。途中が抜けている (消した子の番号) ときは、その番号も選べる。
  * 桁は、その系統でいま使っている書き方に合わせる (01 なら 02, 03…)。
+ *
+ * **先をどこまで出すかに正解はない。** 少なすぎると飛ばした番号を使えず、
+ * 多すぎると選ぶのが大変になる。ここより先の番号を使いたい人は「自分で書く」。
  */
 export function numberOptions(
   series: string,
@@ -93,7 +96,8 @@ export function numberOptions(
   }
 
   const out: string[] = [];
-  for (let n = 1; n <= max + 10; n++) {
+  const last = Math.max(max + 20, 50);
+  for (let n = 1; n <= last; n++) {
     const s = String(n).padStart(width, "0");
     // 直しに来た本人の番号は、埋まっていても選べる
     if (!taken.has(s) || s === own) out.push(s);

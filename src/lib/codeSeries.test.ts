@@ -146,16 +146,20 @@ describe("numberOptions", () => {
     expect(numberOptions("A-", [c("A-1"), c("A-3")])).toContain("2");
   });
 
-  it("いちばん大きい番号の先を10個ぶん出す", () => {
-    expect(numberOptions("A-", [c("A-5")])).toEqual(
-      ["1", "2", "3", "4", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]
-    );
+  it("少ないうちは1〜50まで出す", () => {
+    const opts = numberOptions("A-", [c("A-5")]);
+    expect(opts[0]).toBe("1");
+    expect(opts).not.toContain("5");
+    expect(opts[opts.length - 1]).toBe("50");
   });
 
-  it("その系統がまだ無ければ1〜10", () => {
-    expect(numberOptions("B-", [c("A-1")])).toEqual(
-      ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
-    );
+  it("その系統がまだ無くても1〜50", () => {
+    expect(numberOptions("B-", [c("A-1")])).toHaveLength(50);
+  });
+
+  it("進んでいる系統では、いまの番号の先を20個ぶん出す", () => {
+    const opts = numberOptions("A-", [c("A-100")]);
+    expect(opts[opts.length - 1]).toBe("120");
   });
 
   it("桁は、その系統の書き方に合わせる", () => {
