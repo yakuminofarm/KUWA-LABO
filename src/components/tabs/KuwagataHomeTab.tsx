@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import {
   CalendarClock,
+  ChevronDown,
   ChevronRight,
+  Layers,
   GitBranch,
   JapaneseYen,
   Sparkles,
@@ -38,6 +40,9 @@ import {
   totalHeads,
   daysBetween,
 } from "@/lib/breeding";
+import type { UpcomingTask } from "@/lib/breeding";
+import { TaskGroup, TaskKind, groupTasks } from "@/lib/taskGroups";
+import { BottleBatchSheet } from "@/components/BottleBatchSheet";
 import { doneFeedback, tapFeedback } from "@/lib/haptics";
 import { dailyTrivia } from "@/lib/trivia";
 import { fetchTodayNews } from "@/lib/news";
@@ -51,6 +56,153 @@ interface KuwagataHomeTabProps {
   onNavigate: (tab: KuwagataTabId) => void;
 }
 
+/** やること1件ぶんの札 */
+function TaskCard({ task: t }: { task: UpcomingTask }) {
+  const soon = t.kind === "emerge" || t.kind === "digout";
+  return (
+    <div
+      className="rounded-2xl px-5 py-4 flex items-center gap-4 kuwa-shadow relative overflow-hidden"
+      style={{
+        background: "var(--kuwa-card)",
+        border: t.overdue ? "1px solid rgba(163,80,47,0.35)" : "1px solid var(--kuwa-line)",
+      }}
+    >
+      <span
+        className="absolute left-0 top-0 bottom-0 w-[5px]"
+        style={{
+          background: t.overdue
+            ? "var(--kuwa-clay)"
+            : soon
+            ? "var(--kuwa-bark)"
+            : "var(--kuwa-amber)",
+        }}
+      />
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ml-1"
+        style={
+          t.overdue
+            ? { background: "var(--kuwa-clay-bg)", color: "var(--kuwa-clay)" }
+            : soon
+            ? { background: "var(--kuwa-bark-bg)", color: "var(--kuwa-bark)" }
+            : { background: "var(--kuwa-amber-soft)", color: "var(--kuwa-amber)" }
+        }
+      >
+        {soon ? (
+          <Sparkles className="w-[18px] h-[18px]" strokeWidth={2.2} />
+        ) : (
+          <CalendarClock className="w-[18px] h-[18px]" strokeWidth={2.2} />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold truncate" style={{ color: "var(--kuwa-ink)" }}>
+          {t.title}
+        </p>
+        <p className="text-xs mt-0.5" style={{ color: "var(--kuwa-ink-soft)" }}>
+          {t.detail}
+        </p>
+      </div>
+      {t.overdue && (
+        <span
+          className="font-maru text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+          style={{ background: "var(--kuwa-clay)", color: "#fff6ef" }}
+        >
+          そろそろ！
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 同じ種類のやることを、ひとまとめにした札。
+ * 開くと1件ずつ出る。ビン交換だけは、ここからまとめて記録できる
+ */
+function TaskGroupCard({
+  group,
+  open,
+  onToggle,
+  onBatch,
+}: {
+  group: TaskGroup;
+  open: boolean;
+  onToggle: () => void;
+  onBatch?: () => void;
+}) {
+  const soon = group.kind === "emerge" || group.kind === "digout";
+  const hot = group.overdue > 0;
+  return (
+    <div className="space-y-3">
+      <div
+        className="rounded-2xl kuwa-shadow relative overflow-hidden"
+        style={{
+          background: "var(--kuwa-card)",
+          border: hot ? "1px solid rgba(163,80,47,0.35)" : "1px solid var(--kuwa-line)",
+        }}
+      >
+        <span
+          className="absolute left-0 top-0 bottom-0 w-[5px]"
+          style={{
+            background: hot ? "var(--kuwa-clay)" : soon ? "var(--kuwa-bark)" : "var(--kuwa-amber)",
+          }}
+        />
+        <button
+          onClick={onToggle}
+          aria-expanded={open}
+          className="w-full px-5 py-4 flex items-center gap-4 text-left"
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ml-1"
+            style={
+              hot
+                ? { background: "var(--kuwa-clay-bg)", color: "var(--kuwa-clay)" }
+                : soon
+                ? { background: "var(--kuwa-bark-bg)", color: "var(--kuwa-bark)" }
+                : { background: "var(--kuwa-amber-soft)", color: "var(--kuwa-amber)" }
+            }
+          >
+            {soon ? (
+              <Sparkles className="w-[18px] h-[18px]" strokeWidth={2.2} />
+            ) : (
+              <CalendarClock className="w-[18px] h-[18px]" strokeWidth={2.2} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+              {group.label} {group.tasks.length}件
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--kuwa-ink-soft)" }}>
+              {group.overdue > 0
+                ? `うち${group.overdue}件がそろそろ`
+                : "まだ少し先ですが、近づいています"}
+            </p>
+          </div>
+          <ChevronDown
+            className="w-4 h-4 flex-shrink-0 transition-transform"
+            strokeWidth={2.2}
+            style={{
+              color: "var(--kuwa-ink-soft)",
+              transform: open ? "rotate(180deg)" : undefined,
+            }}
+          />
+        </button>
+
+        {onBatch && (
+          <button
+            onClick={onBatch}
+            className="w-full py-3 text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+            style={{ borderTop: "1px solid var(--kuwa-line)", color: "var(--kuwa-moss)" }}
+          >
+            <Layers className="w-4 h-4" strokeWidth={2.2} />
+            まとめて記録する
+          </button>
+        )}
+      </div>
+
+      {open && group.tasks.map((t) => <TaskCard key={t.id} task={t} />)}
+    </div>
+  );
+}
+
 export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   const {
     beetles, lines, larvae, expenses, reminder, schedule, speciesTuning, lastBackupAt,
@@ -61,6 +213,16 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
   const [showBackupPrompt, setShowBackupPrompt] = useState(false);
   const [taskView, setTaskView] = useState<"list" | "calendar">("list");
   const records = speciesRecords(beetles);
+  const [showBatch, setShowBatch] = useState(false);
+  // 開いているまとまり。ふだんは閉じておく
+  const [openGroups, setOpenGroups] = useState<Set<TaskKind>>(() => new Set());
+  const toggleGroup = (kind: TaskKind) =>
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return next;
+    });
   const foldedHome = useKuwagataStore((s) => s.foldedHome);
   const toggleHomeSection = useKuwagataStore((s) => s.toggleHomeSection);
   // 節ごとの畳み方。どの節も、はじめは開いている
@@ -515,61 +677,21 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
           </div>
         ) : (
           <div className="space-y-3">
-            {tasks.map((t) => (
-              <div
-                key={t.id}
-                className="rounded-2xl px-5 py-4 flex items-center gap-4 kuwa-shadow relative overflow-hidden"
-                style={{
-                  background: "var(--kuwa-card)",
-                  border: t.overdue
-                    ? "1px solid rgba(163,80,47,0.35)"
-                    : "1px solid var(--kuwa-line)",
-                }}
-              >
-                <span
-                  className="absolute left-0 top-0 bottom-0 w-[5px]"
-                  style={{
-                    background: t.overdue
-                      ? "var(--kuwa-clay)"
-                      : t.kind === "emerge" || t.kind === "digout"
-                      ? "var(--kuwa-bark)"
-                      : "var(--kuwa-amber)",
-                  }}
+            {groupTasks(tasks).map((g) =>
+              // 1件しか無いまとまりは、まとめずにそのまま出す。
+              // 「ビン交換 1件」を開かせるのは、ひと手間増えるだけ
+              g.tasks.length === 1 ? (
+                <TaskCard key={g.kind} task={g.tasks[0]} />
+              ) : (
+                <TaskGroupCard
+                  key={g.kind}
+                  group={g}
+                  open={openGroups.has(g.kind)}
+                  onToggle={() => toggleGroup(g.kind)}
+                  onBatch={g.kind === "bottle" ? () => setShowBatch(true) : undefined}
                 />
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ml-1"
-                  style={
-                    t.overdue
-                      ? { background: "var(--kuwa-clay-bg)", color: "var(--kuwa-clay)" }
-                      : t.kind === "emerge" || t.kind === "digout"
-                      ? { background: "var(--kuwa-bark-bg)", color: "var(--kuwa-bark)" }
-                      : { background: "var(--kuwa-amber-soft)", color: "var(--kuwa-amber)" }
-                  }
-                >
-                  {t.kind === "emerge" || t.kind === "digout" ? (
-                    <Sparkles className="w-[18px] h-[18px]" strokeWidth={2.2} />
-                  ) : (
-                    <CalendarClock className="w-[18px] h-[18px]" strokeWidth={2.2} />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold truncate" style={{ color: "var(--kuwa-ink)" }}>
-                    {t.title}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--kuwa-ink-soft)" }}>
-                    {t.detail}
-                  </p>
-                </div>
-                {t.overdue && (
-                  <span
-                    className="font-maru text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
-                    style={{ background: "var(--kuwa-clay)", color: "#fff6ef" }}
-                  >
-                    そろそろ！
-                  </span>
-                )}
-              </div>
-            ))}
+              )
+            )}
           </div>
         )}
       </FoldableSection>
@@ -801,6 +923,7 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
       )}
 
       {showRecords && <RecordsSheet onClose={() => setShowRecords(false)} />}
+      {showBatch && <BottleBatchSheet onClose={() => setShowBatch(false)} />}
       {showBackupPrompt && <BackupSheet onClose={() => setShowBackupPrompt(false)} />}
     </div>
   );
