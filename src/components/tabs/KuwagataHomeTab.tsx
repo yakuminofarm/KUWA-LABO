@@ -38,10 +38,10 @@ import {
   speciesRecords,
   tasksByDate,
   totalHeads,
-  daysBetween,
 } from "@/lib/breeding";
 import type { UpcomingTask } from "@/lib/breeding";
 import { TaskGroup, TaskKind, groupTasks } from "@/lib/taskGroups";
+import { backupNudge, nudgeText } from "@/lib/backupNudge";
 import { BottleBatchSheet } from "@/components/BottleBatchSheet";
 import { doneFeedback, tapFeedback } from "@/lib/haptics";
 import { dailyTrivia } from "@/lib/trivia";
@@ -241,9 +241,9 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
     lines.filter((l) => !l.isSample).length +
     larvae.filter((l) => !l.isSample).length +
     expenses.filter((e) => !e.isSample).length;
-  // ある程度たまっていて、しばらく書き出していない人にだけそっと促す
-  const needsBackupNudge =
-    realCount >= 5 && (!lastBackupAt || daysBetween(lastBackupAt) >= 14);
+  // ある程度たまっていて、しばらく書き出していない人にだけ促す。
+  // 長く空くと色を変えて、読み飛ばされないようにする
+  const nudge = backupNudge(realCount, lastBackupAt);
   const { showToast } = useToast();
   const feeding = feedingSummary(beetles, reminder.intervalDays, undefined, speciesTuning);
 
@@ -377,18 +377,31 @@ export function KuwagataHomeTab({ onNavigate }: KuwagataHomeTabProps) {
         </div>
       )}
 
-      {/* 端末の中だけの保存なので、書き出さないと機種変更で消える。
-          記録が少しでもある人にだけ、しばらく経ってから静かに促す */}
-      {needsBackupNudge && (
+      {/* 端末の中だけの保存なので、書き出さないとアプリごと消える。
+          記録が少しでもある人にだけ、しばらく経ってから促す */}
+      {nudge.level !== "none" && (
         <div
           className="rounded-2xl px-4 py-3 flex items-center gap-3"
-          style={{ background: "var(--kuwa-bark-bg)", border: "1px solid var(--kuwa-line)" }}
+          style={
+            nudge.level === "hard"
+              ? { background: "var(--kuwa-clay-bg)", border: "1px solid rgba(163,80,47,0.35)" }
+              : { background: "var(--kuwa-bark-bg)", border: "1px solid var(--kuwa-line)" }
+          }
         >
-          <p className="text-xs flex-1 min-w-0 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
-            {lastBackupAt
-              ? "しばらくバックアップを書き出していません"
-              : "まだバックアップを書き出していません"}
-          </p>
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-xs leading-relaxed"
+              style={{ color: nudge.level === "hard" ? "var(--kuwa-clay)" : "var(--kuwa-ink-soft)" }}
+            >
+              {nudgeText(nudge)}
+            </p>
+            {/* 強く促すときだけ、何が起きうるのかを書く */}
+            {nudge.level === "hard" && (
+              <p className="text-[11px] mt-1 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+                記録はこの端末の中だけにあります。アプリが消えると戻せません
+              </p>
+            )}
+          </div>
           <button
             onClick={() => setShowBackupPrompt(true)}
             className="kuwa-btn-ghost px-4 py-2 text-xs flex-shrink-0 active:scale-95 transition-all"
