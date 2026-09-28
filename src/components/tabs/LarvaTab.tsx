@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Search, Sparkles, Worm } from "lucide-react";
+import { AlertTriangle, Layers, Search, Sparkles, Worm } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Larva, LarvaStage } from "@/types";
 import {
@@ -24,6 +24,8 @@ import { AddLarvaModal } from "@/components/AddLarvaModal";
 import { LarvaDetailModal } from "@/components/LarvaDetailModal";
 import { EmptyState, Fab, ListGroup, PhotoThumb } from "@/components/KuwaUI";
 import { FilterBar } from "@/components/FilterBar";
+import { BottleBatchSheet } from "@/components/BottleBatchSheet";
+import { bottleTargets } from "@/lib/bottleBatch";
 import { EMPTY_IMAGE } from "@/lib/assets";
 import { STAGE_IMAGE } from "@/lib/assets";
 
@@ -189,10 +191,16 @@ function LarvaCard({ larva, onClick }: { larva: Larva; onClick: () => void }) {
 
 export function LarvaTab() {
   const { larvae } = useKuwagataStore();
+  const tabSchedule = useKuwagataStore((s) => s.schedule);
+  const tabTuning = useKuwagataStore((s) => s.speciesTuning);
   const [showAdd, setShowAdd] = useState(false);
+  const [showBatch, setShowBatch] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
+
+  // そろそろ交換する子の数。まとめての入り口は、いるときだけ出す
+  const dueCount = bottleTargets(larvae, tabSchedule, tabTuning).filter((t) => t.due).length;
 
   const searched = larvae.filter(
     (l) =>
@@ -253,6 +261,17 @@ export function LarvaTab() {
           style={{ fontSize: 14 }}
         />
       </div>
+
+      {/* いま交換する子がいるときだけ出す。無い日には出さない */}
+      {dueCount > 0 && (
+        <button
+          onClick={() => setShowBatch(true)}
+          className="kuwa-btn-ghost w-full py-3 text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+        >
+          <Layers className="w-4 h-4" strokeWidth={2.2} />
+          まとめてビン交換 ({dueCount}件)
+        </button>
+      )}
 
       {larvae.length > 0 && (
         <FilterBar
@@ -337,6 +356,7 @@ export function LarvaTab() {
       <Fab onClick={() => setShowAdd(true)} label="幼虫を登録" />
 
       {showAdd && <AddLarvaModal onClose={() => setShowAdd(false)} />}
+      {showBatch && <BottleBatchSheet onClose={() => setShowBatch(false)} />}
       {selected && <LarvaDetailModal larva={selected} onClose={() => setSelectedId(null)} />}
     </div>
   );
