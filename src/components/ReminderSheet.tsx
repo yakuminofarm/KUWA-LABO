@@ -18,6 +18,7 @@ import {
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { Sheet } from "@/components/KuwaUI";
 import { checkHaptics } from "@/lib/haptics";
+import { CheckupSection } from "@/components/CheckupSection";
 import { SpeciesTuningSection } from "@/components/SpeciesTuningSection";
 import { CodeSeriesSection } from "@/components/CodeSeriesSection";
 import { LocalitySection } from "@/components/LocalitySection";
@@ -302,6 +303,8 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
           はじめの値に戻す
         </button>
       </div>
+
+      <CheckupSection />
 
       <SpeciesTuningSection />
 
