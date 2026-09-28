@@ -6,6 +6,9 @@
  * **その品種で使ったことのある産地**を出して、押すだけで入るようにする。
  */
 
+/** 産地の名前の長さの上限。血統書や出品リストに収めるため */
+export const LOCALITY_NAME_MAX = 40;
+
 /** 一度に出す数。多すぎると探すことになるので、よく使うぶんだけ */
 export const LOCALITY_MAX = 8;
 
@@ -30,4 +33,54 @@ export function knownLocalities(
     .sort((a, b) => b[1] - a[1])
     .map(([name]) => name)
     .slice(0, limit);
+}
+
+/** 品種ごとの、使っている産地とその頭数 */
+export interface LocalityUse {
+  species: string;
+  name: string;
+  count: number;
+}
+
+/**
+ * 手元で使っている産地の一覧。品種ごとにまとめ、多い順に出す。
+ *
+ * **品種ごとに分ける。** 同じ「久留米」でも品種が違えば別の血統であり、
+ * 片方だけ名前を直したいことがある。
+ */
+export function localityUses(
+  beetles: readonly { locality?: string; species: string }[]
+): LocalityUse[] {
+  const count = new Map<string, LocalityUse>();
+  for (const b of beetles) {
+    const name = (b.locality ?? "").trim();
+    if (!name) continue;
+    const key = `${b.species}\u0000${name}`;
+    const hit = count.get(key);
+    if (hit) hit.count++;
+    else count.set(key, { species: b.species, name, count: 1 });
+  }
+  return [...count.values()].sort(
+    (a, b) =>
+      a.species.localeCompare(b.species, "ja") ||
+      b.count - a.count ||
+      a.name.localeCompare(b.name, "ja")
+  );
+}
+
+export type LocalityIssue = "empty" | "too-long" | "same";
+
+/**
+ * 名前を直してよいか。
+ * **すでにある産地へまとめるのは許す** (「能勢YG」を「能勢YG血統」にそろえたい)
+ */
+export function checkLocalityName(
+  from: string,
+  raw: string
+): { name: string } | { issue: LocalityIssue } {
+  const name = raw.trim().replace(/\s+/g, " ");
+  if (name === "") return { issue: "empty" };
+  if (name.length > LOCALITY_NAME_MAX) return { issue: "too-long" };
+  if (name === from) return { issue: "same" };
+  return { name };
 }

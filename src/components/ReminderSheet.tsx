@@ -20,6 +20,7 @@ import { Sheet } from "@/components/KuwaUI";
 import { checkHaptics } from "@/lib/haptics";
 import { SpeciesTuningSection } from "@/components/SpeciesTuningSection";
 import { CodeSeriesSection } from "@/components/CodeSeriesSection";
+import { LocalitySection } from "@/components/LocalitySection";
 import { useToast } from "@/components/ui/Toast";
 
 export function ReminderSheet({ onClose }: { onClose: () => void }) {
@@ -305,6 +306,8 @@ export function ReminderSheet({ onClose }: { onClose: () => void }) {
       <SpeciesTuningSection />
 
       <CodeSeriesSection />
+
+      <LocalitySection />
 
       {/* このアプリの助言について。個体を預かる以上、黙って断定しない */}
       <div

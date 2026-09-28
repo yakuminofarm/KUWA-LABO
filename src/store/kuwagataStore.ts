@@ -72,6 +72,11 @@ interface KuwagataStore {
    */
   renameSpecies: (from: string, to: string) => number;
   /**
+   * 産地の名前を直す。**その品種の記録だけ**を付け替える。
+   * 同じ産地名でも品種が違えば別の血統なので、まとめて直さない
+   */
+  renameLocality: (species: string, from: string, to: string) => number;
+  /**
    * 登録しておく管理系統 (25OK-A など)。使ったことのある系統は記録から
    * 分かるので、ここに入るのは**まだ使っていない系統**だけ
    * (src/lib/codeSeries.ts)
@@ -233,6 +238,18 @@ export const useKuwagataStore = create<KuwagataStore>()(
           codeSeries: [...new Set(s.codeSeries.filter((x) => x !== from).concat(to))],
         }));
         return { moved: plan.changes.length, clashes: [] };
+      },
+
+      renameLocality: (species, from, to) => {
+        let moved = 0;
+        set((s) => ({
+          beetles: s.beetles.map((b) => {
+            if (b.species !== species || (b.locality ?? "").trim() !== from) return b;
+            moved++;
+            return { ...b, locality: to };
+          }),
+        }));
+        return moved;
       },
 
       renameSpecies: (from, to) => {
