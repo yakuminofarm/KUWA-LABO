@@ -244,6 +244,8 @@ export function parseBackup(text: string): ParseResult {
           // 写真の欄は配列として読むので、形が違えば落とす
           photoIds: asStrings(o.photoIds),
           photoUrls: asStrings(o.photoUrls),
+          // エサやりの履歴も配列として読む
+          fedDates: asStrings(o.fedDates),
         } as unknown as Beetle)
   );
 

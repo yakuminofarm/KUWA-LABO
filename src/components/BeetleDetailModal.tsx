@@ -36,7 +36,8 @@ import {
   splitPairAmount,
   todayStr,
 } from "@/lib/breeding";
-import { formatDate, getGenderLabel } from "@/lib/utils";
+import { formatDate, formatDateShort, getGenderLabel } from "@/lib/utils";
+import { fedDatesOf, feedingStats } from "@/lib/feeding";
 import { useToast } from "@/components/ui/Toast";
 import { PhotoPickerMulti, PhotoThumb, PhotoViewer } from "@/components/KuwaUI";
 import { mainPhotoRef, photoEntries, photoPatch } from "@/lib/photoRef";
@@ -106,6 +107,8 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
 
   // ストアの最新状態を参照 (お気に入り等の即時反映のため)
   const beetle = beetles.find((b) => b.id === initial.id) ?? initial;
+  const fedDates = fedDatesOf(beetle);
+  const stats = feedingStats(fedDates, todayStr());
   // 自家産の個体は入手金額を持たない。代わりに育成にかかった額を元の記録から出す
   const sourceLarva = beetle.sourceLarvaId
     ? larvae.find((l) => l.id === beetle.sourceLarvaId)
@@ -363,6 +366,47 @@ export function BeetleDetailModal({ beetle: initial, onClose, onDuplicate }: Bee
                 </p>
               </div>
             </button>
+          )}
+
+          {/* あげた日の積み重ね。押す手間は増やさずに、後から見られるように */}
+          {!editing && fedDates.length > 0 && (
+            <div className="kuwa-card p-4">
+              <div className="flex items-baseline gap-2">
+                <p className="text-sm font-bold" style={{ color: "var(--kuwa-ink)" }}>
+                  エサやりの記録
+                </p>
+                <p className="text-[11px]" style={{ color: "var(--kuwa-ink-soft)" }}>
+                  {stats.total}日ぶん
+                </p>
+              </div>
+              <p className="text-xs mt-1.5" style={{ color: "var(--kuwa-ink-soft)" }}>
+                この30日で{stats.recent}回
+                {stats.averageDays != null && ` ・ だいたい${stats.averageDays}日おき`}
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                {[...fedDates]
+                  .reverse()
+                  .slice(0, 10)
+                  .map((d) => (
+                    <span
+                      key={d}
+                      className="kuwa-badge"
+                      style={{
+                        background: d === todayStr() ? "#d7e0b8" : "var(--kuwa-bark-bg)",
+                        color: d === todayStr() ? "#4f5f2a" : "var(--kuwa-ink-soft)",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {formatDateShort(d)}
+                    </span>
+                  ))}
+                {fedDates.length > 10 && (
+                  <span className="kuwa-badge" style={{ color: "var(--kuwa-ink-soft)" }}>
+                    ほか{fedDates.length - 10}日
+                  </span>
+                )}
+              </div>
+            </div>
           )}
 
           {editing ? (

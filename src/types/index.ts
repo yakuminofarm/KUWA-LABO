@@ -57,6 +57,11 @@ export interface Beetle {
   priceYen?: number;       // 入手金額 (円)
   matured?: boolean;       // 後食済み (ブリード可能な成熟状態)
   lastFedDate?: string;    // 最終給餌日 (YYYY-MM-DD)
+  /**
+   * あげた日の一覧 (古い順)。押した記録をそのまま積む。
+   * 履歴を持つ前の記録には無いので、読むときは fedDatesOf でそろえる
+   */
+  fedDates?: string[];
   foodType?: string;       // この個体だけ別の餌にする場合。未設定なら全体の既定を使う
   /** この個体だけ間隔を変える場合 (日)。未設定なら全体の既定を使う */
   feedIntervalDays?: number;

@@ -12,6 +12,7 @@ import {
 import { DEFAULT_SCHEDULE, headCount, needsFeeding, todayStr } from "@/lib/breeding";
 import { isBuiltInSpecies } from "@/lib/customSpecies";
 import { renameSeriesPlan } from "@/lib/codeSeries";
+import { withFed, withoutFed } from "@/lib/feeding";
 import type { SpeciesOverrides, TuningPatch } from "@/lib/speciesTuning";
 import { generateId } from "@/lib/utils";
 import { mockBeetles, mockExpenses, mockLarvae, mockLines } from "@/lib/mockData";
@@ -188,7 +189,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
           return {
             beetles: s.beetles.map((b) =>
               b.id === id
-                ? { ...b, lastFedDate: b.lastFedDate === today ? undefined : today }
+                ? { ...b, ...(b.lastFedDate === today ? withoutFed(b, today) : withFed(b, today)) }
                 : b
             ),
           };
@@ -204,9 +205,7 @@ export const useKuwagataStore = create<KuwagataStore>()(
             .map((b) => b.id)
         );
         set((s) => ({
-          beetles: s.beetles.map((b) =>
-            due.has(b.id) ? { ...b, lastFedDate: today } : b
-          ),
+          beetles: s.beetles.map((b) => (due.has(b.id) ? { ...b, ...withFed(b, today) } : b)),
         }));
         return due.size;
       },
