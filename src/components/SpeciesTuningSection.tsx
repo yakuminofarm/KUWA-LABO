@@ -61,12 +61,15 @@ function SpeciesRow({
   species,
   onRename,
   onRemove,
+  usedCount,
 }: {
   species: string;
   /** 組み込みでない品種だけ渡される。記録のほうもまとめて付け替える */
   onRename?: (to: string) => void;
-  /** 自分で足した品種で、まだ記録が無いときだけ渡される */
+  /** まだ記録が無いときだけ渡される */
   onRemove?: () => void;
+  /** 外せないときの理由 (記録が何件あるか) */
+  usedCount?: number;
 }) {
   const schedule = useKuwagataStore((s) => s.schedule);
   const reminder = useKuwagataStore((s) => s.reminder);
@@ -189,7 +192,7 @@ function SpeciesRow({
               </div>
             ))}
 
-          {onRemove && (
+          {onRemove ? (
             <button
               onClick={onRemove}
               className="w-full py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
@@ -198,6 +201,19 @@ function SpeciesRow({
               <Trash2 className="w-3.5 h-3.5" strokeWidth={2.2} />
               この品種を一覧から外す
             </button>
+          ) : (
+            // 黙って伏せると「消せる場所が無い」と探すことになる。
+            // なぜ外せないのかを、その場に書いておく
+            usedCount != null &&
+            usedCount > 0 && (
+              <p
+                className="text-[11px] leading-relaxed text-center"
+                style={{ color: "var(--kuwa-ink-soft)" }}
+              >
+                この品種の記録が{usedCount}件あるので、一覧から外せません。
+                選択肢は記録からも作られるため、記録が残っているかぎり戻ってきます。
+              </p>
+            )
           )}
         </div>
       )}
@@ -278,6 +294,11 @@ export function SpeciesTuningSection() {
         エサの減りかたも羽化までの日数も品種で違うので、上の全体設定より
         こちらが優先されます。個体ごとに決めた値があれば、さらにそちらが優先されます。
       </p>
+      <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--kuwa-ink-soft)" }}>
+        品種を押して開くと、<strong style={{ color: "var(--kuwa-ink)" }}>名前を直す</strong>・
+        <strong style={{ color: "var(--kuwa-ink)" }}>一覧から外す</strong>
+        もここでできます (はじめから入っている品種はのぞく)。
+      </p>
 
       <div className="mt-3 space-y-2">
         {species.map((name) => (
@@ -287,10 +308,11 @@ export function SpeciesTuningSection() {
             // 組み込みの名前は直せない。次の更新で足された名前と食い違うため
             onRename={isBuiltInSpecies(name) ? undefined : (to) => rename(name, to)}
             onRemove={
-              customSpecies.includes(name) && !speciesInUse(name, records)
+              !isBuiltInSpecies(name) && !speciesInUse(name, records)
                 ? () => remove(name)
                 : undefined
             }
+            usedCount={isBuiltInSpecies(name) ? undefined : inUse.filter((x) => x === name).length}
           />
         ))}
       </div>
