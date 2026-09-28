@@ -285,3 +285,45 @@ describe("品種の名前を直す", () => {
     expect(useKuwagataStore.getState().customSpecies).toEqual([]);
   });
 });
+
+describe("管理系統の名前を直す", () => {
+  const b = (id: string, code: string): Beetle => ({
+    id,
+    code,
+    species: "オオクワガタ",
+    gender: "male",
+    acquiredDate: "2026-01-01",
+    isAlive: true,
+    notes: "",
+  });
+
+  beforeEach(() => {
+    resetStore();
+    useKuwagataStore.setState({ codeSeries: [] });
+  });
+
+  it("その系統の管理番号を、番号はそのままに付け替える", () => {
+    useKuwagataStore.getState().addBeetle(b("1", "TD-007"));
+    useKuwagataStore.getState().addBeetle(b("2", "TD-008"));
+    const r = useKuwagataStore.getState().renameCodeSeries("TD-", "TH-");
+    expect(r).toEqual({ moved: 2, clashes: [] });
+    expect(useKuwagataStore.getState().beetles.map((x) => x.code)).toEqual([
+      "TH-007",
+      "TH-008",
+    ]);
+  });
+
+  it("行き先に同じ番号の子がいたら、1件も動かさない", () => {
+    useKuwagataStore.getState().addBeetle(b("1", "TD-1"));
+    useKuwagataStore.getState().addBeetle(b("2", "TH-1"));
+    const r = useKuwagataStore.getState().renameCodeSeries("TD-", "TH-");
+    expect(r.clashes).toEqual(["TH-1"]);
+    expect(useKuwagataStore.getState().beetles.map((x) => x.code)).toEqual(["TD-1", "TH-1"]);
+  });
+
+  it("登録しておいた系統の名前も入れ替わる", () => {
+    useKuwagataStore.getState().addCodeSeries("TD-");
+    useKuwagataStore.getState().renameCodeSeries("TD-", "TH-");
+    expect(useKuwagataStore.getState().codeSeries).toEqual(["TH-"]);
+  });
+});

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { useKuwagataStore } from "@/store/kuwagataStore";
 import { useToast } from "@/components/ui/Toast";
 import {
   SERIES_MAX,
   checkSeriesName,
+  checkSeriesRename,
   knownSeries,
   seriesInUse,
   seriesLabel,
@@ -26,6 +27,7 @@ const ISSUE_TEXT = {
   "too-long": `系統は${SERIES_MAX}文字までにしてください`,
   "ends-with-digit": "系統の終わりは数字にできません。番号と見分けがつかなくなります",
   duplicate: "その系統はもう選べます",
+  same: "名前が変わっていません",
 } as const;
 
 export function CodeSeriesSection() {
@@ -33,8 +35,11 @@ export function CodeSeriesSection() {
   const registered = useKuwagataStore((s) => s.codeSeries);
   const addCodeSeries = useKuwagataStore((s) => s.addCodeSeries);
   const removeCodeSeries = useKuwagataStore((s) => s.removeCodeSeries);
+  const renameCodeSeries = useKuwagataStore((s) => s.renameCodeSeries);
   const { showToast } = useToast();
   const [adding, setAdding] = useState("");
+  // いま名前を直している系統と、打ちかけの名前
+  const [editing, setEditing] = useState<{ from: string; to: string } | null>(null);
 
   const series = knownSeries(beetles, registered);
 
@@ -51,6 +56,23 @@ export function CodeSeriesSection() {
 
   const count = (s: string) => beetles.filter((b) => splitCode(b.code)?.series === s).length;
 
+  const rename = () => {
+    if (editing == null) return;
+    const result = checkSeriesRename(editing.from, editing.to);
+    if ("issue" in result) {
+      showToast(ISSUE_TEXT[result.issue], "error");
+      return;
+    }
+    const { moved, clashes } = renameCodeSeries(editing.from, result.name);
+    if (clashes.length > 0) {
+      // どこまで直ったのか分からなくなるので、1件も動かしていない
+      showToast(`${clashes[0]} がすでにあるので、まとめられません`, "error");
+      return;
+    }
+    setEditing(null);
+    showToast(moved > 0 ? `${result.name} に直しました (${moved}頭)` : `${result.name} に直しました`);
+  };
+
   return (
     <div
       className="rounded-2xl p-4"
@@ -63,12 +85,37 @@ export function CodeSeriesSection() {
         管理番号の「25OK-A3」でいう <strong style={{ color: "var(--kuwa-ink)" }}>25OK-A</strong>{" "}
         の部分です。登録画面では、ここから選んで番号だけを入れられます。
         いちど使った系統は自動で並ぶので、足すのは先に決めておきたいときだけで大丈夫です。
+        鉛筆の印から名前を直すと、<strong style={{ color: "var(--kuwa-ink)" }}>その系統の管理番号もまとめて変わります</strong>
+        (番号はそのまま)。
       </p>
 
       {series.length > 0 && (
         <div className="mt-3 space-y-2">
           {series.map((name) => {
             const used = count(name);
+            if (editing?.from === name) {
+              return (
+                <div key={name} className="flex gap-2">
+                  <input
+                    value={editing.to}
+                    onChange={(e) => setEditing({ from: name, to: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") rename();
+                    }}
+                    maxLength={SERIES_MAX}
+                    autoFocus
+                    className="kuwa-input flex-1 min-w-0"
+                  />
+                  <button
+                    onClick={rename}
+                    aria-label={`${name} の名前を直す`}
+                    className="kuwa-btn-ghost px-4 flex items-center justify-center flex-shrink-0 active:scale-95 transition-all"
+                  >
+                    <Check className="w-4 h-4" strokeWidth={2.6} />
+                  </button>
+                </div>
+              );
+            }
             return (
               <div
                 key={name}
@@ -84,6 +131,18 @@ export function CodeSeriesSection() {
                 <span className="text-[11px] flex-shrink-0" style={{ color: "var(--kuwa-ink-soft)" }}>
                   {used > 0 ? `${used}頭` : "まだ使っていません"}
                 </span>
+                {/* 記号なしの系統は、名前を直す入り口を出さない。
+                    空の名前から始まる欄になり、何を直すのか分からない */}
+                {name !== "" && (
+                  <button
+                    onClick={() => setEditing({ from: name, to: name })}
+                    aria-label={`${name} の名前を直す`}
+                    className="p-1.5 flex-shrink-0 active:scale-95 transition-all"
+                    style={{ color: "var(--kuwa-ink-soft)" }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" strokeWidth={2.2} />
+                  </button>
+                )}
                 {/* 使っている系統は外せない。外しても記録の番号は変わらないが、
                     一覧から消えると選び直せなくなる */}
                 {!seriesInUse(name, beetles) && (

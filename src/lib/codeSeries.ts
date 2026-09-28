@@ -127,7 +127,51 @@ export function seriesInUse(series: string, beetles: readonly { code: string }[]
   return beetles.some((b) => splitCode(b.code)?.series === series);
 }
 
+/**
+ * 系統の名前を直したときに、管理番号をどう付け替えるか。
+ *
+ * **番号はそのまま、系統の部分だけ差し替える。** TD-007 を TH- に直せば TH-007。
+ * 行き先にその番号の子がいたら、**1件も動かさずに知らせる** — 一部だけ動かすと、
+ * どこまで直ったのか分からなくなる。
+ */
+export function renameSeriesPlan(
+  from: string,
+  to: string,
+  beetles: readonly { id: string; code: string }[]
+): { changes: { id: string; code: string }[]; clashes: string[] } {
+  const changes: { id: string; code: string }[] = [];
+  const clashes: string[] = [];
+  const staying = new Set(
+    beetles.filter((b) => splitCode(b.code)?.series !== from).map((b) => b.code)
+  );
+
+  for (const b of beetles) {
+    const parts = splitCode(b.code);
+    if (!parts || parts.series !== from) continue;
+    const code = joinCode(to, parts.number);
+    if (staying.has(code)) clashes.push(code);
+    else changes.push({ id: b.id, code });
+  }
+  return { changes, clashes };
+}
+
 export type SeriesIssue = "empty" | "too-long" | "ends-with-digit" | "duplicate";
+
+/**
+ * 名前を直してよいか。足すときと違って、**すでにある系統へまとめるのは許す**
+ * (「TDー」を「TD-」に直したい、が実際に起きる)。重なりは番号で見る
+ */
+export function checkSeriesRename(
+  from: string,
+  raw: string
+): { name: string } | { issue: SeriesIssue | "same" } {
+  const name = raw.trim();
+  if (name === "") return { issue: "empty" };
+  if (name.length > SERIES_MAX) return { issue: "too-long" };
+  if (/\d$/.test(name)) return { issue: "ends-with-digit" };
+  if (name === from) return { issue: "same" };
+  return { name };
+}
 
 export function checkSeriesName(
   raw: string,

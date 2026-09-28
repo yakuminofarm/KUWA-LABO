@@ -11,6 +11,7 @@ import {
 } from "@/types";
 import { DEFAULT_SCHEDULE, headCount, needsFeeding, todayStr } from "@/lib/breeding";
 import { isBuiltInSpecies } from "@/lib/customSpecies";
+import { renameSeriesPlan } from "@/lib/codeSeries";
 import type { SpeciesOverrides, TuningPatch } from "@/lib/speciesTuning";
 import { generateId } from "@/lib/utils";
 import { mockBeetles, mockExpenses, mockLarvae, mockLines } from "@/lib/mockData";
@@ -78,6 +79,11 @@ interface KuwagataStore {
   codeSeries: string[];
   addCodeSeries: (name: string) => void;
   removeCodeSeries: (name: string) => void;
+  /**
+   * 管理系統の名前を直す。**その系統の管理番号もまとめて付け替える。**
+   * 行き先に同じ番号の子がいるときは、1件も動かさずに、その番号を返す
+   */
+  renameCodeSeries: (from: string, to: string) => { moved: number; clashes: string[] };
   /**
    * ホームで畳んでいる節。
    * 端末ごとの見た目の好みなので、控え (バックアップ) には入れない
@@ -213,6 +219,21 @@ export const useKuwagataStore = create<KuwagataStore>()(
       // 選択肢から外すだけなので、残っている記録は今までどおり動く
       removeCustomSpecies: (name) =>
         set((s) => ({ customSpecies: s.customSpecies.filter((x) => x !== name) })),
+
+      renameCodeSeries: (from, to) => {
+        const plan = renameSeriesPlan(from, to, get().beetles);
+        // 一部だけ動かすと、どこまで直ったのか分からなくなる
+        if (plan.clashes.length > 0) return { moved: 0, clashes: plan.clashes };
+        const next = new Map(plan.changes.map((c) => [c.id, c.code]));
+        set((s) => ({
+          beetles: s.beetles.map((b) => {
+            const code = next.get(b.id);
+            return code == null ? b : { ...b, code };
+          }),
+          codeSeries: [...new Set(s.codeSeries.filter((x) => x !== from).concat(to))],
+        }));
+        return { moved: plan.changes.length, clashes: [] };
+      },
 
       renameSpecies: (from, to) => {
         let moved = 0;

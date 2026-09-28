@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   checkSeriesName,
+  checkSeriesRename,
   codeFromParts,
   joinCode,
   knownSeries,
   nextNumberIn,
   freeNumbers,
   numberOptions,
+  renameSeriesPlan,
   seriesInUse,
   splitCode,
 } from "@/lib/codeSeries";
@@ -182,5 +184,56 @@ describe("numberOptions", () => {
 
   it("桁の違う番号で直しに来ても、本人のぶんは消えない", () => {
     expect(freeNumbers("A-", [c("A-01")], "7")).toContain("7");
+  });
+});
+
+describe("renameSeriesPlan", () => {
+  const rec = (id: string, code: string) => ({ id, code });
+
+  it("番号はそのまま、系統の部分だけ差し替える", () => {
+    const plan = renameSeriesPlan("TD-", "TH-", [rec("1", "TD-007"), rec("2", "TD-008")]);
+    expect(plan.changes).toEqual([
+      { id: "1", code: "TH-007" },
+      { id: "2", code: "TH-008" },
+    ]);
+    expect(plan.clashes).toEqual([]);
+  });
+
+  it("ほかの系統の子には触らない", () => {
+    const plan = renameSeriesPlan("TD-", "TH-", [rec("1", "TD-1"), rec("2", "XX-1")]);
+    expect(plan.changes).toEqual([{ id: "1", code: "TH-1" }]);
+  });
+
+  it("行き先に同じ番号の子がいたら知らせる", () => {
+    const plan = renameSeriesPlan("TD-", "TH-", [rec("1", "TD-1"), rec("2", "TH-1")]);
+    expect(plan.clashes).toEqual(["TH-1"]);
+  });
+
+  it("分けられない番号の子は動かさない", () => {
+    expect(renameSeriesPlan("TD-", "TH-", [rec("1", "オオクワ♂")]).changes).toEqual([]);
+  });
+
+  it("記号なしの系統からも直せる", () => {
+    expect(renameSeriesPlan("", "TD-", [rec("1", "7")]).changes).toEqual([
+      { id: "1", code: "TD-7" },
+    ]);
+  });
+});
+
+describe("checkSeriesRename", () => {
+  it("すでにある系統へまとめるのは許す (重なりは番号で見る)", () => {
+    expect(checkSeriesRename("TDー", "TD-")).toEqual({ name: "TD-" });
+  });
+
+  it("同じ名前は直したことにならない", () => {
+    expect(checkSeriesRename("TD-", "TD-")).toEqual({ issue: "same" });
+  });
+
+  it("終わりが数字の系統は弾く", () => {
+    expect(checkSeriesRename("TD-", "TD2")).toEqual({ issue: "ends-with-digit" });
+  });
+
+  it("空は弾く", () => {
+    expect(checkSeriesRename("TD-", "  ")).toEqual({ issue: "empty" });
   });
 });
